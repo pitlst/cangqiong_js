@@ -101,8 +101,7 @@
             display: flex;
             flex-direction: column;
             align-items: stretch;
-            gap: 10px;
-            padding: 18px 22px;
+            padding: 0;
             background:
                 radial-gradient(1200px 600px at 50% -10%, color-mix(in oklch, var(--primary) 12%, transparent) 0%, transparent 60%),
                 var(--background);
@@ -111,6 +110,169 @@
         .page > * {
             position: relative;
             z-index: 1;
+        }
+
+        .app-shell {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--sidebar-border);
+            background: color-mix(in oklch, var(--sidebar) 92%, transparent);
+            backdrop-filter: blur(16px) saturate(1.1);
+            -webkit-backdrop-filter: blur(16px) saturate(1.1);
+        }
+
+        .sidebar-brand {
+            padding: 20px 16px 14px;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .sidebar-title {
+            display: block;
+            font-size: .9375rem;
+            font-weight: 600;
+            letter-spacing: -.02em;
+            color: var(--sidebar-foreground);
+            line-height: 1.3;
+        }
+
+        .sidebar-sub {
+            display: block;
+            margin-top: 2px;
+            font-size: 11px;
+            color: var(--muted-foreground);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px 10px;
+            overflow: auto;
+        }
+
+        .nav-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 38px;
+            padding: 0 12px 0 14px;
+            border: none;
+            border-radius: calc(var(--radius) - 4px);
+            background: transparent;
+            color: var(--sidebar-foreground);
+            font: inherit;
+            font-size: .8125rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+
+        .nav-item::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 3px;
+            height: 0;
+            border-radius: 0 2px 2px 0;
+            background: var(--sidebar-primary);
+            transform: translateY(-50%);
+            transition: height .15s;
+        }
+
+        .nav-item:hover {
+            background: var(--sidebar-accent);
+            color: var(--sidebar-accent-foreground);
+        }
+
+        .nav-item.is-active {
+            background: color-mix(in oklch, var(--sidebar-primary) 12%, var(--sidebar-accent));
+            color: var(--sidebar-accent-foreground);
+        }
+
+        .nav-item.is-active::before {
+            height: 18px;
+        }
+
+        .nav-group-label {
+            padding: 10px 14px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .06em;
+            color: var(--muted-foreground);
+            user-select: none;
+        }
+
+        .readonly-hint {
+            flex-shrink: 0;
+            font-size: 12px;
+            color: var(--muted-foreground);
+            line-height: 1.5;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 4px);
+            background: color-mix(in oklch, var(--muted) 40%, transparent);
+        }
+
+        .org-view-split {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .org-view-split .org-tree-row {
+            cursor: default;
+        }
+
+        .org-view-table-wrap {
+            flex: 1;
+            border: none;
+            border-radius: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-foot {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border-top: 1px solid var(--sidebar-border);
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 18px 22px 14px;
+        }
+
+        .main-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .main-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -.025em;
+            line-height: 1.2;
         }
 
         /* DeepSeek Harness 暗色：#0a0a0a + 钢蓝体积光 + 极淡网格（边缘淡出） */
@@ -150,16 +312,180 @@
             line-height: 1.2;
         }
 
-        .toolbar {
+        .tab-panels {
+            flex: 1;
+            min-height: 0;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+        }
+
+        .tab-panel {
+            flex: 1;
+            min-height: 0;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tab-panel.is-active {
+            display: flex;
+        }
+
+        .data-table {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
             gap: 8px;
         }
 
-        .toolbar-right {
-            margin-left: auto;
+        .data-table-mount {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dt-toolbar {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .dt-filter-input {
+            width: 220px;
+            max-width: 100%;
+            flex: 0 0 auto;
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid var(--input);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--foreground);
+            font: inherit;
+            font-size: .8125rem;
+        }
+
+        .dt-filter-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--background), 0 0 0 4px color-mix(in oklch, var(--ring) 30%, transparent);
+        }
+
+        .dt-meta {
+            font-size: 12px;
+            color: var(--muted-foreground);
+            white-space: nowrap;
+        }
+
+        .dt-table-wrap {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .dt-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .dt-page-info {
+            font-size: 12px;
+            color: var(--muted-foreground);
+        }
+
+        .dt-page-size {
+            height: 28px;
+            border: 1px solid var(--input);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--foreground);
+            font-size: 12px;
+            padding: 0 6px;
+        }
+
+        .dt-empty {
+            text-align: center;
+            color: var(--muted-foreground);
+            padding: 24px 12px !important;
+        }
+
+        .org-dialog-dt {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table th.th-sort {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .table th.th-sort:hover {
+            background: color-mix(in oklch, var(--accent) 65%, transparent);
+        }
+
+        .th-sort-inner {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .th-sort-icon {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 1px;
+            opacity: .35;
+            line-height: 0;
+        }
+
+        .th-sort.is-asc .th-sort-icon,
+        .th-sort.is-desc .th-sort-icon {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        .th-sort.is-asc .sort-down,
+        .th-sort.is-desc .sort-up,
+        .th-sort:not(.is-asc):not(.is-desc) .sort-up,
+        .th-sort:not(.is-asc):not(.is-desc) .sort-down {
+            opacity: .2;
+        }
+
+        .th-sort.is-asc .sort-up {
+            opacity: 1;
+        }
+
+        .th-sort.is-desc .sort-down {
+            opacity: 1;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            column-gap: 12px;
+            row-gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
             gap: 8px;
         }
 
@@ -452,8 +778,8 @@
             gap: 6px;
         }
         .dlg-form-col {
-            flex: 0 0 260px;
-            width: 260px;
+            flex: 0 0 380px;
+            width: 380px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -462,12 +788,125 @@
         .dlg-field-grow {
             flex: 1;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
         }
-        .dlg-field-grow textarea {
+        .cfg-panel {
             flex: 1;
             min-height: 0;
-            height: 100%;
-            resize: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            padding: 10px;
+            overflow: auto;
+        }
+        .cfg-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .cfg-panel-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--foreground);
+        }
+        .cfg-panel-hint {
+            font-size: 11px;
+            color: var(--muted-foreground);
+            line-height: 1.4;
+        }
+        .cfg-panel-hint.is-error {
+            color: var(--destructive);
+        }
+        .cfg-panel-hint.is-ok {
+            color: color-mix(in oklch, var(--primary) 70%, var(--foreground));
+        }
+        .cfg-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .cfg-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cfg-row input[type="text"],
+        .cfg-row input[type="number"] {
+            height: 30px;
+            border: 1px solid var(--input);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--foreground);
+            padding: 0 8px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .cfg-row input[type="text"] {
+            flex: 1;
+            min-width: 0;
+        }
+        .cfg-row input[type="number"] {
+            width: 72px;
+            font-variant-numeric: tabular-nums;
+        }
+        .cfg-row-label {
+            flex-shrink: 0;
+            width: 28px;
+            font-size: 11px;
+            color: var(--muted-foreground);
+            text-align: right;
+        }
+        .cfg-row-suffix {
+            flex-shrink: 0;
+            font-size: 11px;
+            color: var(--muted-foreground);
+        }
+        .cfg-text-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .cfg-text-field label {
+            font-size: 11px;
+            color: var(--muted-foreground);
+            line-height: 1.35;
+        }
+        .cfg-text-field input {
+            height: 30px;
+            border: 1px solid var(--input);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--foreground);
+            padding: 0 8px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--muted-foreground);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, color .15s;
+        }
+        .btn-icon:hover {
+            background: var(--accent);
+            color: var(--accent-foreground);
+        }
+        .btn-icon.danger:hover {
+            color: var(--destructive);
         }
         .org-split {
             flex: 1;
@@ -579,10 +1018,11 @@
             flex-direction: column;
         }
         .org-table-toolbar {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            justify-content: flex-end;
-            gap: 10px;
+            column-gap: 12px;
+            row-gap: 8px;
             padding: 6px 8px;
             flex-shrink: 0;
         }
@@ -651,51 +1091,149 @@
 
 <body>
     <div class="page">
-        <h1 class="page-title">配置项列表</h1>
-        <div class="toolbar">
-            <button class="btn btn-default" id="tblnew" type="button">新增</button>
-            <span class="toolbar-right">
-                <button class="icon-btn" id="theme-btn" type="button" aria-label="切换暗色模式" title="切换暗色模式">
-                    <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="4" />
-                        <path d="M12 2v2" />
-                        <path d="M12 20v2" />
-                        <path d="m4.93 4.93 1.41 1.41" />
-                        <path d="m17.66 17.66 1.41 1.41" />
-                        <path d="M2 12h2" />
-                        <path d="M20 12h2" />
-                        <path d="m6.34 17.66-1.41 1.41" />
-                        <path d="m19.07 4.93-1.41 1.41" />
-                    </svg>
-                    <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-                    </svg>
-                </button>
-                <button class="icon-btn" id="close-btn" type="button" aria-label="关闭" title="关闭 (Esc)">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M18 6 6 18" />
-                        <path d="m6 6 12 12" />
-                    </svg>
-                </button>
-            </span>
+        <div class="app-shell">
+            <aside class="sidebar">
+                <div class="sidebar-brand">
+                    <span class="sidebar-title">党群绩效评价与创先争优评价</span>
+                    <span class="sidebar-sub">绩效评价页面</span>
+                </div>
+                <nav class="sidebar-nav" role="tablist" aria-label="主导航">
+                    <button class="nav-item is-active" id="tab-quarterly" type="button" role="tab"
+                        aria-selected="true" aria-controls="panel-quarterly" data-tab="quarterly">季度评价结果</button>
+                    <button class="nav-item" id="tab-annual" type="button" role="tab"
+                        aria-selected="false" aria-controls="panel-annual" data-tab="annual">年度评价结果</button>
+                    <button class="nav-item" id="tab-config" type="button" role="tab"
+                        aria-selected="false" aria-controls="panel-config" data-tab="config">配置项管理</button>
+                    <span class="nav-group-label"> 来源数据 </span>
+                    <button class="nav-item" id="tab-deduction" type="button" role="tab"
+                        aria-selected="false" aria-controls="panel-deduction" data-tab="deduction">扣分项台账</button>
+                    <button class="nav-item" id="tab-party-quarterly" type="button" role="tab"
+                        aria-selected="false" aria-controls="panel-partyQuarterly" data-tab="partyQuarterly">季度党群绩效</button>
+                    <button class="nav-item" id="tab-org" type="button" role="tab"
+                        aria-selected="false" aria-controls="panel-org" data-tab="org">党组织查询</button>
+                </nav>
+                <div class="sidebar-foot">
+                    <button class="icon-btn" id="theme-btn" type="button" aria-label="切换暗色模式" title="切换暗色模式">
+                        <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4" />
+                            <path d="M12 2v2" />
+                            <path d="M12 20v2" />
+                            <path d="m4.93 4.93 1.41 1.41" />
+                            <path d="m17.66 17.66 1.41 1.41" />
+                            <path d="M2 12h2" />
+                            <path d="M20 12h2" />
+                            <path d="m6.34 17.66-1.41 1.41" />
+                            <path d="m19.07 4.93-1.41 1.41" />
+                        </svg>
+                        <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="close-btn" type="button" aria-label="关闭" title="关闭 (Esc)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </aside>
+
+            <div class="main">
+                <header class="main-header">
+                    <h1 class="main-title" id="main-title">季度评价结果</h1>
+                </header>
+
+                <div class="tab-panels">
+            <section class="tab-panel is-active" id="panel-quarterly" role="tabpanel" aria-labelledby="tab-quarterly">
+                <div class="toolbar">
+                    <div class="toolbar-actions">
+                        <button class="btn btn-default" id="tbl-quarterly-new" type="button">新增</button>
+                        <button class="btn btn-outline" id="tbl-quarterly-edit" type="button">修改</button>
+                        <button class="btn btn-outline" id="tbl-quarterly-del" type="button">删除</button>
+                        <button class="btn btn-outline" id="tbl-quarterly-calc-score" type="button">计算绩效得分</button>
+                        <button class="btn btn-outline" id="tbl-quarterly-calc-eval" type="button">计算绩效评价结果</button>
+                        <button class="btn btn-outline" id="tbl-quarterly-calc-excellence" type="button">计算创先争优结果</button>
+                        <button class="btn btn-outline" id="tbl-quarterly-export" type="button">导出</button>
+                    </div>
+                    <div class="toolbar-right" id="dt-filter-quarterly"></div>
+                </div>
+                <div class="data-table-mount" id="dt-quarterly"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-annual" role="tabpanel" aria-labelledby="tab-annual" hidden>
+                <div class="toolbar">
+                    <div class="toolbar-actions">
+                        <button class="btn btn-default" id="tbl-annual-new" type="button">新增</button>
+                        <button class="btn btn-outline" id="tbl-annual-edit" type="button">修改</button>
+                        <button class="btn btn-outline" id="tbl-annual-del" type="button">删除</button>
+                        <button class="btn btn-outline" id="tbl-annual-calc-score" type="button">计算绩效得分</button>
+                        <button class="btn btn-outline" id="tbl-annual-calc-eval" type="button">计算绩效评价结果</button>
+                        <button class="btn btn-outline" id="tbl-annual-calc-excellence" type="button">计算创先争优结果</button>
+                        <button class="btn btn-outline" id="tbl-annual-export" type="button">导出</button>
+                    </div>
+                    <div class="toolbar-right" id="dt-filter-annual"></div>
+                </div>
+                <div class="data-table-mount" id="dt-annual"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-config" role="tabpanel" aria-labelledby="tab-config" hidden>
+                <div class="toolbar">
+                    <div class="toolbar-actions">
+                        <button class="btn btn-default" id="tblnew" type="button">新增</button>
+                        <button class="btn btn-outline" id="tbl-config-edit" type="button">修改</button>
+                        <button class="btn btn-outline" id="tbl-config-del" type="button">删除</button>
+                        <button class="btn btn-outline" id="tbl-config-export" type="button">导出</button>
+                    </div>
+                    <div class="toolbar-right" id="dt-filter-config"></div>
+                </div>
+                <div class="data-table-mount" id="dt-config"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-deduction" role="tabpanel" aria-labelledby="tab-deduction" hidden>
+                <div class="toolbar">
+                    <div class="toolbar-actions">
+                        <button class="btn btn-outline" id="tbl-deduction-export" type="button">导出</button>
+                    </div>
+                    <div class="toolbar-right" id="dt-filter-deduction"></div>
+                </div>
+                <div class="data-table-mount" id="dt-deduction"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-partyQuarterly" role="tabpanel" aria-labelledby="tab-party-quarterly" hidden>
+                <div class="toolbar">
+                    <div class="toolbar-actions">
+                        <button class="btn btn-outline" id="tbl-partyQuarterly-export" type="button">导出</button>
+                    </div>
+                    <div class="toolbar-right" id="dt-filter-partyQuarterly"></div>
+                </div>
+                <div class="data-table-mount" id="dt-partyQuarterly"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-org" role="tabpanel" aria-labelledby="tab-org" hidden>
+                <div class="org-split org-view-split" id="org-view-split">
+                    <div class="org-tree-pane" id="org-view-tree-pane">
+                        <div class="org-tree" id="org-view-tree"></div>
+                    </div>
+                    <div class="org-table-pane">
+                        <div class="org-table-toolbar">
+                            <div class="toolbar-actions">
+                                <button class="btn btn-outline" id="tbl-orgView-export" type="button">导出</button>
+                                <span class="org-selected-meta" id="org-view-meta">当前节点下级组织</span>
+                            </div>
+                            <div class="toolbar-right" id="dt-filter-orgView"></div>
+                        </div>
+                        <div class="data-table-mount org-dialog-dt" id="dt-orgView"></div>
+                    </div>
+                </div>
+            </section>
+                </div>
+
+                <p class="status-line" id="demo-status">就绪：所有表格已切换为 shadcn Data Table（@tanstack/react-table）；支持排序、筛选与分页。</p>
+            </div>
         </div>
-        <div class="table-wrap">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>单据编号</th>
-                        <th>单据状态</th>
-                        <th>党组织</th>
-                        <th>配置json</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody"></tbody>
-            </table>
-        </div>
-        <p class="status-line" id="demo-status">就绪：点「新增」将先触发父页面官方按钮，再弹出录入框获取数据。</p>
     </div>
 
     <div class="dialog-overlay" id="dlg-overlay" hidden>
@@ -733,44 +1271,16 @@
                         </div>
                         <div class="org-table-pane">
                             <div class="org-table-toolbar">
-                                <span class="org-pager">
-                                    <button class="icon-btn sm" id="org-prev" type="button" aria-label="上一页" title="上一页">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="m15 18-6-6 6-6" />
-                                        </svg>
-                                    </button>
-                                    <select id="org-page-size" aria-label="每页条数">
-                                        <option value="100">100条/页</option>
-                                        <option value="50">50条/页</option>
-                                        <option value="20">20条/页</option>
-                                    </select>
-                                    <button class="icon-btn sm" id="org-next" type="button" aria-label="下一页" title="下一页">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="m9 18 6-6-6-6" />
-                                        </svg>
-                                    </button>
-                                </span>
-                                <span class="org-selected-meta">
-                                    已选 <span id="org-selected-count">0</span>
-                                    <button class="btn-link" id="org-clear" type="button">清空</button>
-                                </span>
+                                <div class="toolbar-actions">
+                                    <button class="btn btn-outline" id="tbl-orgDialog-export" type="button">导出</button>
+                                    <span class="org-selected-meta">
+                                        已选 <span id="org-selected-count">0</span>
+                                        <button class="btn-link" id="org-clear" type="button">清空</button>
+                                    </span>
+                                </div>
+                                <div class="toolbar-right" id="dt-filter-orgDialog"></div>
                             </div>
-                            <div class="table-wrap org-table-wrap">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th class="th-chk"><input class="chk" id="org-check-all" type="checkbox" aria-label="全选当前页" /></th>
-                                            <th>序号</th>
-                                            <th>组织名称</th>
-                                            <th>数据状态</th>
-                                            <th>上级名称</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="org-tbody"></tbody>
-                                </table>
-                            </div>
+                            <div class="data-table-mount org-dialog-dt" id="dt-orgDialog"></div>
                         </div>
                     </div>
                 </div>
@@ -778,15 +1288,17 @@
                     <div class="dialog-field">
                         <label for="dlg-type">配置类型</label>
                         <select id="dlg-type">
-                            <option>列表配置</option>
-                            <option>单据配置</option>
-                            <option>模板配置</option>
-                            <option>自定义</option>
+                            <option value="quarterly_party_perf">季度党群绩效评价规则</option>
+                            <option value="quarterly_excellence">季度创先争优评价规则</option>
+                            <option value="quarterly_grassroots">季度基层党组织创先争优评价项点</option>
+                            <option value="annual_party_perf">年度党群绩效评价规则</option>
+                            <option value="annual_excellence">年度创先争优评价规则</option>
+                            <option value="annual_grassroots">年度基层党组织创先争优评价项点</option>
                         </select>
                     </div>
                     <div class="dialog-field dlg-field-grow">
-                        <label for="dlg-config">具体配置逻辑</label>
-                        <textarea id="dlg-config" placeholder="（具体配置逻辑，待补充）"></textarea>
+                        <label>具体配置</label>
+                        <div class="cfg-panel" id="dlg-config-panel"></div>
                     </div>
                 </div>
             </div>
@@ -830,8 +1342,13 @@
             syncThemeButton();
         });
 
-        // ---------- shadcn Table 随机数据 ----------
+        // ---------- 页签 + 可排序表格 ----------
         var STATUS = [["A", "暂存"], ["B", "已提交"], ["C", "已审核"]];
+        var QUARTERS = ["2026-Q1", "2026-Q2", "2025-Q4", "2025-Q3", "2025-Q2"];
+        var YEARS = ["2026", "2025", "2024"];
+        var GRADES = ["优秀", "良好", "合格", "待改进"];
+        var activeTab = "quarterly";
+
         var ORG_TREE = {
             id: "all",
             name: "全部",
@@ -861,44 +1378,303 @@
             if (node.id !== "all") ORGS.push(node.name);
             (node.children || []).forEach(collectOrgNames);
         })(ORG_TREE);
-        var ROWS = [];
-        function randRow() {
-            var no = "CQ" + new Date().getFullYear() + String(Math.floor(Math.random() * 9000) + 1000);
+
+        var TABLE_DEFS = {
+            quarterly: {
+                label: "季度评价结果",
+                sortKey: "quarter",
+                sortDir: "desc",
+                columns: [
+                    { key: "no", label: "单据编号", sortable: true },
+                    { key: "quarter", label: "评价季度", sortable: true },
+                    { key: "org", label: "党组织", sortable: true },
+                    { key: "partyScore", label: "党群绩效得分", sortable: true, numeric: true },
+                    { key: "excellenceScore", label: "创先争优得分", sortable: true, numeric: true },
+                    { key: "totalScore", label: "综合得分", sortable: true, numeric: true },
+                    { key: "grade", label: "评价等级", sortable: true },
+                    { key: "statusText", label: "单据状态", sortable: true, badge: true }
+                ],
+                rows: []
+            },
+            annual: {
+                label: "年度评价结果",
+                sortKey: "year",
+                sortDir: "desc",
+                columns: [
+                    { key: "no", label: "单据编号", sortable: true },
+                    { key: "year", label: "评价年度", sortable: true },
+                    { key: "org", label: "党组织", sortable: true },
+                    { key: "partyScore", label: "党群绩效得分", sortable: true, numeric: true },
+                    { key: "excellenceScore", label: "创先争优得分", sortable: true, numeric: true },
+                    { key: "totalScore", label: "综合得分", sortable: true, numeric: true },
+                    { key: "grade", label: "评价等级", sortable: true },
+                    { key: "statusText", label: "单据状态", sortable: true, badge: true }
+                ],
+                rows: []
+            },
+            config: {
+                label: "配置项管理",
+                sortKey: "no",
+                sortDir: "desc",
+                columns: [
+                    { key: "no", label: "单据编号", sortable: true },
+                    { key: "statusText", label: "单据状态", sortable: true, badge: true },
+                    { key: "org", label: "党组织", sortable: true },
+                    { key: "typeName", label: "配置类型", sortable: true },
+                    { key: "config", label: "配置json", sortable: true, mono: true }
+                ],
+                rows: []
+            },
+            deduction: {
+                label: "扣分项台账",
+                sortKey: "code",
+                sortDir: "asc",
+                readonly: true,
+                columns: [
+                    { key: "code", label: "项点编号", sortable: true },
+                    { key: "name", label: "扣分项名称", sortable: true },
+                    { key: "standard", label: "扣分标准", sortable: true },
+                    { key: "score", label: "扣分分值", sortable: true, numeric: true },
+                    { key: "quarter", label: "适用季度", sortable: true },
+                    { key: "statusText", label: "状态", sortable: true, badge: true }
+                ],
+                rows: []
+            },
+            partyQuarterly: {
+                label: "季度党群绩效",
+                sortKey: "org",
+                sortDir: "asc",
+                readonly: true,
+                columns: [
+                    { key: "org", label: "党组织", sortable: true },
+                    { key: "quarter", label: "评价季度", sortable: true },
+                    { key: "itemName", label: "项点名称", sortable: true },
+                    { key: "contribution", label: "贡献度得分", sortable: true, numeric: true },
+                    { key: "weight", label: "权重(%)", sortable: true, numeric: true },
+                    { key: "remark", label: "备注", sortable: true }
+                ],
+                rows: []
+            },
+            org: {
+                label: "党组织",
+                readonly: true
+            }
+        };
+
+        function randNo(prefix) {
+            return (prefix || "CQ") + new Date().getFullYear() + String(Math.floor(Math.random() * 9000) + 1000);
+        }
+        function randStatus() {
             var st = STATUS[Math.floor(Math.random() * STATUS.length)];
+            return { code: st[0], text: st[1] };
+        }
+        function randScore() {
+            return Number((70 + Math.random() * 28).toFixed(1));
+        }
+        function randQuarterlyRow() {
+            var party = randScore();
+            var excellence = randScore();
+            var st = randStatus();
             return {
-                no: no,
-                statusText: st[1],
+                no: randNo("QJ"),
+                quarter: QUARTERS[Math.floor(Math.random() * QUARTERS.length)],
                 org: ORGS[Math.floor(Math.random() * ORGS.length)],
+                partyScore: party,
+                excellenceScore: excellence,
+                totalScore: Number(((party + excellence) / 2).toFixed(1)),
+                grade: GRADES[Math.floor(Math.random() * GRADES.length)],
+                statusText: st.text,
+                statusCode: st.code
+            };
+        }
+        function randAnnualRow() {
+            var party = randScore();
+            var excellence = randScore();
+            var st = randStatus();
+            return {
+                no: randNo("ND"),
+                year: YEARS[Math.floor(Math.random() * YEARS.length)],
+                org: ORGS[Math.floor(Math.random() * ORGS.length)],
+                partyScore: party,
+                excellenceScore: excellence,
+                totalScore: Number(((party + excellence) / 2).toFixed(1)),
+                grade: GRADES[Math.floor(Math.random() * GRADES.length)],
+                statusText: st.text,
+                statusCode: st.code
+            };
+        }
+        function randConfigRow() {
+            var st = randStatus();
+            var types = [
+                "季度党群绩效评价规则",
+                "季度创先争优评价规则",
+                "年度党群绩效评价规则",
+                "年度创先争优评价规则"
+            ];
+            return {
+                no: randNo("CQ"),
+                statusText: st.text,
+                statusCode: st.code,
+                org: ORGS[Math.floor(Math.random() * ORGS.length)],
+                typeName: types[Math.floor(Math.random() * types.length)],
                 config: JSON.stringify({ auto: Math.random() < 0.5, level: Math.floor(Math.random() * 5) + 1 })
             };
         }
-        function renderRows() {
-            var tb = document.getElementById("tbody");
-            if (!tb) {
-                clog("未找到表格 #tbody");
-                return;
-            }
-            tb.innerHTML = "";
-            ROWS.forEach(function (r) {
-                var tr = document.createElement("tr");
-                var tdNo = document.createElement("td");
-                tdNo.textContent = r.no;
-                tr.appendChild(tdNo);
-                var tdStatus = document.createElement("td");
-                var badge = document.createElement("span");
-                badge.className = "badge";
-                badge.textContent = r.statusText;
-                tdStatus.appendChild(badge);
-                tr.appendChild(tdStatus);
-                var tdOrg = document.createElement("td");
-                tdOrg.textContent = r.org;
-                tr.appendChild(tdOrg);
-                var tdCfg = document.createElement("td");
-                tdCfg.className = "cfg";
-                tdCfg.textContent = r.config;
-                tr.appendChild(tdCfg);
-                tb.appendChild(tr);
+        var DEDUCTION_NAMES = [
+            "未按时参加组织生活",
+            "党建工作台账不完整",
+            "党员教育管理不到位",
+            "组织关系转接不及时",
+            "党费缴纳不规范",
+            "民主评议程序缺失",
+            "意识形态工作落实不力"
+        ];
+        var PARTY_ITEMS = ["理论学习", "组织建设", "服务群众", "作风建设", "创新实践"];
+        function randDeductionRow(idx) {
+            var st = randStatus();
+            return {
+                code: "KF" + String(1001 + idx),
+                name: DEDUCTION_NAMES[idx % DEDUCTION_NAMES.length],
+                standard: "每发生一次扣 " + (1 + (idx % 3)) + " 分",
+                score: Number((1 + (idx % 5) * 0.5).toFixed(1)),
+                quarter: QUARTERS[idx % QUARTERS.length],
+                statusText: st.text,
+                statusCode: st.code
+            };
+        }
+        function randPartyQuarterlyRow() {
+            var weight = [40, 30, 20, 10][Math.floor(Math.random() * 4)];
+            return {
+                org: ORGS[Math.floor(Math.random() * ORGS.length)],
+                quarter: QUARTERS[Math.floor(Math.random() * QUARTERS.length)],
+                itemName: PARTY_ITEMS[Math.floor(Math.random() * PARTY_ITEMS.length)],
+                contribution: randScore(),
+                weight: weight,
+                remark: Math.random() < 0.3 ? "—" : "按季度统计"
+            };
+        }
+
+        var ORG_TABLE_COLUMNS = [
+            { key: "_idx", label: "序号", sortable: true },
+            { key: "name", label: "组织名称", sortable: true },
+            { key: "status", label: "数据状态", sortable: true, badge: true },
+            { key: "parentName", label: "上级名称", sortable: true }
+        ];
+        var ORG_DIALOG_COLUMNS = [
+            { key: "_idx", label: "序号", sortable: true },
+            { key: "name", label: "组织名称", sortable: true, link: true },
+            { key: "status", label: "数据状态", sortable: true, badge: true },
+            { key: "parentName", label: "上级名称", sortable: true }
+        ];
+
+        function mapOrgRows(rows) {
+            return rows.map(function (r, idx) {
+                return {
+                    id: r.id,
+                    name: r.name,
+                    status: r.status,
+                    parentName: r.parentName,
+                    _idx: idx + 1
+                };
             });
+        }
+        function onOrgDialogSelectionChange(selection) {
+            orgState.selected = {};
+            Object.keys(selection || {}).forEach(function (id) {
+                if (selection[id]) orgState.selected[id] = true;
+            });
+            var countEl = document.getElementById("org-selected-count");
+            if (countEl) countEl.textContent = String(selectedOrgNames().length);
+        }
+        function refreshOrgDialogTable() {
+            var rows = mapOrgRows(orgTableSource());
+            if (!window.__cqDataTable) return;
+            window.__cqDataTable.setData("orgDialog", rows, {
+                selectedIds: orgState.selected,
+                onSelectionChange: onOrgDialogSelectionChange
+            });
+            var countEl = document.getElementById("org-selected-count");
+            if (countEl) countEl.textContent = String(selectedOrgNames().length);
+        }
+        function refreshDataTable(tabId) {
+            if (window.__cqDataTable && TABLE_DEFS[tabId] && TABLE_DEFS[tabId].columns) {
+                window.__cqDataTable.setData(tabId, TABLE_DEFS[tabId].rows);
+            }
+        }
+        window.__CQ_TABLE_BOOT = function () {
+            if (!window.__cqDataTable) return;
+            var dt = window.__cqDataTable;
+            ["quarterly", "annual", "config", "deduction", "partyQuarterly"].forEach(function (id) {
+                dt.mount(id, "dt-" + id, TABLE_DEFS[id].columns, TABLE_DEFS[id].rows, {
+                    pageSize: 10,
+                    filterPlaceholder: "搜索" + TABLE_DEFS[id].label + "…",
+                    filterHostId: "dt-filter-" + id
+                });
+            });
+            dt.mount("orgView", "dt-orgView", ORG_TABLE_COLUMNS, [], {
+                pageSize: 20,
+                filterPlaceholder: "搜索组织…",
+                filterHostId: "dt-filter-orgView"
+            });
+            ORG_DIALOG_COLUMNS[1].onLinkClick = function (row) {
+                if (orgState.selected[row.id]) delete orgState.selected[row.id];
+                else orgState.selected[row.id] = true;
+                refreshOrgDialogTable();
+            };
+            dt.mount("orgDialog", "dt-orgDialog", ORG_DIALOG_COLUMNS, [], {
+                pageSize: 20,
+                selectable: true,
+                selectedIds: orgState.selected,
+                onSelectionChange: onOrgDialogSelectionChange,
+                filterPlaceholder: "搜索组织…",
+                filterHostId: "dt-filter-orgDialog"
+            });
+            refreshOrgViewTable();
+            refreshOrgDialogTable();
+        };
+
+        function switchTab(tabId) {
+            if (!TABLE_DEFS[tabId]) return;
+            activeTab = tabId;
+            document.querySelectorAll(".nav-item").forEach(function (btn) {
+                var on = btn.getAttribute("data-tab") === tabId;
+                btn.classList.toggle("is-active", on);
+                btn.setAttribute("aria-selected", on ? "true" : "false");
+            });
+            document.querySelectorAll(".tab-panel").forEach(function (panel) {
+                var on = panel.id === "panel-" + tabId;
+                panel.classList.toggle("is-active", on);
+                if (on) panel.removeAttribute("hidden");
+                else panel.setAttribute("hidden", "");
+            });
+            var titleEl = document.getElementById("main-title");
+            if (titleEl) titleEl.textContent = TABLE_DEFS[tabId].label;
+            if (tabId === "org") renderOrgView();
+            var hint = TABLE_DEFS[tabId].readonly
+                ? "（只读 Data Table：排序 / 筛选 / 分页）"
+                : "（Data Table：排序 / 筛选 / 分页）";
+            setStatus("当前页面：" + TABLE_DEFS[tabId].label + hint);
+        }
+        function initTabs() {
+            document.querySelectorAll(".nav-item").forEach(function (btn) {
+                btn.onclick = function () {
+                    switchTab(btn.getAttribute("data-tab"));
+                };
+            });
+            switchTab(activeTab);
+        }
+        function initTableData() {
+            TABLE_DEFS.quarterly.rows = [];
+            TABLE_DEFS.annual.rows = [];
+            TABLE_DEFS.config.rows = [];
+            TABLE_DEFS.deduction.rows = [];
+            TABLE_DEFS.partyQuarterly.rows = [];
+            for (var i = 0; i < 8; i++) TABLE_DEFS.quarterly.rows.push(randQuarterlyRow());
+            for (var j = 0; j < 6; j++) TABLE_DEFS.annual.rows.push(randAnnualRow());
+            for (var k = 0; k < 5; k++) TABLE_DEFS.config.rows.push(randConfigRow());
+            for (var d = 0; d < 7; d++) TABLE_DEFS.deduction.rows.push(randDeductionRow(d));
+            for (var p = 0; p < 10; p++) TABLE_DEFS.partyQuarterly.rows.push(randPartyQuarterlyRow());
+            ["quarterly", "annual", "config", "deduction", "partyQuarterly"].forEach(refreshDataTable);
         }
         function setStatus(msg) {
             var el = document.getElementById("demo-status");
@@ -920,11 +1696,6 @@
                 }, ms || 150);
             });
         }
-        function initRows() {
-            ROWS = [];
-            for (var i = 0; i < 5; i++) ROWS.push(randRow());
-            renderRows();
-        }
 
         // ---------- 党组织：树 + 表（布局对齐官方选择器，样式走当前 shadcn 主题） ----------
         var orgState = {
@@ -934,6 +1705,10 @@
             selected: {},
             page: 1,
             pageSize: 100
+        };
+        var orgViewState = {
+            activeId: "crrc-dw",
+            expanded: { all: true, "crrc-dw": true }
         };
         function findOrgMeta(id, node, parent) {
             node = node || ORG_TREE;
@@ -977,110 +1752,88 @@
             });
             return rows;
         }
+        function orgViewTableSource() {
+            var meta = findOrgMeta(orgViewState.activeId);
+            var node = meta ? meta.node : ORG_TREE;
+            var rows = [];
+            (node.children || []).forEach(function (c) {
+                rows.push({
+                    id: c.id,
+                    name: c.name,
+                    status: c.status || "已审核",
+                    parentName: node.id === "all" ? "" : node.name
+                });
+            });
+            return { node: node, rows: rows };
+        }
+        function paintOrgTreeNode(node, wrap, state, treeRootId, onSelect) {
+            var hasKids = !!(node.children && node.children.length);
+            var row = document.createElement("button");
+            row.type = "button";
+            row.className = "org-tree-row" + (node.id === state.activeId ? " is-active" : "");
+            var tog = document.createElement("span");
+            tog.className = "org-tree-toggle" + (hasKids ? (state.expanded[node.id] ? " is-open" : "") : " is-empty");
+            tog.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>';
+            if (hasKids) {
+                tog.onclick = function (e) {
+                    e.stopPropagation();
+                    state.expanded[node.id] = !state.expanded[node.id];
+                    if (treeRootId === "org-view-tree") renderOrgViewTree();
+                    else renderOrgTree();
+                };
+            }
+            var label = document.createElement("span");
+            label.textContent = node.name;
+            row.appendChild(tog);
+            row.appendChild(label);
+            row.onclick = function () {
+                state.activeId = node.id;
+                if (state.page != null) state.page = 1;
+                if (onSelect) onSelect();
+                else if (treeRootId === "org-view-tree") renderOrgView();
+                else {
+                    renderOrgTree();
+                    renderOrgTable();
+                }
+            };
+            wrap.appendChild(row);
+            if (hasKids && state.expanded[node.id]) {
+                var kids = document.createElement("div");
+                kids.className = "org-tree-children";
+                node.children.forEach(function (c) {
+                    paintOrgTreeNode(c, kids, state, treeRootId, onSelect);
+                });
+                wrap.appendChild(kids);
+            }
+        }
+        function renderOrgViewTree() {
+            var root = document.getElementById("org-view-tree");
+            if (!root) return;
+            root.innerHTML = "";
+            paintOrgTreeNode(ORG_TREE, root, orgViewState, "org-view-tree");
+        }
+        function renderOrgViewTable() {
+            var metaEl = document.getElementById("org-view-meta");
+            var src = orgViewTableSource();
+            if (metaEl) {
+                metaEl.textContent = src.node.name + " · 下级 " + src.rows.length + " 个组织";
+            }
+            if (window.__cqDataTable) {
+                window.__cqDataTable.setData("orgView", mapOrgRows(src.rows));
+            }
+        }
+        function renderOrgView() {
+            renderOrgViewTree();
+            renderOrgViewTable();
+        }
         function renderOrgTree() {
             var root = document.getElementById("org-tree");
             if (!root) return;
             root.innerHTML = "";
-            function paint(node, wrap) {
-                var hasKids = !!(node.children && node.children.length);
-                var row = document.createElement("button");
-                row.type = "button";
-                row.className = "org-tree-row" + (node.id === orgState.activeId ? " is-active" : "");
-                var tog = document.createElement("span");
-                tog.className = "org-tree-toggle" + (hasKids ? (orgState.expanded[node.id] ? " is-open" : "") : " is-empty");
-                tog.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>';
-                if (hasKids) {
-                    tog.onclick = function (e) {
-                        e.stopPropagation();
-                        orgState.expanded[node.id] = !orgState.expanded[node.id];
-                        renderOrgTree();
-                    };
-                }
-                var label = document.createElement("span");
-                label.textContent = node.name;
-                row.appendChild(tog);
-                row.appendChild(label);
-                row.onclick = function () {
-                    orgState.activeId = node.id;
-                    orgState.page = 1;
-                    renderOrgTree();
-                    renderOrgTable();
-                };
-                wrap.appendChild(row);
-                if (hasKids && orgState.expanded[node.id]) {
-                    var kids = document.createElement("div");
-                    kids.className = "org-tree-children";
-                    node.children.forEach(function (c) { paint(c, kids); });
-                    wrap.appendChild(kids);
-                }
-            }
-            paint(ORG_TREE, root);
+            paintOrgTreeNode(ORG_TREE, root, orgState, "org-tree");
         }
         function renderOrgTable() {
-            var tb = document.getElementById("org-tbody");
-            var countEl = document.getElementById("org-selected-count");
-            var checkAll = document.getElementById("org-check-all");
-            var names = selectedOrgNames();
-            if (countEl) countEl.textContent = String(names.length);
-            if (!tb) return;
-            var all = orgTableSource();
-            var size = orgState.pageSize;
-            var pages = Math.max(1, Math.ceil(all.length / size) || 1);
-            if (orgState.page > pages) orgState.page = pages;
-            var start = (orgState.page - 1) * size;
-            var pageRows = all.slice(start, start + size);
-            tb.innerHTML = "";
-            pageRows.forEach(function (r, idx) {
-                var tr = document.createElement("tr");
-                var tdChk = document.createElement("td");
-                tdChk.className = "td-chk";
-                var chk = document.createElement("input");
-                chk.type = "checkbox";
-                chk.className = "chk";
-                chk.checked = !!orgState.selected[r.id];
-                chk.onchange = function () {
-                    if (chk.checked) orgState.selected[r.id] = true;
-                    else delete orgState.selected[r.id];
-                    renderOrgTable();
-                };
-                tdChk.appendChild(chk);
-                var tdNo = document.createElement("td");
-                tdNo.textContent = String(start + idx + 1);
-                var tdName = document.createElement("td");
-                var nameBtn = document.createElement("button");
-                nameBtn.type = "button";
-                nameBtn.className = "org-name-btn";
-                nameBtn.textContent = r.name;
-                nameBtn.onclick = function () {
-                    if (orgState.selected[r.id]) delete orgState.selected[r.id];
-                    else orgState.selected[r.id] = true;
-                    renderOrgTable();
-                };
-                tdName.appendChild(nameBtn);
-                var tdSt = document.createElement("td");
-                var badge = document.createElement("span");
-                badge.className = "badge";
-                badge.textContent = r.status;
-                tdSt.appendChild(badge);
-                var tdParent = document.createElement("td");
-                tdParent.textContent = r.parentName;
-                tr.appendChild(tdChk);
-                tr.appendChild(tdNo);
-                tr.appendChild(tdName);
-                tr.appendChild(tdSt);
-                tr.appendChild(tdParent);
-                tb.appendChild(tr);
-            });
-            if (checkAll) {
-                var allChecked = pageRows.length > 0 && pageRows.every(function (r) { return orgState.selected[r.id]; });
-                var someChecked = pageRows.some(function (r) { return orgState.selected[r.id]; });
-                checkAll.checked = allChecked;
-                checkAll.indeterminate = !allChecked && someChecked;
-            }
-            var prev = document.getElementById("org-prev");
-            var next = document.getElementById("org-next");
-            if (prev) prev.disabled = orgState.page <= 1;
-            if (next) next.disabled = orgState.page >= pages;
+            refreshOrgDialogTable();
         }
         function resetOrgPicker() {
             orgState.activeId = "crrc-dw";
@@ -1090,50 +1843,20 @@
             orgState.page = 1;
             var inc = document.getElementById("org-include-self");
             if (inc) inc.checked = false;
-            var ps = document.getElementById("org-page-size");
-            if (ps) orgState.pageSize = Number(ps.value) || 100;
             renderOrgTree();
-            renderOrgTable();
+            refreshOrgDialogTable();
         }
         (function initOrgPicker() {
             var inc = document.getElementById("org-include-self");
             if (inc) inc.onchange = function () {
                 orgState.includeSelf = !!inc.checked;
                 orgState.page = 1;
-                renderOrgTable();
+                refreshOrgDialogTable();
             };
             bind("org-clear", function () {
                 orgState.selected = {};
-                renderOrgTable();
+                refreshOrgDialogTable();
             });
-            bind("org-prev", function () {
-                if (orgState.page > 1) {
-                    orgState.page--;
-                    renderOrgTable();
-                }
-            });
-            bind("org-next", function () {
-                orgState.page++;
-                renderOrgTable();
-            });
-            var ps = document.getElementById("org-page-size");
-            if (ps) ps.onchange = function () {
-                orgState.pageSize = Number(ps.value) || 100;
-                orgState.page = 1;
-                renderOrgTable();
-            };
-            var checkAll = document.getElementById("org-check-all");
-            if (checkAll) checkAll.onchange = function () {
-                var all = orgTableSource();
-                var size = orgState.pageSize;
-                var start = (orgState.page - 1) * size;
-                var pageRows = all.slice(start, start + size);
-                pageRows.forEach(function (r) {
-                    if (checkAll.checked) orgState.selected[r.id] = true;
-                    else delete orgState.selected[r.id];
-                });
-                renderOrgTable();
-            };
             var handle = document.getElementById("org-resizer");
             var pane = document.getElementById("org-tree-pane");
             if (handle && pane) {
@@ -1159,13 +1882,294 @@
             }
         })();
 
-        // 「新增」：先 wait('tblnew').getElement() 点击父页面官方按钮，再弹出录入框获取数据。
+        // ---------- 配置类型与动态配置面板 ----------
+        var CONFIG_TYPES = {
+            quarterly_party_perf: "季度党群绩效评价规则",
+            quarterly_excellence: "季度创先争优评价规则",
+            quarterly_grassroots: "季度基层党组织创先争优评价项点",
+            annual_party_perf: "年度党群绩效评价规则",
+            annual_excellence: "年度创先争优评价规则",
+            annual_grassroots: "年度基层党组织创先争优评价项点"
+        };
+        var DEFAULT_PARTY_PERF = [
+            { label: "A", percent: 40 },
+            { label: "B", percent: 40 },
+            { label: "C", percent: 20 }
+        ];
+        var DEFAULT_GRASSROOTS = [
+            { name: "项点一", score: 10 },
+            { name: "项点二", score: 10 }
+        ];
         var dlg = document.getElementById("dlg-overlay");
         var dlgType = document.getElementById("dlg-type");
-        var dlgConfig = document.getElementById("dlg-config");
+        var dlgConfigPanel = document.getElementById("dlg-config-panel");
+        var configDraft = null;
+
+        function isPartyPerfType(type) {
+            return type === "quarterly_party_perf" || type === "annual_party_perf";
+        }
+        function isExcellenceType(type) {
+            return type === "quarterly_excellence" || type === "annual_excellence";
+        }
+        function isGrassrootsType(type) {
+            return type === "quarterly_grassroots" || type === "annual_grassroots";
+        }
+        function defaultConfigForType(type) {
+            if (isPartyPerfType(type)) {
+                return { items: DEFAULT_PARTY_PERF.map(function (x) { return { label: x.label, percent: x.percent }; }) };
+            }
+            if (isExcellenceType(type)) {
+                var period = type.indexOf("quarterly") === 0 ? "季度" : "年度";
+                return {
+                    partyPerfLabel: "在" + period + "党群绩效评价为",
+                    adminPerfLabel: "行政绩效为",
+                    excellenceLabel: "创先争优评价为"
+                };
+            }
+            if (isGrassrootsType(type)) {
+                return { items: DEFAULT_GRASSROOTS.map(function (x) { return { name: x.name, score: x.score }; }) };
+            }
+            return {};
+        }
+        function sumPercents(items) {
+            return items.reduce(function (sum, item) {
+                return sum + (Number(item.percent) || 0);
+            }, 0);
+        }
+        function renderPartyPerfPanel(data) {
+            dlgConfigPanel.innerHTML = "";
+            var head = document.createElement("div");
+            head.className = "cfg-panel-head";
+            var title = document.createElement("span");
+            title.className = "cfg-panel-title";
+            title.textContent = "项点与占比";
+            var addBtn = document.createElement("button");
+            addBtn.type = "button";
+            addBtn.className = "btn btn-outline";
+            addBtn.style.height = "28px";
+            addBtn.style.padding = "0 10px";
+            addBtn.style.fontSize = "12px";
+            addBtn.textContent = "添加项点";
+            head.appendChild(title);
+            head.appendChild(addBtn);
+            dlgConfigPanel.appendChild(head);
+            var hint = document.createElement("div");
+            hint.className = "cfg-panel-hint";
+            hint.id = "cfg-sum-hint";
+            hint.textContent = "各项占比之和须为 100%";
+            dlgConfigPanel.appendChild(hint);
+            var list = document.createElement("div");
+            list.className = "cfg-list";
+            list.id = "cfg-perf-list";
+            dlgConfigPanel.appendChild(list);
+
+            function updateHint() {
+                var total = sumPercents(data.items);
+                hint.textContent = "当前占比合计：" + total + "%（须为 100%）";
+                hint.className = "cfg-panel-hint" + (total === 100 ? " is-ok" : total > 100 ? " is-error" : "");
+            }
+            function paint() {
+                list.innerHTML = "";
+                data.items.forEach(function (item, idx) {
+                    var row = document.createElement("div");
+                    row.className = "cfg-row";
+                    var no = document.createElement("span");
+                    no.className = "cfg-row-label";
+                    no.textContent = String(idx + 1);
+                    var labelInput = document.createElement("input");
+                    labelInput.type = "text";
+                    labelInput.placeholder = "项点文本";
+                    labelInput.value = item.label || "";
+                    labelInput.oninput = function () {
+                        item.label = labelInput.value.trim();
+                    };
+                    var percentInput = document.createElement("input");
+                    percentInput.type = "number";
+                    percentInput.min = "0";
+                    percentInput.max = "100";
+                    percentInput.step = "1";
+                    percentInput.value = item.percent != null ? item.percent : "";
+                    percentInput.oninput = function () {
+                        item.percent = Number(percentInput.value);
+                        updateHint();
+                    };
+                    var suffix = document.createElement("span");
+                    suffix.className = "cfg-row-suffix";
+                    suffix.textContent = "%";
+                    var delBtn = document.createElement("button");
+                    delBtn.type = "button";
+                    delBtn.className = "btn-icon danger";
+                    delBtn.title = "删除";
+                    delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+                    delBtn.onclick = function () {
+                        if (data.items.length <= 1) return;
+                        data.items.splice(idx, 1);
+                        paint();
+                        updateHint();
+                    };
+                    row.appendChild(no);
+                    row.appendChild(labelInput);
+                    row.appendChild(percentInput);
+                    row.appendChild(suffix);
+                    row.appendChild(delBtn);
+                    list.appendChild(row);
+                });
+                updateHint();
+            }
+            addBtn.onclick = function () {
+                data.items.push({ label: "", percent: 0 });
+                paint();
+            };
+            paint();
+        }
+        function renderExcellencePanel(data, type) {
+            dlgConfigPanel.innerHTML = "";
+            var period = type.indexOf("quarterly") === 0 ? "季度" : "年度";
+            var fields = [
+                { key: "partyPerfLabel", label: "在" + period + "党群绩效评价为（文本）" },
+                { key: "adminPerfLabel", label: "行政绩效为（文本）" },
+                { key: "excellenceLabel", label: "创先争优评价为（文本）" }
+            ];
+            var hint = document.createElement("div");
+            hint.className = "cfg-panel-hint";
+            hint.textContent = "配置填报时各评价维度对应的提示文本";
+            dlgConfigPanel.appendChild(hint);
+            fields.forEach(function (f) {
+                var wrap = document.createElement("div");
+                wrap.className = "cfg-text-field";
+                var label = document.createElement("label");
+                label.textContent = f.label;
+                var input = document.createElement("input");
+                input.type = "text";
+                input.value = data[f.key] || "";
+                input.placeholder = "请输入提示文本";
+                input.oninput = function () {
+                    data[f.key] = input.value.trim();
+                };
+                wrap.appendChild(label);
+                wrap.appendChild(input);
+                dlgConfigPanel.appendChild(wrap);
+            });
+        }
+        function renderGrassrootsPanel(data) {
+            dlgConfigPanel.innerHTML = "";
+            var head = document.createElement("div");
+            head.className = "cfg-panel-head";
+            var title = document.createElement("span");
+            title.className = "cfg-panel-title";
+            title.textContent = "项点名称与分数";
+            var addBtn = document.createElement("button");
+            addBtn.type = "button";
+            addBtn.className = "btn btn-outline";
+            addBtn.style.height = "28px";
+            addBtn.style.padding = "0 10px";
+            addBtn.style.fontSize = "12px";
+            addBtn.textContent = "添加项点";
+            head.appendChild(title);
+            head.appendChild(addBtn);
+            dlgConfigPanel.appendChild(head);
+            var hint = document.createElement("div");
+            hint.className = "cfg-panel-hint";
+            hint.textContent = "可添加任意数量项点，每项包含名称与分数";
+            dlgConfigPanel.appendChild(hint);
+            var list = document.createElement("div");
+            list.className = "cfg-list";
+            dlgConfigPanel.appendChild(list);
+
+            function paint() {
+                list.innerHTML = "";
+                data.items.forEach(function (item, idx) {
+                    var row = document.createElement("div");
+                    row.className = "cfg-row";
+                    var no = document.createElement("span");
+                    no.className = "cfg-row-label";
+                    no.textContent = String(idx + 1);
+                    var nameInput = document.createElement("input");
+                    nameInput.type = "text";
+                    nameInput.placeholder = "项点名称";
+                    nameInput.value = item.name || "";
+                    nameInput.oninput = function () {
+                        item.name = nameInput.value.trim();
+                    };
+                    var scoreInput = document.createElement("input");
+                    scoreInput.type = "number";
+                    scoreInput.min = "0";
+                    scoreInput.step = "0.5";
+                    scoreInput.placeholder = "分数";
+                    scoreInput.value = item.score != null ? item.score : "";
+                    scoreInput.oninput = function () {
+                        item.score = Number(scoreInput.value);
+                    };
+                    var delBtn = document.createElement("button");
+                    delBtn.type = "button";
+                    delBtn.className = "btn-icon danger";
+                    delBtn.title = "删除";
+                    delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+                    delBtn.onclick = function () {
+                        if (data.items.length <= 1) return;
+                        data.items.splice(idx, 1);
+                        paint();
+                    };
+                    row.appendChild(no);
+                    row.appendChild(nameInput);
+                    row.appendChild(scoreInput);
+                    row.appendChild(delBtn);
+                    list.appendChild(row);
+                });
+            }
+            addBtn.onclick = function () {
+                data.items.push({ name: "", score: 0 });
+                paint();
+            };
+            paint();
+        }
+        function renderConfigPanel() {
+            if (!dlgConfigPanel || !dlgType) return;
+            var type = dlgType.value;
+            configDraft = defaultConfigForType(type);
+            if (isPartyPerfType(type)) renderPartyPerfPanel(configDraft);
+            else if (isExcellenceType(type)) renderExcellencePanel(configDraft, type);
+            else if (isGrassrootsType(type)) renderGrassrootsPanel(configDraft);
+            else dlgConfigPanel.innerHTML = "";
+        }
+        function validateConfig(type, data) {
+            if (isPartyPerfType(type)) {
+                if (!data.items || !data.items.length) return "请至少配置一个项点";
+                for (var i = 0; i < data.items.length; i++) {
+                    if (!data.items[i].label) return "第 " + (i + 1) + " 项点文本不能为空";
+                    if (data.items[i].percent == null || isNaN(data.items[i].percent) || data.items[i].percent < 0) {
+                        return "第 " + (i + 1) + " 项占比无效";
+                    }
+                }
+                if (sumPercents(data.items) !== 100) return "项点占比之和须为 100%，当前为 " + sumPercents(data.items) + "%";
+                return "";
+            }
+            if (isExcellenceType(type)) {
+                if (!data.partyPerfLabel) return "请填写党群绩效评价提示文本";
+                if (!data.adminPerfLabel) return "请填写行政绩效提示文本";
+                if (!data.excellenceLabel) return "请填写创先争优评价提示文本";
+                return "";
+            }
+            if (isGrassrootsType(type)) {
+                if (!data.items || !data.items.length) return "请至少配置一个项点";
+                for (var j = 0; j < data.items.length; j++) {
+                    if (!data.items[j].name) return "第 " + (j + 1) + " 项点名称不能为空";
+                    if (data.items[j].score == null || isNaN(data.items[j].score) || data.items[j].score < 0) {
+                        return "第 " + (j + 1) + " 项分数无效";
+                    }
+                }
+                return "";
+            }
+            return "未知配置类型";
+        }
+        function buildConfigJson(type, data) {
+            return JSON.stringify({ type: type, typeName: CONFIG_TYPES[type] || type, config: data });
+        }
+
         function openDialog() {
             if (!dlg) { clog("弹窗元素不存在 #dlg-overlay"); return; }
-            if (dlgConfig) dlgConfig.value = "";
+            if (dlgType) dlgType.selectedIndex = 0;
+            renderConfigPanel();
             resetOrgPicker();
             dlg.hidden = false;
             if (dlgType) dlgType.focus();
@@ -1173,6 +2177,7 @@
         function closeDialog() {
             if (dlg) dlg.hidden = true;
         }
+        if (dlgType) dlgType.onchange = renderConfigPanel;
         bind("tblnew", async () => {
             var selfBtn = document.getElementById("tblnew");
             var got = await waitEl("tblnew");
@@ -1206,14 +2211,28 @@
                 setStatus("请选择党组织");
                 return;
             }
-            var org = names.join("、");
             var type = dlgType ? dlgType.value : "";
-            var cfg = dlgConfig ? dlgConfig.value.trim() : "";
-            var no = "CQ" + new Date().getFullYear() + String(Math.floor(Math.random() * 9000) + 1000);
-            ROWS.unshift({ no: no, statusText: "暂存", org: org, config: cfg || JSON.stringify({ type: type }) });
-            renderRows();
+            var typeName = CONFIG_TYPES[type] || type;
+            var err = validateConfig(type, configDraft || {});
+            if (err) {
+                setStatus(err);
+                return;
+            }
+            var cfg = buildConfigJson(type, configDraft);
+            var org = names.join("、");
+            var no = randNo("CQ");
+            TABLE_DEFS.config.rows.unshift({
+                no: no,
+                statusText: "暂存",
+                statusCode: "A",
+                org: org,
+                typeName: typeName,
+                config: cfg
+            });
+            refreshDataTable("config");
+            switchTab("config");
             closeDialog();
-            setStatus("已新增「" + org + " / " + type + "」 " + no);
+            setStatus("已新增「" + org + " / " + typeName + "」 " + no);
         });
 
         document.addEventListener("keydown", function (e) {
@@ -1224,7 +2243,8 @@
         });
         try {
             syncThemeButton();
-            initRows();
+            initTableData();
+            initTabs();
         } catch (err) {
             clog("初始化失败: " + (err && err.message));
         }

@@ -57,15 +57,19 @@ function buildColumns(defs, selectable) {
             accessorKey: def.key,
             header: def.label,
             enableSorting: def.sortable !== false,
-            meta: { badge: def.badge, mono: def.mono, numeric: def.numeric, key: def.key },
+            meta: { badge: def.badge, mono: def.mono, numeric: def.numeric, key: def.key, compact: def.compact },
             cell: function (info) {
                 var val = info.getValue();
                 var meta = info.column.columnDef.meta || {};
                 if (meta.badge) {
                     return h("span", { className: "badge" }, val != null ? String(val) : "");
                 }
-                if (meta.numeric && val != null) {
-                    return meta.key === "weight" ? String(val) : Number(val).toFixed(1);
+                if (meta.numeric && val != null && val !== "") {
+                    if (meta.key === "weight") return String(val);
+                    var num = Number(val);
+                    if (num !== num) return String(val);
+                    if (Math.abs(num % 1) < 1e-9) return String(Math.round(num));
+                    return String(Math.round(num * 100) / 100);
                 }
                 if (meta.mono) return val != null ? String(val) : "";
                 if (def.link) {
@@ -80,6 +84,15 @@ function buildColumns(defs, selectable) {
         });
     });
     return cols;
+}
+
+function dtDoc() {
+    try {
+        if (window.__cqDtRoot && typeof window.__cqDtRoot.getElementById === "function") {
+            return window.__cqDtRoot;
+        }
+    } catch (e) { }
+    return document;
 }
 
 function DataTable(props) {
@@ -130,8 +143,13 @@ function DataTable(props) {
             pagination: pagination,
         },
         enableRowSelection: selectable,
-        getRowId: function (row) {
-            return String(row.id != null ? row.id : (row.no != null ? row.no : (row.code != null ? row.code : row._idx)));
+        getRowId: function (row, index) {
+            if (row._rowId != null) return String(row._rowId);
+            if (row.id != null) return String(row.id);
+            if (row.no != null) return String(row.no);
+            if (row.code != null) return String(row.code);
+            if (row._idx != null) return String(row._idx);
+            return String(index);
         },
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
@@ -164,7 +182,7 @@ function DataTable(props) {
     );
     var filterHost = null;
     try {
-        if (props.filterHostId) filterHost = document.getElementById(props.filterHostId);
+        if (props.filterHostId) filterHost = dtDoc().getElementById(props.filterHostId);
     } catch (e) { }
     var toolbar = filterHost
         ? createPortal(filterBar, filterHost)
@@ -178,10 +196,12 @@ function DataTable(props) {
                     table.getHeaderGroups().map(function (hg) {
                         return h("tr", { key: hg.id },
                             hg.headers.map(function (header) {
+                                var meta = header.column.columnDef.meta || {};
                                 var canSort = header.column.getCanSort();
                                 var sorted = header.column.getIsSorted();
                                 var thClass = (canSort ? "th-sort" : "") + (sorted ? " is-" + sorted : "");
                                 if (header.id === "select") thClass = "th-chk";
+                                else if (meta.compact || meta.numeric || meta.badge) thClass = (thClass ? thClass + " " : "") + "th-compact";
                                 return h("th", {
                                     key: header.id,
                                     className: thClass,
@@ -200,9 +220,13 @@ function DataTable(props) {
                         ? table.getRowModel().rows.map(function (row) {
                             return h("tr", { key: row.id },
                                 row.getVisibleCells().map(function (cell) {
+                                    var meta = cell.column.columnDef.meta || {};
                                     var tdClass = "";
                                     if (cell.column.id === "select") tdClass = "td-chk";
-                                    else if (cell.column.columnDef.meta && cell.column.columnDef.meta.mono) tdClass = "cfg";
+                                    else if (meta.mono) tdClass = "cfg";
+                                    if (meta.compact || meta.numeric || meta.badge) {
+                                        tdClass = tdClass ? tdClass + " td-compact" : "td-compact";
+                                    }
                                     return h("td", { key: cell.id, className: tdClass },
                                         flexRender(cell.column.columnDef.cell, cell.getContext()));
                                 })
@@ -252,8 +276,13 @@ function DataTable(props) {
 var roots = {};
 
 function mount(tableId, mountId, columnDefs, data, options) {
-    var el = document.getElementById(mountId);
+    var el = dtDoc().getElementById(mountId);
     if (!el) return;
+    if (roots[tableId]) {
+        try { roots[tableId].root.unmount(); } catch (e) { }
+        delete roots[tableId];
+        try { el.innerHTML = ""; } catch (e2) { }
+    }
     var currentData = data || [];
     var currentOpts = options || {};
     var root = createRoot(el);
@@ -281,6 +310,12 @@ window.__cqDataTable = {
     mount: mount,
     setData: function (tableId, data, opts) {
         if (roots[tableId]) roots[tableId].render(data, opts);
+    },
+    unmountAll: function () {
+        Object.keys(roots).forEach(function (id) {
+            try { roots[id].root.unmount(); } catch (e) { }
+            delete roots[id];
+        });
     },
 };
 

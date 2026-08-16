@@ -1,18 +1,24 @@
 const fs = require("fs");
 const path = require("path");
+const buildDidmount = require("./build-didmount.js");
 
 const bundlePath = path.join(__dirname, "dist", "data-tables.bundle.js");
-const indexPath = path.join(__dirname, "index.js");
+const srcPath = path.join(__dirname, "index.overlay-src.js");
 
 if (!fs.existsSync(bundlePath)) {
     console.error("未找到 dist/data-tables.bundle.js，请先运行: npm run build:tables");
     process.exit(1);
 }
 
+if (!fs.existsSync(srcPath)) {
+    console.error("未找到 index.overlay-src.js");
+    process.exit(1);
+}
+
 const bundle = fs.readFileSync(bundlePath, "utf8");
 const esc = bundle.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 
-let idx = fs.readFileSync(indexPath, "utf8");
+let idx = fs.readFileSync(srcPath, "utf8");
 
 function removeBlock(src, marker) {
     const start = src.indexOf("    const " + marker + " = `");
@@ -38,5 +44,6 @@ if (!idx.includes("modEl.textContent = DT_BUNDLE")) {
 idx = idx.replace(/modEl\.type = "module";\s*/g, "");
 idx = idx.replace(/modEl\.textContent = DT_MODULE;/g, "modEl.textContent = DT_BUNDLE;");
 
-fs.writeFileSync(indexPath, idx);
-console.log("embedded bundle into index.js, bytes:", esc.length);
+fs.writeFileSync(srcPath, idx);
+console.log("embedded bundle into index.overlay-src.js, bytes:", esc.length);
+buildDidmount();
