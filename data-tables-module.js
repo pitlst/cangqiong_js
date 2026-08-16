@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
 import {
     useReactTable,
     getCoreRowModel,
@@ -150,18 +151,27 @@ function DataTable(props) {
         globalFilterFn: "includesString",
     });
 
+    var filterBar = h(React.Fragment, null,
+        h("input", {
+            className: "dt-filter-input",
+            type: "search",
+            placeholder: filterPlaceholder,
+            value: globalFilter != null ? globalFilter : "",
+            onChange: function (e) { setGlobalFilter(e.target.value); },
+        }),
+        h("span", { className: "dt-meta" },
+            "共 " + data.length + " 条 · 筛选后 " + table.getFilteredRowModel().rows.length + " 条")
+    );
+    var filterHost = null;
+    try {
+        if (props.filterHostId) filterHost = document.getElementById(props.filterHostId);
+    } catch (e) { }
+    var toolbar = filterHost
+        ? createPortal(filterBar, filterHost)
+        : h("div", { className: "dt-toolbar" }, filterBar);
+
     return h("div", { className: "data-table" },
-        h("div", { className: "dt-toolbar" },
-            h("input", {
-                className: "dt-filter-input",
-                type: "search",
-                placeholder: filterPlaceholder,
-                value: globalFilter != null ? globalFilter : "",
-                onChange: function (e) { setGlobalFilter(e.target.value); },
-            }),
-            h("span", { className: "dt-meta" },
-                "共 " + data.length + " 条 · 筛选后 " + table.getFilteredRowModel().rows.length + " 条")
-        ),
+        toolbar,
         h("div", { className: "table-wrap dt-table-wrap" },
             h("table", { className: "table" },
                 h("thead", null,
@@ -259,6 +269,7 @@ function mount(tableId, mountId, columnDefs, data, options) {
             selectable: currentOpts.selectable,
             selectedIds: currentOpts.selectedIds,
             onSelectionChange: currentOpts.onSelectionChange,
+            filterHostId: currentOpts.filterHostId,
         }));
     }
 
