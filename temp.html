@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>列表编辑页面</title>
+    <style>
+        :root {
+            --background: oklch(1 0 0);
+            --foreground: oklch(0.145 0 0);
+            --card: oklch(1 0 0);
+            --card-foreground: oklch(0.145 0 0);
+            --popover: oklch(1 0 0);
+            --popover-foreground: oklch(0.145 0 0);
+            --primary: oklch(0.505 0.213 27.518);
+            --primary-foreground: oklch(0.971 0.013 17.38);
+            --secondary: oklch(0.967 0.001 286.375);
+            --secondary-foreground: oklch(0.21 0.006 285.885);
+            --muted: oklch(0.97 0 0);
+            --muted-foreground: oklch(0.556 0 0);
+            --accent: oklch(0.97 0 0);
+            --accent-foreground: oklch(0.205 0 0);
+            --destructive: oklch(0.577 0.245 27.325);
+            --border: oklch(0.922 0 0);
+            --input: oklch(0.922 0 0);
+            --ring: oklch(0.708 0 0);
+            --chart-1: oklch(0.808 0.114 19.571);
+            --chart-2: oklch(0.637 0.237 25.331);
+            --chart-3: oklch(0.577 0.245 27.325);
+            --chart-4: oklch(0.505 0.213 27.518);
+            --chart-5: oklch(0.444 0.177 26.899);
+            --radius: 0.625rem;
+            --sidebar: oklch(0.985 0 0);
+            --sidebar-foreground: oklch(0.145 0 0);
+            --sidebar-primary: oklch(0.577 0.245 27.325);
+            --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
+            --sidebar-accent: oklch(0.97 0 0);
+            --sidebar-accent-foreground: oklch(0.205 0 0);
+            --sidebar-border: oklch(0.922 0 0);
+            --sidebar-ring: oklch(0.708 0 0);
+        }
+
+        .dark {
+            --background: #0a0a0a;
+            --foreground: oklch(0.985 0 0);
+            --card: oklch(0.205 0 0);
+            --card-foreground: oklch(0.985 0 0);
+            --popover: oklch(0.205 0 0);
+            --popover-foreground: oklch(0.985 0 0);
+            --primary: oklch(0.444 0.177 26.899);
+            --primary-foreground: oklch(0.971 0.013 17.38);
+            --secondary: oklch(0.274 0.006 286.033);
+            --secondary-foreground: oklch(0.985 0 0);
+            --muted: oklch(0.269 0 0);
+            --muted-foreground: oklch(0.708 0 0);
+            --accent: oklch(0.269 0 0);
+            --accent-foreground: oklch(0.985 0 0);
+            --destructive: oklch(0.704 0.191 22.216);
+            --border: oklch(1 0 0 / 10%);
+            --input: oklch(1 0 0 / 15%);
+            --ring: oklch(0.556 0 0);
+            --chart-1: oklch(0.808 0.114 19.571);
+            --chart-2: oklch(0.637 0.237 25.331);
+            --chart-3: oklch(0.577 0.245 27.325);
+            --chart-4: oklch(0.505 0.213 27.518);
+            --chart-5: oklch(0.444 0.177 26.899);
+            --sidebar: oklch(0.205 0 0);
+            --sidebar-foreground: oklch(0.985 0 0);
+            --sidebar-primary: oklch(0.637 0.237 25.331);
+            --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
+            --sidebar-accent: oklch(0.269 0 0);
+            --sidebar-accent-foreground: oklch(0.985 0 0);
+            --sidebar-border: oklch(1 0 0 / 10%);
+            --sidebar-ring: oklch(0.556 0 0);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            padding: 18px 22px;
+            background:
+                radial-gradient(1200px 600px at 50% -10%, color-mix(in oklch, var(--primary) 12%, transparent) 0%, transparent 60%),
+                var(--background);
+        }
+
+        .page > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* DeepSeek Harness 暗色：#0a0a0a + 钢蓝体积光 + 极淡网格（边缘淡出） */
+        .dark .page {
+            background-color: #0a0a0a;
+            background-image: none;
+            overflow: hidden;
+        }
+        .dark .page::before,
+        .dark .page::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .dark .page::before {
+            background:
+                radial-gradient(ellipse 90% 70% at 58% 32%, rgba(118, 142, 186, 0.22) 0%, transparent 58%),
+                radial-gradient(ellipse 55% 45% at 18% 78%, rgba(70, 90, 130, 0.12) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 35% at 82% 88%, rgba(90, 110, 150, 0.08) 0%, transparent 50%);
+        }
+        .dark .page::after {
+            background-image:
+                linear-gradient(to right, rgba(186, 204, 230, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(186, 204, 230, 0.08) 1px, transparent 1px);
+            background-size: 90px 90px;
+            opacity: 0.32;
+            -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 38%, #000 12%, transparent 72%);
+            mask-image: radial-gradient(ellipse 80% 70% at 50% 38%, #000 12%, transparent 72%);
+        }
+
+        .page-title {
+            font-size: 1.375rem;
+            font-weight: 600;
+            letter-spacing: -.025em;
+            line-height: 1.2;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: calc(var(--radius) - 2px);
+            border: 1px solid var(--border);
+            background: var(--background);
+            color: var(--foreground);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+
+        .icon-btn:hover {
+            background: var(--accent);
+            color: var(--accent-foreground);
+        }
+
+        .icon-btn .icon-sun {
+            display: none;
+        }
+
+        .dark .icon-btn .icon-sun {
+            display: block;
+        }
+
+        .dark .icon-btn .icon-moon {
+            display: none;
+        }
+
+        /* mira Badge — default */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            border: 1px solid transparent;
+            padding: 2px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.35;
+            width: fit-content;
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        /* mira Button */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: .8125rem;
+            font-weight: 500;
+            height: 32px;
+            padding: 0 14px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background .15s, color .15s, border-color .15s, opacity .15s;
+        }
+
+        .btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--background), 0 0 0 4px color-mix(in oklch, var(--ring) 30%, transparent);
+        }
+
+        .btn:disabled {
+            pointer-events: none;
+            opacity: .5;
+        }
+
+        .btn-default {
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        .btn-default:hover {
+            background: color-mix(in oklch, var(--primary) 80%, transparent);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--foreground);
+        }
+
+        .dark .btn-outline {
+            background: color-mix(in oklch, var(--input) 30%, transparent);
+        }
+
+        .btn-outline:hover {
+            background: color-mix(in oklch, var(--input) 50%, transparent);
+        }
+
+        /* shadcn Table（结构对齐 Table/TableHeader/TableRow/TableHead/TableBody/TableCell，
+           样式用现有 CSS 变量主题，亮暗色自动跟随） */
+        .table-wrap {
+            flex: 1;
+            min-height: 0;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 4px);
+            overflow: auto;
+            background: color-mix(in oklch, var(--background) 42%, transparent);
+            backdrop-filter: blur(20px) saturate(1.15);
+            -webkit-backdrop-filter: blur(20px) saturate(1.15);
+        }
+
+        .table {
+            width: 100%;
+            font-size: .8125rem;
+            border-collapse: collapse;
+            caption-side: bottom;
+            background: transparent;
+        }
+
+        .table thead tr {
+            border-bottom: 1px solid var(--border);
+            background: transparent;
+        }
+
+        .table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            height: 2.25rem;
+            padding: 0 .4375rem;
+            text-align: left;
+            vertical-align: middle;
+            font-weight: 500;
+            color: var(--foreground);
+            background: color-mix(in oklch, var(--background) 48%, transparent);
+            backdrop-filter: blur(20px) saturate(1.15);
+            -webkit-backdrop-filter: blur(20px) saturate(1.15);
+            white-space: nowrap;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid var(--border);
+            background: transparent;
+            transition: background .15s;
+        }
+
+        .table tbody tr:last-child {
+            border-bottom: 0;
+        }
+
+        .table tbody tr:hover {
+            background: color-mix(in oklch, var(--foreground) 6%, transparent);
+        }
+
+        .table td {
+            padding: .375rem .4375rem;
+            vertical-align: middle;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            background: transparent;
+        }
+
+        .table td.cfg {
+            font: 12px/1.4 ui-monospace, Consolas, monospace;
+            color: var(--muted-foreground);
+        }
+
+        .status-line {
+            min-height: 1.3em;
+            font-size: 12px;
+            color: var(--muted-foreground);
+            line-height: 1.5;
+        }
+
+        /* shadcn Dialog（结构对齐 Dialog/Overlay/Content/Header/Title/Description/Footer/Close，
+           样式用现有 CSS 变量主题） */
+        .dialog-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .dialog-overlay[hidden] {
+            display: none;
+        }
+        .dialog-content {
+            width: 100%;
+            max-width: min(1360px, calc(100vw - 40px));
+            height: min(680px, calc(100vh - 40px));
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--radius);
+            background: var(--card);
+            color: var(--card-foreground);
+            box-shadow:
+                0 0 0 1px color-mix(in oklch, var(--foreground) 10%, transparent),
+                0 20px 40px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        .dialog-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 16px 20px 12px;
+            flex-shrink: 0;
+        }
+        .dialog-title {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            line-height: 1.3;
+        }
+        .dialog-close {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            color: var(--muted-foreground);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: calc(var(--radius) - 2px);
+        }
+        .dialog-close:hover {
+            background: var(--accent);
+            color: var(--accent-foreground);
+        }
+        .dialog-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 16px;
+            padding: 0 20px 12px;
+        }
+        .dialog-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .dialog-field label,
+        .dlg-col-label {
+            font-size: 12px;
+            color: var(--muted-foreground);
+        }
+        .dialog-field select,
+        .dialog-field textarea {
+            border: 1px solid var(--input);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--foreground);
+            padding: 0 8px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .dialog-field select {
+            height: 32px;
+        }
+        .dialog-field textarea {
+            padding: 8px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px 16px;
+            flex-shrink: 0;
+            border-top: 1px solid var(--border);
+        }
+        .chk {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+        .dlg-org-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .dlg-form-col {
+            flex: 0 0 260px;
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+        .dlg-field-grow {
+            flex: 1;
+            min-height: 0;
+        }
+        .dlg-field-grow textarea {
+            flex: 1;
+            min-height: 0;
+            height: 100%;
+            resize: none;
+        }
+        .org-split {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: calc(var(--radius) - 4px);
+            overflow: hidden;
+            background: var(--background);
+        }
+        .org-tree-pane {
+            width: 280px;
+            min-width: 260px;
+            max-width: 560px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .org-tree {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 4px;
+        }
+        .org-tree-row {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            width: max-content;
+            min-width: 100%;
+            border: none;
+            background: transparent;
+            color: var(--foreground);
+            font: inherit;
+            font-size: 13px;
+            text-align: left;
+            border-radius: calc(var(--radius) - 4px);
+            padding: 5px 6px;
+            cursor: pointer;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+        .org-tree-row:hover,
+        .org-tree-row.is-active {
+            background: var(--accent);
+            color: var(--accent-foreground);
+        }
+        .org-tree-row.is-active {
+            font-weight: 500;
+        }
+        .org-tree-row > span:last-child {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .org-tree-toggle {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted-foreground);
+        }
+        .org-tree-toggle.is-empty {
+            visibility: hidden;
+        }
+        .org-tree-toggle svg {
+            transition: transform .15s;
+        }
+        .org-tree-toggle.is-open svg {
+            transform: rotate(90deg);
+        }
+        .org-tree-children {
+            padding-left: 12px;
+        }
+        .org-tree-foot {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--foreground);
+            cursor: pointer;
+            user-select: none;
+        }
+        .org-resizer {
+            width: 10px;
+            flex-shrink: 0;
+            cursor: col-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted-foreground);
+            background: var(--background);
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+        .org-resizer:hover,
+        .org-resizer.is-dragging {
+            background: var(--accent);
+            color: var(--accent-foreground);
+        }
+        .org-table-pane {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .org-table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 6px 8px;
+            flex-shrink: 0;
+        }
+        .org-selected-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted-foreground);
+        }
+        .btn-link {
+            border: none;
+            background: transparent;
+            color: var(--primary);
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+        .org-pager {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .org-pager select {
+            height: 28px;
+            border: 1px solid var(--input);
+            border-radius: calc(var(--radius) - 4px);
+            background: var(--background);
+            color: var(--foreground);
+            font-size: 12px;
+            padding: 0 6px;
+        }
+        .org-table-wrap {
+            flex: 1;
+            border: none;
+            border-radius: 0;
+            border-top: 1px solid var(--border);
+        }
+        .table th.th-chk,
+        .table td.td-chk {
+            width: 32px;
+            text-align: center;
+        }
+        .org-name-btn {
+            border: none;
+            background: transparent;
+            color: var(--primary);
+            font: inherit;
+            cursor: pointer;
+            padding: 0;
+            text-align: left;
+        }
+        .org-name-btn:hover {
+            text-decoration: underline;
+        }
+        .icon-btn.sm {
+            width: 28px;
+            height: 28px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <h1 class="page-title">配置项列表</h1>
+        <div class="toolbar">
+            <button class="btn btn-default" id="tblnew" type="button">新增</button>
+            <span class="toolbar-right">
+                <button class="icon-btn" id="theme-btn" type="button" aria-label="切换暗色模式" title="切换暗色模式">
+                    <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2" />
+                        <path d="M12 20v2" />
+                        <path d="m4.93 4.93 1.41 1.41" />
+                        <path d="m17.66 17.66 1.41 1.41" />
+                        <path d="M2 12h2" />
+                        <path d="M20 12h2" />
+                        <path d="m6.34 17.66-1.41 1.41" />
+                        <path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                    <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" id="close-btn" type="button" aria-label="关闭" title="关闭 (Esc)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>单据编号</th>
+                        <th>单据状态</th>
+                        <th>党组织</th>
+                        <th>配置json</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+        <p class="status-line" id="demo-status">就绪：点「新增」将先触发父页面官方按钮，再弹出录入框获取数据。</p>
+    </div>
+
+    <div class="dialog-overlay" id="dlg-overlay" hidden>
+        <div class="dialog-content" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+            <div class="dialog-header">
+                <h2 class="dialog-title" id="dlg-title">新增配置项</h2>
+                <button class="dialog-close" id="dlg-close" type="button" aria-label="关闭" title="关闭">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="dialog-body">
+                <div class="dlg-org-col">
+                    <span class="dlg-col-label">党组织</span>
+                    <div class="org-split" id="org-split">
+                        <div class="org-tree-pane" id="org-tree-pane">
+                            <div class="org-tree" id="org-tree"></div>
+                            <label class="org-tree-foot" for="org-include-self">
+                                <input class="chk" id="org-include-self" type="checkbox" />
+                                包含本级
+                            </label>
+                        </div>
+                        <div class="org-resizer" id="org-resizer" title="拖动调整宽度">
+                            <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+                                <circle cx="3" cy="3" r="1" />
+                                <circle cx="7" cy="3" r="1" />
+                                <circle cx="3" cy="7" r="1" />
+                                <circle cx="7" cy="7" r="1" />
+                                <circle cx="3" cy="11" r="1" />
+                                <circle cx="7" cy="11" r="1" />
+                            </svg>
+                        </div>
+                        <div class="org-table-pane">
+                            <div class="org-table-toolbar">
+                                <span class="org-pager">
+                                    <button class="icon-btn sm" id="org-prev" type="button" aria-label="上一页" title="上一页">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="m15 18-6-6 6-6" />
+                                        </svg>
+                                    </button>
+                                    <select id="org-page-size" aria-label="每页条数">
+                                        <option value="100">100条/页</option>
+                                        <option value="50">50条/页</option>
+                                        <option value="20">20条/页</option>
+                                    </select>
+                                    <button class="icon-btn sm" id="org-next" type="button" aria-label="下一页" title="下一页">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="m9 18 6-6-6-6" />
+                                        </svg>
+                                    </button>
+                                </span>
+                                <span class="org-selected-meta">
+                                    已选 <span id="org-selected-count">0</span>
+                                    <button class="btn-link" id="org-clear" type="button">清空</button>
+                                </span>
+                            </div>
+                            <div class="table-wrap org-table-wrap">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th class="th-chk"><input class="chk" id="org-check-all" type="checkbox" aria-label="全选当前页" /></th>
+                                            <th>序号</th>
+                                            <th>组织名称</th>
+                                            <th>数据状态</th>
+                                            <th>上级名称</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="org-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dlg-form-col">
+                    <div class="dialog-field">
+                        <label for="dlg-type">配置类型</label>
+                        <select id="dlg-type">
+                            <option>列表配置</option>
+                            <option>单据配置</option>
+                            <option>模板配置</option>
+                            <option>自定义</option>
+                        </select>
+                    </div>
+                    <div class="dialog-field dlg-field-grow">
+                        <label for="dlg-config">具体配置逻辑</label>
+                        <textarea id="dlg-config" placeholder="（具体配置逻辑，待补充）"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn btn-outline" id="dlg-cancel" type="button">取消</button>
+                <button class="btn btn-default" id="dlg-ok" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 日志写到父页面控制台，方便在苍穹环境里定位问题
+        function clog() {
+            try {
+                window.parent.console.log.apply(window.parent.console, ["[cq-demo]"].concat([].slice.call(arguments)));
+            } catch (e) { }
+        }
+        // 安全绑定：元素不存在时记日志而不是中断整个脚本
+        function bind(id, handler) {
+            var el = document.getElementById(id);
+            if (!el) {
+                clog("未找到元素 #" + id + "，跳过绑定");
+                return;
+            }
+            el.onclick = handler;
+        }
+        function unmount() {
+            try {
+                window.parent.document.getElementById("${ROOT_ID}")?.remove();
+            } catch (e) { }
+        }
+        bind("close-btn", unmount);
+        function syncThemeButton() {
+            var btn = document.getElementById("theme-btn");
+            if (!btn) return;
+            var dark = document.documentElement.classList.contains("dark");
+            btn.setAttribute("aria-label", dark ? "切换亮色模式" : "切换暗色模式");
+            btn.title = dark ? "切换亮色模式" : "切换暗色模式";
+        }
+        bind("theme-btn", function () {
+            document.documentElement.classList.toggle("dark");
+            syncThemeButton();
+        });
+
+        // ---------- shadcn Table 随机数据 ----------
+        var STATUS = [["A", "暂存"], ["B", "已提交"], ["C", "已审核"]];
+        var ORG_TREE = {
+            id: "all",
+            name: "全部",
+            status: "已审核",
+            children: [{
+                id: "crrc-dw",
+                name: "中车株洲电力机车有限公司党委",
+                status: "已审核",
+                children: [
+                    { id: "org-kj", name: "科技管理部党支部", status: "已审核" },
+                    { id: "org-zl", name: "质量保证部党支部", status: "已审核" },
+                    { id: "org-gy", name: "工艺技术部党支部", status: "已审核" },
+                    { id: "org-zz", name: "制造中心党支部", status: "已审核" },
+                    { id: "org-cg", name: "采购中心党支部", status: "已审核" },
+                    { id: "org-cw", name: "财务部党支部", status: "已审核" },
+                    { id: "org-rl", name: "人力资源部党支部", status: "已审核" },
+                    { id: "org-dwgz", name: "党委工作部党支部", status: "已审核" },
+                    { id: "org-jw", name: "纪委办公室党支部", status: "已审核" },
+                    { id: "org-aq", name: "安全环保部党支部", status: "已审核" },
+                    { id: "org-yy", name: "运营管理部党支部", status: "已审核" },
+                    { id: "org-sc", name: "市场营销部党支部", status: "已审核" }
+                ]
+            }]
+        };
+        var ORGS = [];
+        (function collectOrgNames(node) {
+            if (node.id !== "all") ORGS.push(node.name);
+            (node.children || []).forEach(collectOrgNames);
+        })(ORG_TREE);
+        var ROWS = [];
+        function randRow() {
+            var no = "CQ" + new Date().getFullYear() + String(Math.floor(Math.random() * 9000) + 1000);
+            var st = STATUS[Math.floor(Math.random() * STATUS.length)];
+            return {
+                no: no,
+                statusText: st[1],
+                org: ORGS[Math.floor(Math.random() * ORGS.length)],
+                config: JSON.stringify({ auto: Math.random() < 0.5, level: Math.floor(Math.random() * 5) + 1 })
+            };
+        }
+        function renderRows() {
+            var tb = document.getElementById("tbody");
+            if (!tb) {
+                clog("未找到表格 #tbody");
+                return;
+            }
+            tb.innerHTML = "";
+            ROWS.forEach(function (r) {
+                var tr = document.createElement("tr");
+                var tdNo = document.createElement("td");
+                tdNo.textContent = r.no;
+                tr.appendChild(tdNo);
+                var tdStatus = document.createElement("td");
+                var badge = document.createElement("span");
+                badge.className = "badge";
+                badge.textContent = r.statusText;
+                tdStatus.appendChild(badge);
+                tr.appendChild(tdStatus);
+                var tdOrg = document.createElement("td");
+                tdOrg.textContent = r.org;
+                tr.appendChild(tdOrg);
+                var tdCfg = document.createElement("td");
+                tdCfg.className = "cfg";
+                tdCfg.textContent = r.config;
+                tr.appendChild(tdCfg);
+                tb.appendChild(tr);
+            });
+        }
+        function setStatus(msg) {
+            var el = document.getElementById("demo-status");
+            if (el) el.textContent = msg;
+        }
+        // 模拟官方 this.wait：异步等待渲染完成后返回 { getElement() }。
+        // 官方脚本的 this 绑定在苍穹页面上下文，控件 DOM 在父页面（window.parent.document）。
+        // 只查父页面；跨域时访问 parent 会抛异常，记日志后 getElement() 为 null。
+        function waitEl(id, ms) {
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    var el = null;
+                    try {
+                        el = window.parent.document.getElementById(id);
+                    } catch (e) {
+                        clog("无法访问父页面 #" + id + ": " + (e && e.message));
+                    }
+                    resolve({ getElement: function () { return el; } });
+                }, ms || 150);
+            });
+        }
+        function initRows() {
+            ROWS = [];
+            for (var i = 0; i < 5; i++) ROWS.push(randRow());
+            renderRows();
+        }
+
+        // ---------- 党组织：树 + 表（布局对齐官方选择器，样式走当前 shadcn 主题） ----------
+        var orgState = {
+            activeId: "crrc-dw",
+            expanded: { all: true, "crrc-dw": true },
+            includeSelf: false,
+            selected: {},
+            page: 1,
+            pageSize: 100
+        };
+        function findOrgMeta(id, node, parent) {
+            node = node || ORG_TREE;
+            parent = parent || null;
+            if (node.id === id) return { node: node, parent: parent };
+            var ch = node.children || [];
+            for (var i = 0; i < ch.length; i++) {
+                var hit = findOrgMeta(id, ch[i], node);
+                if (hit) return hit;
+            }
+            return null;
+        }
+        function selectedOrgNames() {
+            return Object.keys(orgState.selected).filter(function (id) {
+                return orgState.selected[id];
+            }).map(function (id) {
+                var m = findOrgMeta(id);
+                return m ? m.node.name : id;
+            });
+        }
+        function orgTableSource() {
+            var meta = findOrgMeta(orgState.activeId);
+            var node = meta ? meta.node : ORG_TREE;
+            var rows = [];
+            if (orgState.includeSelf && node.id !== "all") {
+                var p = meta && meta.parent ? meta.parent : null;
+                rows.push({
+                    id: node.id,
+                    name: node.name,
+                    status: node.status || "已审核",
+                    parentName: p && p.id !== "all" ? p.name : ""
+                });
+            }
+            (node.children || []).forEach(function (c) {
+                rows.push({
+                    id: c.id,
+                    name: c.name,
+                    status: c.status || "已审核",
+                    parentName: node.id === "all" ? "" : node.name
+                });
+            });
+            return rows;
+        }
+        function renderOrgTree() {
+            var root = document.getElementById("org-tree");
+            if (!root) return;
+            root.innerHTML = "";
+            function paint(node, wrap) {
+                var hasKids = !!(node.children && node.children.length);
+                var row = document.createElement("button");
+                row.type = "button";
+                row.className = "org-tree-row" + (node.id === orgState.activeId ? " is-active" : "");
+                var tog = document.createElement("span");
+                tog.className = "org-tree-toggle" + (hasKids ? (orgState.expanded[node.id] ? " is-open" : "") : " is-empty");
+                tog.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>';
+                if (hasKids) {
+                    tog.onclick = function (e) {
+                        e.stopPropagation();
+                        orgState.expanded[node.id] = !orgState.expanded[node.id];
+                        renderOrgTree();
+                    };
+                }
+                var label = document.createElement("span");
+                label.textContent = node.name;
+                row.appendChild(tog);
+                row.appendChild(label);
+                row.onclick = function () {
+                    orgState.activeId = node.id;
+                    orgState.page = 1;
+                    renderOrgTree();
+                    renderOrgTable();
+                };
+                wrap.appendChild(row);
+                if (hasKids && orgState.expanded[node.id]) {
+                    var kids = document.createElement("div");
+                    kids.className = "org-tree-children";
+                    node.children.forEach(function (c) { paint(c, kids); });
+                    wrap.appendChild(kids);
+                }
+            }
+            paint(ORG_TREE, root);
+        }
+        function renderOrgTable() {
+            var tb = document.getElementById("org-tbody");
+            var countEl = document.getElementById("org-selected-count");
+            var checkAll = document.getElementById("org-check-all");
+            var names = selectedOrgNames();
+            if (countEl) countEl.textContent = String(names.length);
+            if (!tb) return;
+            var all = orgTableSource();
+            var size = orgState.pageSize;
+            var pages = Math.max(1, Math.ceil(all.length / size) || 1);
+            if (orgState.page > pages) orgState.page = pages;
+            var start = (orgState.page - 1) * size;
+            var pageRows = all.slice(start, start + size);
+            tb.innerHTML = "";
+            pageRows.forEach(function (r, idx) {
+                var tr = document.createElement("tr");
+                var tdChk = document.createElement("td");
+                tdChk.className = "td-chk";
+                var chk = document.createElement("input");
+                chk.type = "checkbox";
+                chk.className = "chk";
+                chk.checked = !!orgState.selected[r.id];
+                chk.onchange = function () {
+                    if (chk.checked) orgState.selected[r.id] = true;
+                    else delete orgState.selected[r.id];
+                    renderOrgTable();
+                };
+                tdChk.appendChild(chk);
+                var tdNo = document.createElement("td");
+                tdNo.textContent = String(start + idx + 1);
+                var tdName = document.createElement("td");
+                var nameBtn = document.createElement("button");
+                nameBtn.type = "button";
+                nameBtn.className = "org-name-btn";
+                nameBtn.textContent = r.name;
+                nameBtn.onclick = function () {
+                    if (orgState.selected[r.id]) delete orgState.selected[r.id];
+                    else orgState.selected[r.id] = true;
+                    renderOrgTable();
+                };
+                tdName.appendChild(nameBtn);
+                var tdSt = document.createElement("td");
+                var badge = document.createElement("span");
+                badge.className = "badge";
+                badge.textContent = r.status;
+                tdSt.appendChild(badge);
+                var tdParent = document.createElement("td");
+                tdParent.textContent = r.parentName;
+                tr.appendChild(tdChk);
+                tr.appendChild(tdNo);
+                tr.appendChild(tdName);
+                tr.appendChild(tdSt);
+                tr.appendChild(tdParent);
+                tb.appendChild(tr);
+            });
+            if (checkAll) {
+                var allChecked = pageRows.length > 0 && pageRows.every(function (r) { return orgState.selected[r.id]; });
+                var someChecked = pageRows.some(function (r) { return orgState.selected[r.id]; });
+                checkAll.checked = allChecked;
+                checkAll.indeterminate = !allChecked && someChecked;
+            }
+            var prev = document.getElementById("org-prev");
+            var next = document.getElementById("org-next");
+            if (prev) prev.disabled = orgState.page <= 1;
+            if (next) next.disabled = orgState.page >= pages;
+        }
+        function resetOrgPicker() {
+            orgState.activeId = "crrc-dw";
+            orgState.expanded = { all: true, "crrc-dw": true };
+            orgState.includeSelf = false;
+            orgState.selected = {};
+            orgState.page = 1;
+            var inc = document.getElementById("org-include-self");
+            if (inc) inc.checked = false;
+            var ps = document.getElementById("org-page-size");
+            if (ps) orgState.pageSize = Number(ps.value) || 100;
+            renderOrgTree();
+            renderOrgTable();
+        }
+        (function initOrgPicker() {
+            var inc = document.getElementById("org-include-self");
+            if (inc) inc.onchange = function () {
+                orgState.includeSelf = !!inc.checked;
+                orgState.page = 1;
+                renderOrgTable();
+            };
+            bind("org-clear", function () {
+                orgState.selected = {};
+                renderOrgTable();
+            });
+            bind("org-prev", function () {
+                if (orgState.page > 1) {
+                    orgState.page--;
+                    renderOrgTable();
+                }
+            });
+            bind("org-next", function () {
+                orgState.page++;
+                renderOrgTable();
+            });
+            var ps = document.getElementById("org-page-size");
+            if (ps) ps.onchange = function () {
+                orgState.pageSize = Number(ps.value) || 100;
+                orgState.page = 1;
+                renderOrgTable();
+            };
+            var checkAll = document.getElementById("org-check-all");
+            if (checkAll) checkAll.onchange = function () {
+                var all = orgTableSource();
+                var size = orgState.pageSize;
+                var start = (orgState.page - 1) * size;
+                var pageRows = all.slice(start, start + size);
+                pageRows.forEach(function (r) {
+                    if (checkAll.checked) orgState.selected[r.id] = true;
+                    else delete orgState.selected[r.id];
+                });
+                renderOrgTable();
+            };
+            var handle = document.getElementById("org-resizer");
+            var pane = document.getElementById("org-tree-pane");
+            if (handle && pane) {
+                handle.addEventListener("mousedown", function (e) {
+                    e.preventDefault();
+                    handle.classList.add("is-dragging");
+                    var startX = e.clientX;
+                    var startW = pane.getBoundingClientRect().width;
+                    function move(ev) {
+                        var w = Math.min(560, Math.max(260, startW + ev.clientX - startX));
+                        pane.style.width = w + "px";
+                    }
+                    function up() {
+                        handle.classList.remove("is-dragging");
+                        document.body.style.userSelect = "";
+                        document.removeEventListener("mousemove", move);
+                        document.removeEventListener("mouseup", up);
+                    }
+                    document.body.style.userSelect = "none";
+                    document.addEventListener("mousemove", move);
+                    document.addEventListener("mouseup", up);
+                });
+            }
+        })();
+
+        // 「新增」：先 wait('tblnew').getElement() 点击父页面官方按钮，再弹出录入框获取数据。
+        var dlg = document.getElementById("dlg-overlay");
+        var dlgType = document.getElementById("dlg-type");
+        var dlgConfig = document.getElementById("dlg-config");
+        function openDialog() {
+            if (!dlg) { clog("弹窗元素不存在 #dlg-overlay"); return; }
+            if (dlgConfig) dlgConfig.value = "";
+            resetOrgPicker();
+            dlg.hidden = false;
+            if (dlgType) dlgType.focus();
+        }
+        function closeDialog() {
+            if (dlg) dlg.hidden = true;
+        }
+        bind("tblnew", async () => {
+            var selfBtn = document.getElementById("tblnew");
+            var got = await waitEl("tblnew");
+            var addBtn = got.getElement();
+            if (!addBtn) {
+                setStatus("未找到父页面 #tblnew，父页面新增逻辑未执行");
+                clog("wait('tblnew') 在父页面未找到元素");
+                return;
+            }
+            // 本地单独打开 index.html 时 parent === 当前页，#tblnew 就是自己，不能再 click 以免递归
+            if (addBtn !== selfBtn) {
+                addBtn.click();
+                clog("已 click 父页面 #tblnew", addBtn.tagName);
+            } else {
+                clog("父页面 #tblnew 与当前按钮为同一元素（本地预览），跳过 click");
+            }
+            openDialog();
+            setStatus("已触发父页面新增，请填写配置项");
+        });
+        bind("dlg-close", closeDialog);
+        bind("dlg-cancel", closeDialog);
+        // 点遮罩关闭（与 shadcn Dialog 行为一致）
+        if (dlg) {
+            dlg.addEventListener("click", function (e) {
+                if (e.target === dlg) closeDialog();
+            });
+        }
+        bind("dlg-ok", () => {
+            var names = selectedOrgNames();
+            if (!names.length) {
+                setStatus("请选择党组织");
+                return;
+            }
+            var org = names.join("、");
+            var type = dlgType ? dlgType.value : "";
+            var cfg = dlgConfig ? dlgConfig.value.trim() : "";
+            var no = "CQ" + new Date().getFullYear() + String(Math.floor(Math.random() * 9000) + 1000);
+            ROWS.unshift({ no: no, statusText: "暂存", org: org, config: cfg || JSON.stringify({ type: type }) });
+            renderRows();
+            closeDialog();
+            setStatus("已新增「" + org + " / " + type + "」 " + no);
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                if (dlg && !dlg.hidden) { closeDialog(); return; } // 弹窗优先关闭
+                unmount();
+            }
+        });
+        try {
+            syncThemeButton();
+            initRows();
+        } catch (err) {
+            clog("初始化失败: " + (err && err.message));
+        }
+    </script>
+</body>
+
+</html>
