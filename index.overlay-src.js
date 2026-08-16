@@ -1503,9 +1503,11 @@ Error generating stack: \`+o.message+\`
                 lastAppHomeLen: 0,
                 lastDeductionLen: 0,
                 lastPartyLen: 0,
+                lastOrgLen: 0,
                 lastAppHomeHead: "",
                 lastDeductionHead: "",
                 lastPartyHead: "",
+                lastOrgHead: "",
                 clicks: {},
                 iframeSrcs: [],
                 hasJQuery: false,
@@ -1521,12 +1523,15 @@ Error generating stack: \`+o.message+\`
             try {
                 var dSess = cqFetchSessions && cqFetchSessions["cq-fetch-frame-deduction"];
                 var pSess = cqFetchSessions && cqFetchSessions["cq-fetch-frame-party"];
-                snap.lastAppHomeLen = String((dSess && dSess.lastAppHome) || (pSess && pSess.lastAppHome) || "").length;
+                var oSess = cqFetchSessions && cqFetchSessions["cq-fetch-frame-org"];
+                snap.lastAppHomeLen = String((dSess && dSess.lastAppHome) || (pSess && pSess.lastAppHome) || (oSess && oSess.lastAppHome) || "").length;
                 snap.lastDeductionLen = String((dSess && dSess.lastList) || "").length;
                 snap.lastPartyLen = String((pSess && pSess.lastList) || "").length;
-                snap.lastAppHomeHead = String((dSess && dSess.lastAppHome) || (pSess && pSess.lastAppHome) || "").slice(0, 500);
+                snap.lastOrgLen = String((oSess && oSess.lastList) || "").length;
+                snap.lastAppHomeHead = String((dSess && dSess.lastAppHome) || (pSess && pSess.lastAppHome) || (oSess && oSess.lastAppHome) || "").slice(0, 500);
                 snap.lastDeductionHead = String((dSess && dSess.lastList) || "").slice(0, 500);
                 snap.lastPartyHead = String((pSess && pSess.lastBill) || (pSess && pSess.lastList) || "").slice(0, 500);
+                snap.lastOrgHead = String((oSess && oSess.lastList) || "").slice(0, 500);
             } catch (e4) { }
             try {
                 var pw = parentWin();
@@ -1537,14 +1542,17 @@ Error generating stack: \`+o.message+\`
                     app: !!findClickAnywhere("应用"),
                     party: !!findClickAnywhere("党费"),
                     deductionMenu: !!findClickAnywhere("扣分项台账"),
-                    partyMenu: !!findClickAnywhere("季度党群绩效贡献度")
+                    partyMenu: !!findClickAnywhere("季度党群绩效贡献度"),
+                    orgMenu: !!findClickAnywhere("党组织查询")
                 };
                 snap.sessionHref = sessionWin ? safeHref(sessionWin) : "";
                 var fetchDedEl = hostWin().document.getElementById("cq-fetch-frame-deduction");
                 var fetchPartyEl = hostWin().document.getElementById("cq-fetch-frame-party");
+                var fetchOrgEl = hostWin().document.getElementById("cq-fetch-frame-org");
                 var fetchOldEl = hostWin().document.getElementById("cq-fetch-frame");
                 snap.fetchFrameSrc = fetchDedEl ? String(fetchDedEl.src || "") : (fetchOldEl ? String(fetchOldEl.src || "") : "");
                 snap.fetchPartyFrameSrc = fetchPartyEl ? String(fetchPartyEl.src || "") : "";
+                snap.fetchOrgFrameSrc = fetchOrgEl ? String(fetchOrgEl.src || "") : "";
                 var ifs = doc.querySelectorAll("iframe[src]");
                 var i;
                 for (i = 0; i < ifs.length && i < 25; i++) {
@@ -1817,13 +1825,21 @@ Error generating stack: \`+o.message+\`
             { key: "_idx", label: "序号", sortable: true },
             { key: "name", label: "组织名称", sortable: true },
             { key: "status", label: "数据状态", sortable: true, badge: true },
-            { key: "parentName", label: "上级名称", sortable: true }
+            { key: "parentName", label: "上级名称", sortable: true },
+            { key: "orgType", label: "党组织类别", sortable: true, compact: true },
+            { key: "foundedAt", label: "成立时间", sortable: true, compact: true },
+            { key: "number", label: "编码", sortable: true, compact: true },
+            { key: "level", label: "级次", sortable: true, compact: true }
         ];
         var ORG_DIALOG_COLUMNS = [
             { key: "_idx", label: "序号", sortable: true },
             { key: "name", label: "组织名称", sortable: true, link: true },
             { key: "status", label: "数据状态", sortable: true, badge: true },
-            { key: "parentName", label: "上级名称", sortable: true }
+            { key: "parentName", label: "上级名称", sortable: true },
+            { key: "orgType", label: "党组织类别", sortable: true, compact: true },
+            { key: "foundedAt", label: "成立时间", sortable: true, compact: true },
+            { key: "number", label: "编码", sortable: true, compact: true },
+            { key: "level", label: "级次", sortable: true, compact: true }
         ];
 
         function mapOrgRows(rows) {
@@ -1833,6 +1849,10 @@ Error generating stack: \`+o.message+\`
                     name: r.name,
                     status: r.status,
                     parentName: r.parentName,
+                    orgType: r.orgType || "",
+                    foundedAt: r.foundedAt || "",
+                    number: r.number || "",
+                    level: r.level == null || r.level === "" ? "" : r.level,
                     _idx: idx + 1
                 };
             });
@@ -1912,7 +1932,14 @@ Error generating stack: \`+o.message+\`
             });
             var titleEl = document.getElementById("main-title");
             if (titleEl) titleEl.textContent = TABLE_DEFS[tabId].label;
-            if (tabId === "org") renderOrgView();
+            if (tabId === "org") {
+                renderOrgView();
+                if (!orgLoading && !orgReady) {
+                    var orgMetaEl = document.getElementById("org-view-meta");
+                    if (orgMetaEl) orgMetaEl.textContent = "正在加载党组织…";
+                    loadOrgFromCq();
+                }
+            }
             if (tabId === "deduction" && !deductionLoading && !deductionReady) {
                 loadDeductionFromCq();
             }
@@ -2055,11 +2082,25 @@ Error generating stack: \`+o.message+\`
             menuTexts: ["季度党群绩效贡献度", "季度党群绩效"],
             maxBills: 40
         };
+        var CQ_ORG = {
+            menuAppId: "crrc_party_dues",
+            menuFormId: "crrc_party_dues_apphome",
+            menuControl: "navigationbar",
+            menuRoot: "root",
+            menuItemId: "2546603181119401984",
+            dataAppId: "crrc_dj",
+            dataFormId: "crrc_dj_org_tree_ext",
+            menuTexts: ["党组织查询", "党组织"]
+        };
         var deductionLoading = false;
         var deductionReady = false;
         var partyLoading = false;
         var partyReady = false;
+        var orgLoading = false;
+        var orgReady = false;
         var STATUS_TEXT = { A: "暂存", B: "已提交", C: "已审核" };
+        var ORG_TYPE_TEXT = { "1": "党委", "2": "党总支", "3": "党支部", "4": "党小组" };
+        var ORG_ENABLE_TEXT = { "0": "禁用", "1": "可用" };
         var PERIOD_TEXT = { "1": "一季度", "2": "二季度", "3": "三季度", "4": "四季度", "5": "年度" };
         var watchedTenantPageId = "";
         var sessionWin = null;
@@ -2160,6 +2201,7 @@ Error generating stack: \`+o.message+\`
             cqDisposed = true;
             deductionLoading = false;
             partyLoading = false;
+            orgLoading = false;
             if (alertTimer) { clearTimeout(alertTimer); alertTimer = 0; }
             if (alertLeaveTimer) { clearTimeout(alertLeaveTimer); alertLeaveTimer = 0; }
             if (alertTimers && alertTimers.length) {
@@ -2185,6 +2227,7 @@ Error generating stack: \`+o.message+\`
             removeBundleScripts();
             try { window.__cqFetchDeduction = null; } catch (e2) { }
             try { window.__cqFetchPartyQuarterly = null; } catch (e2b) { }
+            try { window.__cqFetchOrg = null; } catch (e2c) { }
             try { window.__cqDisposeOverlay = null; } catch (e3) { }
             try { window.__cqDtRoot = null; } catch (e4) { }
             try { unmountHost(); } catch (e5) { }
@@ -2593,6 +2636,7 @@ Error generating stack: \`+o.message+\`
             if (ac !== "loadData" || !text || hasTimeoutText(text)) return;
             if (formId === "crrc_party_dues_apphome") sess.lastAppHome = text;
             if (formId === "crrc_deduction_log") sess.lastList = text;
+            if (formId === "crrc_dj_org_tree_ext") sess.lastList = text;
             if (formId === "crrc_dj_cb_count") {
                 if (isPartyBillPageId(pageId, sess.listPageId, formId)) sess.lastBill = text;
                 else sess.lastList = text;
@@ -2614,7 +2658,9 @@ Error generating stack: \`+o.message+\`
                 iframe.id = sess.frameId;
                 iframe.setAttribute("data-cq-fetch", "1");
                 iframe.title = sess.frameId;
-                var leftPx = sess.frameId.indexOf("party") >= 0 ? "8px" : "0";
+                var leftPx = "0";
+                if (sess.frameId.indexOf("party") >= 0) leftPx = "8px";
+                if (sess.frameId.indexOf("-org") >= 0) leftPx = "16px";
                 iframe.setAttribute("style", "position:fixed;left:" + leftPx + ";top:0;width:1400px;height:900px;opacity:0;pointer-events:none;border:0;z-index:1;");
                 var url = consoleHomeUrl();
                 iframe.src = url;
@@ -2710,8 +2756,10 @@ Error generating stack: \`+o.message+\`
         function hookParentForTenant() {
             var dSess = cqFetchSessions["cq-fetch-frame-deduction"];
             var pSess = cqFetchSessions["cq-fetch-frame-party"];
+            var oSess = cqFetchSessions["cq-fetch-frame-org"];
             if (dSess) hookSessionTree(dSess);
             if (pSess) hookSessionTree(pSess);
+            if (oSess) hookSessionTree(oSess);
         }
         function waitFor(fn, timeout, step, label) {
             var t0 = Date.now();
@@ -2771,6 +2819,10 @@ Error generating stack: \`+o.message+\`
             if (seen.indexOf(obj) >= 0) return;
             seen.push(obj);
             fn(obj);
+            if (!Array.isArray(obj)) {
+                var mnSkip = String(obj.methodname || obj.methodName || "");
+                if (mnSkip === "addNodes" || mnSkip === "updateNodes") return;
+            }
             if (Array.isArray(obj)) {
                 var n = Math.min(obj.length, 400);
                 for (var i = 0; i < n; i++) walkCq(obj[i], fn, depth + 1, seen);
@@ -3797,18 +3849,440 @@ Error generating stack: \`+o.message+\`
         try { parentWin().__cqFetchPartyQuarterly = loadPartyQuarterlyFromCq; } catch (ePq) { }
         try { window.__cqFetchPartyQuarterly = loadPartyQuarterlyFromCq; } catch (ePq2) { }
 
+        function formatOrgValue(key, raw) {
+            if (raw == null || raw === "") return "";
+            var v = cqCell(raw);
+            if (key === "status" || key === "billstatus") {
+                var st = String(v);
+                return STATUS_TEXT[st] || st;
+            }
+            if (key === "crrc_combofield") {
+                var t = String(v);
+                return ORG_TYPE_TEXT[t] || t;
+            }
+            if (key === "enable") {
+                var en = String(v);
+                return ORG_ENABLE_TEXT[en] || en;
+            }
+            if (v && typeof v === "object") return "";
+            return v == null ? "" : v;
+        }
+        function looksLikeOrgTreeNode(obj) {
+            if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
+            var id = obj.id != null ? String(obj.id) : "";
+            var name = obj.text || obj.name;
+            return !!(id && name);
+        }
+        function orgTreeArgsOf(obj) {
+            var args = obj.args;
+            if (!Array.isArray(args) || !args.length) return null;
+            var first = args[0];
+            if (Array.isArray(first) && first.length && looksLikeOrgTreeNode(first[0])) return first;
+            if (looksLikeOrgTreeNode(first)) return [first];
+            return null;
+        }
+        function countOrgTree(nodes) {
+            if (!nodes) return 0;
+            var arr = Array.isArray(nodes) ? nodes : [nodes];
+            var n = 0;
+            var i;
+            for (i = 0; i < arr.length; i++) {
+                n += 1;
+                n += countOrgTree(arr[i] && arr[i].children);
+            }
+            return n;
+        }
+        function findOrgAddNodes(payload) {
+            var best = null;
+            var bestCount = -1;
+            var bestMethod = "";
+            function walk(obj, depth, seen) {
+                if (!obj || typeof obj !== "object" || depth > 16) return;
+                if (seen.indexOf(obj) >= 0) return;
+                seen.push(obj);
+                if (!Array.isArray(obj)) {
+                    var mn = String(obj.methodname || obj.methodName || "");
+                    if (mn === "addNodes" || mn === "updateNodes") {
+                        var arr = orgTreeArgsOf(obj);
+                        if (arr && arr.length) {
+                            var c = countOrgTree(arr);
+                            if (c > bestCount || (c === bestCount && mn === "addNodes" && bestMethod !== "addNodes")) {
+                                best = arr;
+                                bestCount = c;
+                                bestMethod = mn;
+                            }
+                        }
+                        return;
+                    }
+                }
+                if (Array.isArray(obj)) {
+                    var n = Math.min(obj.length, 80);
+                    var i;
+                    for (i = 0; i < n; i++) walk(obj[i], depth + 1, seen);
+                    return;
+                }
+                var keys = Object.keys(obj);
+                var k;
+                for (k = 0; k < keys.length && k < 80; k++) {
+                    if (keys[k] === "args") continue;
+                    walk(obj[keys[k]], depth + 1, seen);
+                }
+            }
+            walk(parseMaybeJson(payload), 0, []);
+            return best;
+        }
+        function findOrgBillListPack(payload) {
+            var pack = null;
+            function walk(obj, depth, seen) {
+                if (!obj || typeof obj !== "object" || depth > 16) return;
+                if (seen.indexOf(obj) >= 0) return;
+                seen.push(obj);
+                if (!Array.isArray(obj)) {
+                    var mn = String(obj.methodname || obj.methodName || "");
+                    if (mn === "addNodes" || mn === "updateNodes") return;
+                    if (obj.k === "billlistap" && obj.data && Array.isArray(obj.data.rows)) pack = obj.data;
+                    else if (!pack && obj.c === "billlistap" && obj.p && Array.isArray(obj.p.rows)) pack = obj.p;
+                    else if (!pack && Array.isArray(obj.rows) && obj.dataindex && typeof obj.dataindex === "object" && !Array.isArray(obj.dataindex)) pack = obj;
+                }
+                if (Array.isArray(obj)) {
+                    var n = Math.min(obj.length, 80);
+                    var i;
+                    for (i = 0; i < n; i++) walk(obj[i], depth + 1, seen);
+                    return;
+                }
+                var keys = Object.keys(obj);
+                var k;
+                for (k = 0; k < keys.length && k < 80; k++) {
+                    if (keys[k] === "args") continue;
+                    walk(obj[keys[k]], depth + 1, seen);
+                }
+            }
+            walk(parseMaybeJson(payload), 0, []);
+            return pack;
+        }
+        function mapOrgListRows(pack) {
+            var map = {};
+            if (!pack || !Array.isArray(pack.rows)) return map;
+            var idx = pack.dataindex || {};
+            var i;
+            for (i = 0; i < pack.rows.length; i++) {
+                var row = pack.rows[i];
+                function cell(key) {
+                    if (idx[key] == null) return "";
+                    return formatOrgValue(key, row[idx[key]]);
+                }
+                var id = String(cell("crrc_dj_org_tree_ext_id") || "");
+                if (!id) continue;
+                map[id] = {
+                    name: cell("name"),
+                    status: cell("status"),
+                    parent_name: cell("parent_name"),
+                    orgType: cell("crrc_combofield"),
+                    foundedAt: cell("crrc_datefield"),
+                    number: cell("number"),
+                    level: cell("level"),
+                    longnumber: cell("longnumber"),
+                    enable: cell("enable")
+                };
+            }
+            return map;
+        }
+        function mapCqOrgNode(n, parentName, listMap) {
+            var rawId = n && n.id != null ? String(n.id) : "";
+            var name = n && (n.text || n.name) ? String(n.text || n.name) : "";
+            var parentid = n && n.parentid != null ? String(n.parentid) : "";
+            var id = rawId;
+            if (name === "全部" && !parentid) id = "all";
+            var extra = listMap[rawId] || {};
+            var node = {
+                id: id,
+                name: name,
+                parentid: parentid,
+                parentName: extra.parent_name || parentName || "",
+                status: extra.status || "",
+                orgType: extra.orgType || "",
+                foundedAt: extra.foundedAt || "",
+                number: extra.number || "",
+                level: extra.level == null || extra.level === "" ? "" : extra.level,
+                longnumber: extra.longnumber || n.longNumber || n.longnumber || "",
+                enable: extra.enable || "",
+                children: []
+            };
+            var kids = (n && n.children) || [];
+            var ki;
+            for (ki = 0; ki < kids.length; ki++) {
+                node.children.push(mapCqOrgNode(kids[ki], name, listMap));
+            }
+            return node;
+        }
+        function buildOrgRoot(nodes, listMap) {
+            if (!nodes || !nodes.length) return null;
+            if (nodes.length === 1) return mapCqOrgNode(nodes[0], "", listMap);
+            var wrap = { id: "all", name: "全部", status: "", children: [] };
+            var wi;
+            for (wi = 0; wi < nodes.length; wi++) wrap.children.push(mapCqOrgNode(nodes[wi], "", listMap));
+            return wrap;
+        }
+        function buildOrgRootFromList(listMap) {
+            var ids = Object.keys(listMap);
+            var children = [];
+            var li;
+            for (li = 0; li < ids.length; li++) {
+                var extra = listMap[ids[li]];
+                children.push({
+                    id: ids[li],
+                    name: extra.name,
+                    status: extra.status,
+                    parentName: extra.parent_name,
+                    orgType: extra.orgType,
+                    foundedAt: extra.foundedAt,
+                    number: extra.number,
+                    level: extra.level,
+                    longnumber: extra.longnumber,
+                    enable: extra.enable,
+                    children: []
+                });
+            }
+            var companyName = children.length && children[0].parentName ? children[0].parentName : "中车株洲电力机车有限公司党委";
+            return {
+                id: "all",
+                name: "全部",
+                status: "",
+                children: [{
+                    id: "crrc-dw",
+                    name: companyName,
+                    status: "",
+                    children: children
+                }]
+            };
+        }
+        function rebuildOrgNames() {
+            ORGS = [];
+            function walk(node) {
+                if (!node) return;
+                if (node.id !== "all") ORGS.push(node.name);
+                var ch = node.children || [];
+                var wi;
+                for (wi = 0; wi < ch.length; wi++) walk(ch[wi]);
+            }
+            walk(ORG_TREE);
+        }
+        function defaultOrgCompanyId() {
+            var ch = ORG_TREE && ORG_TREE.children;
+            if (ch && ch.length) return ch[0].id;
+            return "crrc-dw";
+        }
+        function defaultOrgExpanded() {
+            var exp = { all: true };
+            var cid = defaultOrgCompanyId();
+            if (cid) exp[cid] = true;
+            return exp;
+        }
+        function orgRowFromNode(node, parentName) {
+            return {
+                id: node.id,
+                name: node.name,
+                status: node.status || "",
+                parentName: parentName || node.parentName || "",
+                orgType: node.orgType || "",
+                foundedAt: node.foundedAt || "",
+                number: node.number || "",
+                level: node.level == null || node.level === "" ? "" : node.level
+            };
+        }
+        function applyOrgTree(root) {
+            if (!root) return;
+            ORG_TREE = root;
+            rebuildOrgNames();
+            var companyId = defaultOrgCompanyId();
+            orgViewState.activeId = companyId;
+            orgViewState.expanded = defaultOrgExpanded();
+            orgState.activeId = companyId;
+            orgState.expanded = defaultOrgExpanded();
+            orgState.selected = {};
+            orgState.page = 1;
+            renderOrgView();
+            renderOrgTree();
+            refreshOrgDialogTable();
+        }
+        function isOrgListLoad(r, sess) {
+            if (!r || !r.query || r.query.ac !== "loadData") return false;
+            if (!r.response || r.response.length <= 8 || hasTimeoutText(r.response)) return false;
+            var f = r.query.f;
+            if (!f || isReservedForm(f)) return false;
+            if (sess && sess.listPageId && r.pageId === sess.listPageId) return true;
+            if (f === CQ_ORG.dataFormId) return true;
+            var s = String(r.response);
+            return s.indexOf("addNodes") >= 0 && s.indexOf("crrc_dj_org_tree_ext") >= 0;
+        }
+        function findOrgMenu(sess) {
+            var texts = CQ_ORG.menuTexts;
+            var i;
+            for (i = 0; i < texts.length; i++) {
+                var hit = findClickInSession(sess, texts[i]);
+                if (hit) return { hit: hit, text: texts[i] };
+            }
+            return null;
+        }
+        function pickOrgPayload(sess, res) {
+            if (res && typeof res === "object" && !res.query) return res;
+            var last = sess && sess.lastList;
+            if (last && String(last).indexOf("addNodes") >= 0) return last;
+            if (res && res.response && String(res.response).indexOf("addNodes") >= 0) return res.response;
+            if (last) return last;
+            if (res && res.response) return res.response;
+            return res;
+        }
+        function loadOrgFromCq() {
+            if (cqDisposed) return Promise.resolve(null);
+            if (orgLoading) return orgLoading;
+            var sess = getFetchSession("cq-fetch-frame-org");
+            var trail = [];
+            function step(name, info) {
+                trail.push({ name: name, info: info || null });
+                clog("org-step", name, info || "");
+            }
+            var task = Promise.resolve().then(function () {
+                if (cqDisposed) throw new Error("aborted");
+                return ensureFetchSession(sess);
+            }).then(function () {
+                if (cqDisposed) throw new Error("aborted");
+                hookSessionTree(sess);
+                var consolePageId = findConsolePageIdFrom(sess.win);
+                var suffix = extractRootSuffix(consolePageId);
+                step("session", {
+                    consolePageId: consolePageId,
+                    suffix: suffix,
+                    frameId: sess.frameId,
+                    sessionHref: safeHref(sess.win)
+                });
+                if (!consolePageId || !suffix) {
+                    throw new Error("未找到主控台 pageId。隐藏 iframe 可能未加载到主控台。");
+                }
+                var menuPageId = CQ_ORG.menuAppId + suffix;
+                var listPageId = CQ_ORG.menuItemId + suffix;
+                sess.listPageId = listPageId;
+                sess.dataFormId = CQ_ORG.dataFormId;
+                sess.dataAppId = CQ_ORG.dataAppId;
+                sess.lastList = "";
+                sess.lastBill = "";
+                sess.lastAppHome = "";
+                sess.requests = [];
+                function treeMenuThenLoad() {
+                    step("treeMenuThenLoad", { menuPageId: menuPageId, listPageId: listPageId });
+                    return cqInvoke(
+                        sess.win,
+                        CQ_ORG.menuAppId,
+                        CQ_ORG.menuFormId,
+                        "treeMenuClick",
+                        menuPageId,
+                        [{
+                            key: CQ_ORG.menuControl,
+                            methodName: "treeMenuClick",
+                            args: [CQ_ORG.menuRoot, CQ_ORG.menuItemId],
+                            postData: [{}, []]
+                        }]
+                    ).then(function () {
+                        return cqInvoke(
+                            sess.win,
+                            CQ_ORG.dataAppId,
+                            CQ_ORG.dataFormId,
+                            "loadData",
+                            listPageId,
+                            [{ key: "", methodName: "loadData", args: [], postData: [] }]
+                        );
+                    });
+                }
+                function waitListLoad() {
+                    return waitForSessReq(sess, function (r) {
+                        return isOrgListLoad(r, sess);
+                    }, 25000, "等待党组织查询 loadData");
+                }
+                return clickAppThenParty(sess, step).then(function () {
+                    var hit = findOrgMenu(sess);
+                    step("find-menu", { hasMenu: !!(hit && hit.hit), text: hit ? hit.text : "" });
+                    if (hit && hit.hit) {
+                        clog("点击", hit.text);
+                        fireParentClick(hit.hit.el, hit.hit.win);
+                        return waitListLoad().catch(function () {
+                            clog("点击后未捕获党组织 loadData，改请求链");
+                            step("click-menu-no-payload", {});
+                            return treeMenuThenLoad();
+                        });
+                    }
+                    return treeMenuThenLoad();
+                }).then(function (res) {
+                    if (cqDisposed) return null;
+                    var payload = pickOrgPayload(sess, res);
+                    var nodes = findOrgAddNodes(payload);
+                    var pack = findOrgBillListPack(payload);
+                    if (!nodes) {
+                        var ri;
+                        for (ri = sess.requests.length - 1; ri >= 0; ri--) {
+                            if (!isOrgListLoad(sess.requests[ri], sess)) continue;
+                            var cand = sess.requests[ri].response;
+                            nodes = findOrgAddNodes(cand);
+                            if (!pack) pack = findOrgBillListPack(cand);
+                            if (nodes) {
+                                payload = cand;
+                                break;
+                            }
+                        }
+                    }
+                    var listMap = mapOrgListRows(pack);
+                    var listCount = 0;
+                    try { listCount = Object.keys(listMap).length; } catch (eLc) { listCount = 0; }
+                    var root = nodes && nodes.length ? buildOrgRoot(nodes, listMap) : null;
+                    var usedFallback = false;
+                    if (!root && listCount) {
+                        root = buildOrgRootFromList(listMap);
+                        usedFallback = true;
+                    }
+                    clog("党组织树", nodes ? countOrgTree(nodes) : 0, "列表", listCount, usedFallback ? "fallback" : "");
+                    if (!root) {
+                        orgReady = true;
+                        showAlert("default", "党组织加载成功", "列表为空");
+                        return null;
+                    }
+                    applyOrgTree(root);
+                    orgReady = true;
+                    var treeCount = countOrgTree(root);
+                    try { window.__cqLastOrgParse = { treeCount: treeCount, listCount: listCount, usedFallback: usedFallback }; } catch (e3) { }
+                    if (usedFallback) {
+                        showAlert("default", "党组织加载成功", "列表 " + listCount + " 行（树未解析，仅一级）");
+                    } else {
+                        showAlert("default", "党组织加载成功", "树节点 " + treeCount + "，列表 " + listCount + " 行");
+                    }
+                    return root;
+                });
+            }).then(function (root) {
+                orgLoading = false;
+                return root;
+            }, function (err) {
+                orgLoading = false;
+                if (cqDisposed || (err && err.message === "aborted")) return null;
+                clog("党组织加载失败", err && err.message);
+                reportError("org-load", err, { trail: trail });
+                showAlert("destructive", "党组织加载失败", err && err.message ? String(err.message) : String(err));
+            });
+            orgLoading = task;
+            return task;
+        }
+        try { parentWin().__cqFetchOrg = loadOrgFromCq; } catch (eOrg) { }
+        try { window.__cqFetchOrg = loadOrgFromCq; } catch (eOrg2) { }
+
         // ---------- 党组织：树 + 表（布局对齐官方选择器，样式走当前 shadcn 主题） ----------
         var orgState = {
-            activeId: "crrc-dw",
-            expanded: { all: true, "crrc-dw": true },
+            activeId: defaultOrgCompanyId(),
+            expanded: defaultOrgExpanded(),
             includeSelf: false,
             selected: {},
             page: 1,
             pageSize: 100
         };
         var orgViewState = {
-            activeId: "crrc-dw",
-            expanded: { all: true, "crrc-dw": true }
+            activeId: defaultOrgCompanyId(),
+            expanded: defaultOrgExpanded()
         };
         function findOrgMeta(id, node, parent) {
             node = node || ORG_TREE;
@@ -3835,20 +4309,10 @@ Error generating stack: \`+o.message+\`
             var rows = [];
             if (orgState.includeSelf && node.id !== "all") {
                 var p = meta && meta.parent ? meta.parent : null;
-                rows.push({
-                    id: node.id,
-                    name: node.name,
-                    status: node.status || "已审核",
-                    parentName: p && p.id !== "all" ? p.name : ""
-                });
+                rows.push(orgRowFromNode(node, p && p.id !== "all" ? p.name : ""));
             }
             (node.children || []).forEach(function (c) {
-                rows.push({
-                    id: c.id,
-                    name: c.name,
-                    status: c.status || "已审核",
-                    parentName: node.id === "all" ? "" : node.name
-                });
+                rows.push(orgRowFromNode(c, node.id === "all" ? "" : node.name));
             });
             return rows;
         }
@@ -3857,12 +4321,7 @@ Error generating stack: \`+o.message+\`
             var node = meta ? meta.node : ORG_TREE;
             var rows = [];
             (node.children || []).forEach(function (c) {
-                rows.push({
-                    id: c.id,
-                    name: c.name,
-                    status: c.status || "已审核",
-                    parentName: node.id === "all" ? "" : node.name
-                });
+                rows.push(orgRowFromNode(c, node.id === "all" ? "" : node.name));
             });
             return { node: node, rows: rows };
         }
@@ -3936,8 +4395,8 @@ Error generating stack: \`+o.message+\`
             refreshOrgDialogTable();
         }
         function resetOrgPicker() {
-            orgState.activeId = "crrc-dw";
-            orgState.expanded = { all: true, "crrc-dw": true };
+            orgState.activeId = defaultOrgCompanyId();
+            orgState.expanded = defaultOrgExpanded();
             orgState.includeSelf = false;
             orgState.selected = {};
             orgState.page = 1;
