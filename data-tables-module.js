@@ -57,7 +57,7 @@ function buildColumns(defs, selectable) {
             accessorKey: def.key,
             header: def.label,
             enableSorting: def.sortable !== false,
-            meta: { badge: def.badge, mono: def.mono, numeric: def.numeric, key: def.key, compact: def.compact },
+            meta: { badge: def.badge, mono: def.mono, numeric: def.numeric, key: def.key, compact: def.compact, wrap: def.wrap },
             cell: function (info) {
                 var val = info.getValue();
                 var meta = info.column.columnDef.meta || {};
@@ -201,6 +201,7 @@ function DataTable(props) {
                                 var sorted = header.column.getIsSorted();
                                 var thClass = (canSort ? "th-sort" : "") + (sorted ? " is-" + sorted : "");
                                 if (header.id === "select") thClass = "th-chk";
+                                else if (meta.wrap) thClass = (thClass ? thClass + " " : "") + "th-wrap";
                                 else if (meta.compact || meta.numeric || meta.badge) thClass = (thClass ? thClass + " " : "") + "th-compact";
                                 return h("th", {
                                     key: header.id,
@@ -224,7 +225,9 @@ function DataTable(props) {
                                     var tdClass = "";
                                     if (cell.column.id === "select") tdClass = "td-chk";
                                     else if (meta.mono) tdClass = "cfg";
-                                    if (meta.compact || meta.numeric || meta.badge) {
+                                    if (meta.wrap) {
+                                        tdClass = tdClass ? tdClass + " td-wrap" : "td-wrap";
+                                    } else if (meta.compact || meta.numeric || meta.badge) {
                                         tdClass = tdClass ? tdClass + " td-compact" : "td-compact";
                                     }
                                     return h("td", { key: cell.id, className: tdClass },

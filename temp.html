@@ -39,6 +39,20 @@
             --sidebar-accent-foreground: oklch(0.205 0 0);
             --sidebar-border: oklch(0.922 0 0);
             --sidebar-ring: oklch(0.708 0 0);
+            --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            --font-size: 14px;
+            --text-xs: calc(var(--font-size) * 0.75);
+            --text-sm: calc(var(--font-size) * 0.875);
+            --text-base: var(--font-size);
+            --text-lg: calc(var(--font-size) * 1.125);
+            --text-xl: calc(var(--font-size) * 1.25);
+            --text-2xl: calc(var(--font-size) * 1.5);
+            --dt-col-max: calc(var(--font-size) * 16);
+            font-family: var(--font-sans);
+            font-size: var(--font-size);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
         .dark {
@@ -86,10 +100,9 @@
         html,
         body {
             height: 100%;
-        }
-
-        body {
-            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-sans);
+            font-size: var(--font-size);
+            line-height: 1.5;
             background: var(--background);
             color: var(--foreground);
             -webkit-font-smoothing: antialiased;
@@ -102,6 +115,10 @@
             flex-direction: column;
             align-items: stretch;
             padding: 0;
+            font-family: var(--font-sans);
+            font-size: var(--text-sm);
+            line-height: 1.5;
+            color: var(--foreground);
             background:
                 radial-gradient(1200px 600px at 50% -10%, color-mix(in oklch, var(--primary) 12%, transparent) 0%, transparent 60%),
                 var(--background);
@@ -137,7 +154,7 @@
 
         .sidebar-title {
             display: block;
-            font-size: .9375rem;
+            font-size: var(--text-base);
             font-weight: 600;
             letter-spacing: -.02em;
             color: var(--sidebar-foreground);
@@ -147,7 +164,7 @@
         .sidebar-sub {
             display: block;
             margin-top: 2px;
-            font-size: 11px;
+            font-size: var(--text-xs);
             color: var(--muted-foreground);
         }
 
@@ -173,7 +190,7 @@
             background: transparent;
             color: var(--sidebar-foreground);
             font: inherit;
-            font-size: .8125rem;
+            font-size: var(--text-sm);
             font-weight: 500;
             text-align: left;
             cursor: pointer;
@@ -209,7 +226,7 @@
 
         .nav-group-label {
             padding: 10px 14px 4px;
-            font-size: 10px;
+            font-size: var(--text-xs);
             font-weight: 600;
             letter-spacing: .06em;
             color: var(--muted-foreground);
@@ -218,7 +235,7 @@
 
         .readonly-hint {
             flex-shrink: 0;
-            font-size: 12px;
+            font-size: var(--text-sm);
             color: var(--muted-foreground);
             line-height: 1.5;
             padding: 8px 12px;
@@ -269,7 +286,7 @@
         }
 
         .main-title {
-            font-size: 1.25rem;
+            font-size: var(--text-xl);
             font-weight: 600;
             letter-spacing: -.025em;
             line-height: 1.2;
@@ -306,7 +323,7 @@
         }
 
         .page-title {
-            font-size: 1.375rem;
+            font-size: var(--text-2xl);
             font-weight: 600;
             letter-spacing: -.025em;
             line-height: 1.2;
@@ -337,6 +354,10 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
         }
 
         .data-table-mount {
@@ -344,6 +365,10 @@
             min-height: 0;
             display: flex;
             flex-direction: column;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
         }
 
         .dt-toolbar {
@@ -365,7 +390,7 @@
             background: var(--background);
             color: var(--foreground);
             font: inherit;
-            font-size: .8125rem;
+            font-size: var(--text-sm);
         }
 
         .dt-filter-input:focus {
@@ -374,7 +399,7 @@
         }
 
         .dt-meta {
-            font-size: 12px;
+            font-size: var(--text-sm);
             color: var(--muted-foreground);
             white-space: nowrap;
         }
@@ -394,7 +419,7 @@
         }
 
         .dt-page-info {
-            font-size: 12px;
+            font-size: var(--text-sm);
             color: var(--muted-foreground);
         }
 
@@ -404,7 +429,7 @@
             border-radius: calc(var(--radius) - 4px);
             background: var(--background);
             color: var(--foreground);
-            font-size: 12px;
+            font-size: var(--text-sm);
             padding: 0 6px;
         }
 
@@ -527,7 +552,7 @@
             border-radius: 9999px;
             border: 1px solid transparent;
             padding: 2px 9px;
-            font-size: 11px;
+            font-size: var(--text-xs);
             font-weight: 600;
             line-height: 1.35;
             width: fit-content;
@@ -543,7 +568,7 @@
             gap: 8px;
             white-space: nowrap;
             border-radius: calc(var(--radius) - 2px);
-            font-size: .8125rem;
+            font-size: var(--text-sm);
             font-weight: 500;
             height: 32px;
             padding: 0 14px;
@@ -600,7 +625,7 @@
 
         .table {
             width: 100%;
-            font-size: .8125rem;
+            font-size: var(--text-sm);
             border-collapse: collapse;
             caption-side: bottom;
             background: transparent;
@@ -615,8 +640,9 @@
             position: sticky;
             top: 0;
             z-index: 1;
-            height: 2.25rem;
-            padding: 0 .4375rem;
+            min-height: 2.25rem;
+            height: auto;
+            padding: .4rem .4375rem;
             text-align: left;
             vertical-align: middle;
             font-weight: 500;
@@ -624,7 +650,11 @@
             background: color-mix(in oklch, var(--background) 48%, transparent);
             backdrop-filter: blur(20px) saturate(1.15);
             -webkit-backdrop-filter: blur(20px) saturate(1.15);
-            white-space: nowrap;
+            max-width: var(--dt-col-max);
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.4;
         }
 
         .table tbody tr {
@@ -643,22 +673,96 @@
 
         .table td {
             padding: .375rem .4375rem;
-            vertical-align: middle;
-            white-space: nowrap;
+            vertical-align: top;
+            max-width: var(--dt-col-max);
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.45;
             font-variant-numeric: tabular-nums;
             background: transparent;
         }
 
+        .table th.th-compact,
+        .table td.td-compact {
+            white-space: nowrap;
+            max-width: none;
+            vertical-align: middle;
+        }
+
         .table td.cfg {
-            font: 12px/1.4 ui-monospace, Consolas, monospace;
+            font-size: var(--text-xs);
+            font-family: var(--font-mono);
+            line-height: 1.4;
             color: var(--muted-foreground);
         }
 
-        .status-line {
-            min-height: 1.3em;
-            font-size: 12px;
+        /* shadcn Alert（右上角弹出，5 秒后消失） */
+        .alert-host {
+            position: fixed;
+            top: 18px;
+            right: 22px;
+            z-index: 70;
+            width: min(392px, calc(100vw - 40px));
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .alert {
+            pointer-events: auto;
+            position: relative;
+            display: grid;
+            grid-template-columns: 16px 1fr;
+            column-gap: 12px;
+            row-gap: 2px;
+            align-items: start;
+            width: 100%;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--card-foreground);
+            padding: 12px 16px;
+            font-size: var(--text-sm);
+            box-shadow:
+                0 0 0 1px color-mix(in oklch, var(--foreground) 6%, transparent),
+                0 12px 32px rgba(0, 0, 0, .14);
+            animation: alert-in .2s ease-out;
+        }
+        .alert > svg {
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+            color: currentColor;
+        }
+        .alert-title {
+            grid-column: 2;
+            font-weight: 500;
+            line-height: 1.3;
+            letter-spacing: -.01em;
+        }
+        .alert-description {
+            grid-column: 2;
             color: var(--muted-foreground);
             line-height: 1.5;
+        }
+        .alert-destructive {
+            color: var(--destructive);
+            border-color: color-mix(in oklch, var(--destructive) 28%, var(--border));
+        }
+        .alert-destructive .alert-description {
+            color: color-mix(in oklch, var(--destructive) 78%, var(--muted-foreground));
+        }
+        .alert.is-leaving {
+            animation: alert-out .25s ease-in forwards;
+        }
+        @keyframes alert-in {
+            from { opacity: 0; transform: translate(8px, -8px); }
+            to { opacity: 1; transform: none; }
+        }
+        @keyframes alert-out {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translate(8px, -6px); }
         }
 
         /* shadcn Dialog（结构对齐 Dialog/Overlay/Content/Header/Title/Description/Footer/Close，
@@ -698,7 +802,7 @@
             flex-shrink: 0;
         }
         .dialog-title {
-            font-size: 1rem;
+            font-size: var(--text-lg);
             font-weight: 600;
             letter-spacing: -.01em;
             line-height: 1.3;
@@ -735,7 +839,7 @@
         }
         .dialog-field label,
         .dlg-col-label {
-            font-size: 12px;
+            font-size: var(--text-sm);
             color: var(--muted-foreground);
         }
         .dialog-field select,
@@ -745,7 +849,7 @@
             background: var(--background);
             color: var(--foreground);
             padding: 0 8px;
-            font-size: 13px;
+            font-size: var(--text-sm);
             font-family: inherit;
         }
         .dialog-field select {
@@ -811,12 +915,12 @@
             flex-shrink: 0;
         }
         .cfg-panel-title {
-            font-size: 12px;
+            font-size: var(--text-sm);
             font-weight: 500;
             color: var(--foreground);
         }
         .cfg-panel-hint {
-            font-size: 11px;
+            font-size: var(--text-xs);
             color: var(--muted-foreground);
             line-height: 1.4;
         }
@@ -844,7 +948,7 @@
             background: var(--background);
             color: var(--foreground);
             padding: 0 8px;
-            font-size: 12px;
+            font-size: var(--text-sm);
             font-family: inherit;
         }
         .cfg-row input[type="text"] {
@@ -858,13 +962,13 @@
         .cfg-row-label {
             flex-shrink: 0;
             width: 28px;
-            font-size: 11px;
+            font-size: var(--text-xs);
             color: var(--muted-foreground);
             text-align: right;
         }
         .cfg-row-suffix {
             flex-shrink: 0;
-            font-size: 11px;
+            font-size: var(--text-xs);
             color: var(--muted-foreground);
         }
         .cfg-text-field {
@@ -873,7 +977,7 @@
             gap: 4px;
         }
         .cfg-text-field label {
-            font-size: 11px;
+            font-size: var(--text-xs);
             color: var(--muted-foreground);
             line-height: 1.35;
         }
@@ -884,7 +988,7 @@
             background: var(--background);
             color: var(--foreground);
             padding: 0 8px;
-            font-size: 12px;
+            font-size: var(--text-sm);
             font-family: inherit;
         }
         .btn-icon {
@@ -941,7 +1045,7 @@
             background: transparent;
             color: var(--foreground);
             font: inherit;
-            font-size: 13px;
+            font-size: var(--text-sm);
             text-align: left;
             border-radius: calc(var(--radius) - 4px);
             padding: 5px 6px;
@@ -989,7 +1093,7 @@
             gap: 6px;
             padding: 8px 10px;
             border-top: 1px solid var(--border);
-            font-size: 12px;
+            font-size: var(--text-sm);
             color: var(--foreground);
             cursor: pointer;
             user-select: none;
@@ -1030,7 +1134,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 12px;
+            font-size: var(--text-sm);
             color: var(--muted-foreground);
         }
         .btn-link {
@@ -1038,7 +1142,7 @@
             background: transparent;
             color: var(--primary);
             font: inherit;
-            font-size: 12px;
+            font-size: var(--text-sm);
             cursor: pointer;
             padding: 0;
         }
@@ -1056,7 +1160,7 @@
             border-radius: calc(var(--radius) - 4px);
             background: var(--background);
             color: var(--foreground);
-            font-size: 12px;
+            font-size: var(--text-sm);
             padding: 0 6px;
         }
         .org-table-wrap {
@@ -1094,8 +1198,8 @@
         <div class="app-shell">
             <aside class="sidebar">
                 <div class="sidebar-brand">
-                    <span class="sidebar-title">党群绩效评价与创先争优评价</span>
-                    <span class="sidebar-sub">绩效评价页面</span>
+                    <span class="sidebar-title">党群绩效与创先争优评价</span>
+                    <span class="sidebar-sub">党委组织部绩效输出管理</span>
                 </div>
                 <nav class="sidebar-nav" role="tablist" aria-label="主导航">
                     <button class="nav-item is-active" id="tab-quarterly" type="button" role="tab"
@@ -1230,11 +1334,11 @@
                 </div>
             </section>
                 </div>
-
-                <p class="status-line" id="demo-status">就绪：所有表格已切换为 shadcn Data Table（@tanstack/react-table）；支持排序、筛选与分页。</p>
             </div>
         </div>
     </div>
+
+    <div class="alert-host" id="cq-alert-host" aria-live="polite"></div>
 
     <div class="dialog-overlay" id="dlg-overlay" hidden>
         <div class="dialog-content" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
@@ -1312,8 +1416,104 @@
         // 日志写到父页面控制台，方便在苍穹环境里定位问题
         function clog() {
             try {
-                window.parent.console.log.apply(window.parent.console, ["[cq-demo]"].concat([].slice.call(arguments)));
+                var c = (window.parent && window.parent.console) || window.console;
+                c.log.apply(c, ["[cq-demo]"].concat([].slice.call(arguments)));
             } catch (e) { }
+        }
+        var cqDebugLog = [];
+        function errToInfo(err) {
+            if (err == null) return null;
+            if (typeof err !== "object") return { message: String(err) };
+            return {
+                name: err.name || "",
+                message: err.message || String(err),
+                stack: err.stack ? String(err.stack) : ""
+            };
+        }
+        function safeHref(win) {
+            try { return win.location.href; } catch (e) { return "(cross-origin)"; }
+        }
+        function snapshotCq(extra) {
+            var snap = {
+                extra: extra || {},
+                href: "",
+                parentHref: "",
+                topHref: "",
+                consolePageId: "",
+                suffix: "",
+                watchedTenantPageId: typeof watchedTenantPageId === "undefined" ? "" : watchedTenantPageId,
+                lastAppHomeLen: 0,
+                lastDeductionLen: 0,
+                lastPartyLen: 0,
+                lastAppHomeHead: "",
+                lastDeductionHead: "",
+                lastPartyHead: "",
+                clicks: {},
+                iframeSrcs: [],
+                hasJQuery: false,
+                parentWinHref: ""
+            };
+            try { snap.href = String(location.href || ""); } catch (e0) { }
+            try { snap.parentHref = String(window.parent.location.href || ""); } catch (e1) { snap.parentHref = "(blocked)"; }
+            try { snap.topHref = String(window.top.location.href || ""); } catch (e2) { snap.topHref = "(blocked)"; }
+            try {
+                snap.consolePageId = findConsolePageId();
+                snap.suffix = extractRootSuffix(snap.consolePageId);
+            } catch (e3) { }
+            try {
+                var dSess = cqFetchSessions && cqFetchSessions["cq-fetch-frame-deduction"];
+                var pSess = cqFetchSessions && cqFetchSessions["cq-fetch-frame-party"];
+                snap.lastAppHomeLen = String((dSess && dSess.lastAppHome) || (pSess && pSess.lastAppHome) || "").length;
+                snap.lastDeductionLen = String((dSess && dSess.lastList) || "").length;
+                snap.lastPartyLen = String((pSess && pSess.lastList) || "").length;
+                snap.lastAppHomeHead = String((dSess && dSess.lastAppHome) || (pSess && pSess.lastAppHome) || "").slice(0, 500);
+                snap.lastDeductionHead = String((dSess && dSess.lastList) || "").slice(0, 500);
+                snap.lastPartyHead = String((pSess && pSess.lastBill) || (pSess && pSess.lastList) || "").slice(0, 500);
+            } catch (e4) { }
+            try {
+                var pw = parentWin();
+                snap.parentWinHref = safeHref(pw);
+                snap.hasJQuery = !!(pw && (pw.jQuery || pw.$) && (pw.jQuery || pw.$).ajax);
+                var doc = pw.document;
+                snap.clicks = {
+                    app: !!findClickAnywhere("应用"),
+                    party: !!findClickAnywhere("党费"),
+                    deductionMenu: !!findClickAnywhere("扣分项台账"),
+                    partyMenu: !!findClickAnywhere("季度党群绩效贡献度")
+                };
+                snap.sessionHref = sessionWin ? safeHref(sessionWin) : "";
+                var fetchDedEl = hostWin().document.getElementById("cq-fetch-frame-deduction");
+                var fetchPartyEl = hostWin().document.getElementById("cq-fetch-frame-party");
+                var fetchOldEl = hostWin().document.getElementById("cq-fetch-frame");
+                snap.fetchFrameSrc = fetchDedEl ? String(fetchDedEl.src || "") : (fetchOldEl ? String(fetchOldEl.src || "") : "");
+                snap.fetchPartyFrameSrc = fetchPartyEl ? String(fetchPartyEl.src || "") : "";
+                var ifs = doc.querySelectorAll("iframe[src]");
+                var i;
+                for (i = 0; i < ifs.length && i < 25; i++) {
+                    snap.iframeSrcs.push(String(ifs[i].src || "").slice(0, 300));
+                }
+            } catch (e5) {
+                snap.parentScanError = e5 && e5.message ? e5.message : String(e5);
+            }
+            return snap;
+        }
+        function reportError(kind, err, extra) {
+            var payload = {
+                kind: kind,
+                at: (new Date()).toISOString(),
+                error: errToInfo(err),
+                snapshot: snapshotCq(extra)
+            };
+            cqDebugLog.push(payload);
+            try {
+                window.__cqLastError = payload;
+                window.__cqDebugLog = cqDebugLog;
+            } catch (e0) { }
+            var text = "";
+            try { text = JSON.stringify(payload, null, 2); } catch (e1) { text = String(kind) + " " + String(err); }
+            clog("ERROR_JSON");
+            clog(text);
+            return payload;
         }
         // 安全绑定：元素不存在时记日志而不是中断整个脚本
         function bind(id, handler) {
@@ -1325,9 +1525,7 @@
             el.onclick = handler;
         }
         function unmount() {
-            try {
-                window.parent.document.getElementById("${ROOT_ID}")?.remove();
-            } catch (e) { }
+            disposeCqResources();
         }
         bind("close-btn", unmount);
         function syncThemeButton() {
@@ -1431,12 +1629,15 @@
                 sortDir: "asc",
                 readonly: true,
                 columns: [
-                    { key: "code", label: "项点编号", sortable: true },
-                    { key: "name", label: "扣分项名称", sortable: true },
-                    { key: "standard", label: "扣分标准", sortable: true },
-                    { key: "score", label: "扣分分值", sortable: true, numeric: true },
-                    { key: "quarter", label: "适用季度", sortable: true },
-                    { key: "statusText", label: "状态", sortable: true, badge: true }
+                    { key: "code", label: "单据编号", sortable: true },
+                    { key: "statusText", label: "单据状态", sortable: true, badge: true },
+                    { key: "year", label: "年份", sortable: true },
+                    { key: "quarter", label: "季度", sortable: true },
+                    { key: "name", label: "扣分事项", sortable: true },
+                    { key: "standard", label: "扣分依据", sortable: true },
+                    { key: "score", label: "扣分分数", sortable: true, numeric: true },
+                    { key: "org", label: "被扣分组织", sortable: true },
+                    { key: "dept", label: "输出部门.名称", sortable: true }
                 ],
                 rows: []
             },
@@ -1602,6 +1803,7 @@
             }
         }
         window.__CQ_TABLE_BOOT = function () {
+            try {
             if (!window.__cqDataTable) return;
             var dt = window.__cqDataTable;
             ["quarterly", "annual", "config", "deduction", "partyQuarterly"].forEach(function (id) {
@@ -1629,8 +1831,11 @@
                 filterPlaceholder: "搜索组织…",
                 filterHostId: "dt-filter-orgDialog"
             });
-            refreshOrgViewTable();
+            renderOrgViewTable();
             refreshOrgDialogTable();
+            } catch (bootErr) {
+                reportError("table-boot", bootErr, { hasDt: !!window.__cqDataTable });
+            }
         };
 
         function switchTab(tabId) {
@@ -1650,10 +1855,12 @@
             var titleEl = document.getElementById("main-title");
             if (titleEl) titleEl.textContent = TABLE_DEFS[tabId].label;
             if (tabId === "org") renderOrgView();
-            var hint = TABLE_DEFS[tabId].readonly
-                ? "（只读 Data Table：排序 / 筛选 / 分页）"
-                : "（Data Table：排序 / 筛选 / 分页）";
-            setStatus("当前页面：" + TABLE_DEFS[tabId].label + hint);
+            if (tabId === "deduction" && !deductionLoading && !deductionReady) {
+                loadDeductionFromCq();
+            }
+            if (tabId === "partyQuarterly" && !partyLoading && !partyReady) {
+                loadPartyQuarterlyFromCq();
+            }
         }
         function initTabs() {
             document.querySelectorAll(".nav-item").forEach(function (btn) {
@@ -1664,21 +1871,79 @@
             switchTab(activeTab);
         }
         function initTableData() {
+            loadDeductionFromCq();
+            loadPartyQuarterlyFromCq();
             TABLE_DEFS.quarterly.rows = [];
             TABLE_DEFS.annual.rows = [];
             TABLE_DEFS.config.rows = [];
-            TABLE_DEFS.deduction.rows = [];
             TABLE_DEFS.partyQuarterly.rows = [];
             for (var i = 0; i < 8; i++) TABLE_DEFS.quarterly.rows.push(randQuarterlyRow());
             for (var j = 0; j < 6; j++) TABLE_DEFS.annual.rows.push(randAnnualRow());
             for (var k = 0; k < 5; k++) TABLE_DEFS.config.rows.push(randConfigRow());
-            for (var d = 0; d < 7; d++) TABLE_DEFS.deduction.rows.push(randDeductionRow(d));
-            for (var p = 0; p < 10; p++) TABLE_DEFS.partyQuarterly.rows.push(randPartyQuarterlyRow());
-            ["quarterly", "annual", "config", "deduction", "partyQuarterly"].forEach(refreshDataTable);
+            ["quarterly", "annual", "config"].forEach(refreshDataTable);
+        }
+        var alertTimer = 0;
+        var alertLeaveTimer = 0;
+        var alertTimers = [];
+        function makeAlertIcon(kind) {
+            var ns = "http://www.w3.org/2000/svg";
+            var svg = document.createElementNS(ns, "svg");
+            svg.setAttribute("width", "16");
+            svg.setAttribute("height", "16");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("fill", "none");
+            svg.setAttribute("stroke", "currentColor");
+            svg.setAttribute("stroke-width", "2");
+            svg.setAttribute("stroke-linecap", "round");
+            svg.setAttribute("stroke-linejoin", "round");
+            svg.setAttribute("aria-hidden", "true");
+            function node(name, attrs) {
+                var n = document.createElementNS(ns, name);
+                var keys = Object.keys(attrs);
+                for (var i = 0; i < keys.length; i++) n.setAttribute(keys[i], attrs[keys[i]]);
+                svg.appendChild(n);
+            }
+            node("circle", { cx: "12", cy: "12", r: "10" });
+            if (kind === "destructive") {
+                node("line", { x1: "12", x2: "12", y1: "8", y2: "12" });
+                node("line", { x1: "12", x2: "12.01", y1: "16", y2: "16" });
+            } else {
+                node("path", { d: "m9 12 2 2 4-4" });
+            }
+            return svg;
+        }
+        function showAlert(variant, title, desc) {
+            if (cqDisposed) return;
+            var host = document.getElementById("cq-alert-host");
+            if (!host) return;
+            var el = document.createElement("div");
+            el.className = "alert" + (variant === "destructive" ? " alert-destructive" : "");
+            el.setAttribute("role", "alert");
+            el.appendChild(makeAlertIcon(variant));
+            var t = document.createElement("div");
+            t.className = "alert-title";
+            t.textContent = title || "";
+            el.appendChild(t);
+            if (desc) {
+                var d = document.createElement("div");
+                d.className = "alert-description";
+                d.textContent = desc;
+                el.appendChild(d);
+            }
+            host.appendChild(el);
+            var leaveTimer = 0;
+            var hideTimer = setTimeout(function () {
+                el.classList.add("is-leaving");
+                leaveTimer = setTimeout(function () {
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                }, 250);
+                alertTimers.push(leaveTimer);
+            }, 5000);
+            alertTimers.push(hideTimer);
         }
         function setStatus(msg) {
-            var el = document.getElementById("demo-status");
-            if (el) el.textContent = msg;
+            if (!msg) return;
+            showAlert("default", "提示", msg);
         }
         // 模拟官方 this.wait：异步等待渲染完成后返回 { getElement() }。
         // 官方脚本的 this 绑定在苍穹页面上下文，控件 DOM 在父页面（window.parent.document）。
@@ -1688,14 +1953,1785 @@
                 setTimeout(function () {
                     var el = null;
                     try {
-                        el = window.parent.document.getElementById(id);
+                        el = hostWin().document.getElementById(id);
                     } catch (e) {
-                        clog("无法访问父页面 #" + id + ": " + (e && e.message));
+                        clog("无法访问宿主页面 #" + id + ": " + (e && e.message));
                     }
                     resolve({ getElement: function () { return el; } });
                 }, ms || 150);
             });
         }
+
+        // 扣分项台账：selectTab(应用) → gotoapp(党费) → treeMenuClick → loadData。签名走父页 ajax。
+        var CQ_DEDUCTION = {
+            consoleAppId: "bos",
+            consoleForm: "pc_main_console",
+            appTabKey: "tabap",
+            appTabArg: "appbeta",
+            myAppForm: "tenant_myapp",
+            myAppControl: "bizcustomlistap",
+            partyApp: {
+                appnumber: "crrc_party_dues",
+                appid: "5NBN/3EAL5OQ",
+                alluserapp: "0",
+                appname: "党费"
+            },
+            menuAppId: "crrc_party_dues",
+            menuFormId: "crrc_party_dues_apphome",
+            menuControl: "navigationbar",
+            menuRoot: "root",
+            menuItemId: "2524686743156851712",
+            dataAppId: "crrc_dj",
+            dataFormId: "crrc_deduction_log"
+        };
+        var CQ_PARTY = {
+            menuAppId: "crrc_party_dues",
+            menuFormId: "crrc_party_dues_apphome",
+            menuControl: "navigationbar",
+            menuRoot: "root",
+            menuItemId: "2546583953733611520",
+            dataAppId: "crrc_dj",
+            dataFormId: "crrc_dj_cb_count",
+            listControl: "billlistap",
+            pkField: "crrc_dj_cb_count_id",
+            menuTexts: ["季度党群绩效贡献度", "季度党群绩效"],
+            maxBills: 40
+        };
+        var deductionLoading = false;
+        var deductionReady = false;
+        var partyLoading = false;
+        var partyReady = false;
+        var STATUS_TEXT = { A: "暂存", B: "已提交", C: "已审核" };
+        var PERIOD_TEXT = { "1": "一季度", "2": "二季度", "3": "三季度", "4": "四季度", "5": "年度" };
+        var watchedTenantPageId = "";
+        var sessionWin = null;
+        var cqDisposed = false;
+        var fetchFrameTimer = 0;
+        var onCqKeydown = null;
+        var cqFetchSessions = {};
+
+        function pageDoc() {
+            try { return hostWin().document; } catch (e) { return document; }
+        }
+        function isFetchFrameWin(win) {
+            if (!win) return false;
+            try {
+                var fe = win.frameElement;
+                if (fe && fe.getAttribute("data-cq-fetch") === "1") return true;
+            } catch (e0) { }
+            try {
+                if (win.parent && win.parent !== win) {
+                    var pfe = win.parent.frameElement;
+                    if (pfe && pfe.getAttribute("data-cq-fetch") === "1") return true;
+                }
+            } catch (e1) { }
+            return false;
+        }
+        function unhookFetchOn(win) {
+            if (!win) return;
+            try {
+                if (win.__cqOrigFetch) win.fetch = win.__cqOrigFetch;
+                try { delete win.__cqOrigFetch; } catch (e0) { win.__cqOrigFetch = null; }
+                try { delete win.__cqTenantHooked; } catch (e1) { win.__cqTenantHooked = false; }
+                try { delete win.__cqOurFetch; } catch (e2) { win.__cqOurFetch = null; }
+                try { delete win.__cqFetchSess; } catch (e3) { win.__cqFetchSess = null; }
+            } catch (e4) { }
+        }
+        function walkWindows(fn) {
+            var seen = [];
+            function walk(win, depth) {
+                if (!win || depth > 8) return;
+                var s;
+                for (s = 0; s < seen.length; s++) if (seen[s] === win) return;
+                seen.push(win);
+                try { fn(win); } catch (e0) { }
+                try {
+                    var frames = win.frames;
+                    var f;
+                    for (f = 0; f < frames.length; f++) walk(frames[f], depth + 1);
+                } catch (e1) { }
+            }
+            try { walk(window, 0); } catch (e2) { }
+            try { walk(hostWin(), 0); } catch (e3) { }
+            try { if (sessionWin) walk(sessionWin, 0); } catch (e4) { }
+            try {
+                var ids = Object.keys(cqFetchSessions || {});
+                var si;
+                for (si = 0; si < ids.length; si++) {
+                    var sw = cqFetchSessions[ids[si]] && cqFetchSessions[ids[si]].win;
+                    if (sw) walk(sw, 0);
+                }
+            } catch (e5) { }
+        }
+        function removeFetchFrames() {
+            var nodes = [];
+            try {
+                var byId = hostWin().document.getElementById("cq-fetch-frame");
+                if (byId) nodes.push(byId);
+            } catch (e0) { }
+            try {
+                var list = pageDoc().querySelectorAll("iframe[data-cq-fetch='1']");
+                var i;
+                for (i = 0; i < list.length; i++) nodes.push(list[i]);
+            } catch (e1) { }
+            var seen = [];
+            var n;
+            for (n = 0; n < nodes.length; n++) {
+                var el = nodes[n];
+                if (!el || seen.indexOf(el) >= 0) continue;
+                seen.push(el);
+                try { el.onload = null; } catch (e2) { }
+                try { el.src = "about:blank"; } catch (e3) { }
+                try { if (el.parentNode) el.parentNode.removeChild(el); } catch (e4) { }
+            }
+        }
+        function removeBundleScripts() {
+            try {
+                var list = pageDoc().querySelectorAll("script[data-cq-dt-bundle='1']");
+                var i;
+                for (i = 0; i < list.length; i++) {
+                    if (list[i].parentNode) list[i].parentNode.removeChild(list[i]);
+                }
+            } catch (e) { }
+        }
+        function disposeCqResources() {
+            if (cqDisposed) {
+                removeFetchFrames();
+                return;
+            }
+            cqDisposed = true;
+            deductionLoading = false;
+            partyLoading = false;
+            if (alertTimer) { clearTimeout(alertTimer); alertTimer = 0; }
+            if (alertLeaveTimer) { clearTimeout(alertLeaveTimer); alertLeaveTimer = 0; }
+            if (alertTimers && alertTimers.length) {
+                var ati;
+                for (ati = 0; ati < alertTimers.length; ati++) clearTimeout(alertTimers[ati]);
+                alertTimers = [];
+            }
+            if (fetchFrameTimer) { clearTimeout(fetchFrameTimer); fetchFrameTimer = 0; }
+            try {
+                var sessIds = Object.keys(cqFetchSessions || {});
+                var sxi;
+                for (sxi = 0; sxi < sessIds.length; sxi++) {
+                    var sx = cqFetchSessions[sessIds[sxi]];
+                    if (sx && sx.timer) clearTimeout(sx.timer);
+                }
+            } catch (eSess) { }
+            cqFetchSessions = {};
+            try { if (window.__cqDataTable && window.__cqDataTable.unmountAll) window.__cqDataTable.unmountAll(); } catch (e0) { }
+            walkWindows(unhookFetchOn);
+            sessionWin = null;
+            removeFetchFrames();
+            try { if (onCqKeydown) document.removeEventListener("keydown", onCqKeydown); } catch (e1) { }
+            removeBundleScripts();
+            try { window.__cqFetchDeduction = null; } catch (e2) { }
+            try { window.__cqFetchPartyQuarterly = null; } catch (e2b) { }
+            try { window.__cqDisposeOverlay = null; } catch (e3) { }
+            try { window.__cqDtRoot = null; } catch (e4) { }
+            try { unmountHost(); } catch (e5) { }
+            try {
+                var hostEl = hostWin().document.getElementById("shadcn-hello-inject-root");
+                if (hostEl && hostEl.parentNode) hostEl.parentNode.removeChild(hostEl);
+            } catch (e6) { }
+        }
+
+        function hostWin() {
+            try { return window.parent; } catch (e) { return window; }
+        }
+        function parentWin() {
+            var start = hostWin();
+            var best = start;
+            try {
+                var cur = start;
+                var n = 0;
+                while (cur && n < 8) {
+                    n++;
+                    try {
+                        if (cur.$ && typeof cur.$.ajax === "function") best = cur;
+                    } catch (e1) { }
+                    var next = null;
+                    try {
+                        if (cur.top && cur !== cur.top) next = cur.parent;
+                        else break;
+                    } catch (e2) { break; }
+                    if (!next || next === cur) break;
+                    cur = next;
+                }
+                return best || start;
+            } catch (e) {
+                return start || window;
+            }
+        }
+        function cqOrigin() {
+            try { return parentWin().location.origin; } catch (e) { return ""; }
+        }
+        function hasTimeoutText(s) {
+            s = String(s || "");
+            return s.indexOf("pagetimeout") >= 0 || s.indexOf("会话超时") >= 0;
+        }
+        function collapseWs(s) {
+            var t = String(s || ""), out = "", prev = false, i, c;
+            for (i = 0; i < t.length; i++) {
+                c = t.charAt(i);
+                if (c === " " || c === String.fromCharCode(10) || c === String.fromCharCode(13) || c === String.fromCharCode(9)) {
+                    if (!prev) out += " ";
+                    prev = true;
+                } else {
+                    out += c;
+                    prev = false;
+                }
+            }
+            return out.trim();
+        }
+        function takeQueryParam(url, name) {
+            var u = String(url || "");
+            var needle = name + "=";
+            var i = u.indexOf("?" + needle);
+            if (i < 0) i = u.indexOf("&" + needle);
+            if (i < 0) return "";
+            var start = i + 1 + needle.length;
+            var end = u.indexOf("&", start);
+            if (end < 0) end = u.length;
+            try { return decodeURIComponent(u.slice(start, end)); } catch (e) { return u.slice(start, end); }
+        }
+        function findRootToken(pageId) {
+            var raw = String(pageId || "");
+            var s = raw.toLowerCase();
+            var i = s.indexOf("root");
+            if (i < 0) return "";
+            var hex = "0123456789abcdef";
+            var j = i + 4;
+            while (j < s.length && hex.indexOf(s.charAt(j)) >= 0) j++;
+            if (j - (i + 4) < 16) return "";
+            return raw.slice(i, j);
+        }
+        function extractRootSuffix(pageId) {
+            return findRootToken(pageId);
+        }
+        function isConsoleRootPageId(id) {
+            var s = String(id || "");
+            return s.indexOf("root") === 0 && findRootToken(s) === s;
+        }
+        function isGuidPageId(id) {
+            var s = String(id || "");
+            if (s.length !== 32) return false;
+            var hex = "0123456789abcdef";
+            for (var i = 0; i < 32; i++) {
+                if (hex.indexOf(s.charAt(i).toLowerCase()) < 0) return false;
+            }
+            return true;
+        }
+        function keyLooksLikeForm(key) {
+            key = String(key || "").toLowerCase();
+            return key.indexOf("formid") >= 0 || key.indexOf("pageid") >= 0 || key.indexOf("form") >= 0 || key.indexOf("page") >= 0;
+        }
+        function collectPageIds(win, depth, out, seen) {
+            out = out || [];
+            seen = seen || [];
+            if (!win || depth > 8) return out;
+            for (var s = 0; s < seen.length; s++) if (seen[s] === win) return out;
+            seen.push(win);
+            try {
+                var href = win.location.href;
+                var u = new URL(href);
+                var pid = u.searchParams.get("pageId") || u.searchParams.get("byPageId");
+                if (pid) out.push(pid);
+                var fid = u.searchParams.get("formId");
+                if (fid === CQ_DEDUCTION.myAppForm && pid) watchedTenantPageId = pid;
+            } catch (e) { }
+            try {
+                var doc = win.document;
+                if (doc) {
+                    var roots = doc.querySelectorAll("[id^='root']");
+                    for (var r = 0; r < roots.length; r++) {
+                        if (isConsoleRootPageId(roots[r].id)) out.push(roots[r].id);
+                    }
+                    var nodes = doc.querySelectorAll("iframe[src], [pageid], [data-pageid]");
+                    for (var i = 0; i < nodes.length; i++) {
+                        var el = nodes[i];
+                        var src = el.getAttribute("src") || "";
+                        var pidFromSrc = takeQueryParam(src, "pageId");
+                        if (pidFromSrc) out.push(pidFromSrc);
+                        if (src.indexOf(CQ_DEDUCTION.myAppForm) >= 0 && pidFromSrc) watchedTenantPageId = pidFromSrc;
+                        var attr = el.getAttribute("pageid") || el.getAttribute("data-pageid");
+                        if (attr) out.push(attr);
+                    }
+                }
+            } catch (e2) { }
+            try {
+                var frames = win.frames;
+                for (var f = 0; f < frames.length; f++) collectPageIds(frames[f], depth + 1, out, seen);
+            } catch (e3) { }
+            return out;
+        }
+        function findConsolePageId() {
+            var ids = collectPageIds(parentWin(), 0, [], []);
+            for (var i = 0; i < ids.length; i++) if (isConsoleRootPageId(ids[i])) return ids[i];
+            return "";
+        }
+        function addUnique(arr, id) {
+            if (!id || arr.indexOf(id) >= 0) return;
+            arr.push(id);
+        }
+        function pickPageIdFromObj(obj, hits, depth, seen) {
+            if (!obj || typeof obj !== "object" || depth > 6) return;
+            if (seen.indexOf(obj) >= 0) return;
+            seen.push(obj);
+            var fid = obj.formId || obj.formid || obj.formID || "";
+            var pid = obj.pageId || obj.pageid || obj.PageId || "";
+            if (pid && String(fid) === CQ_DEDUCTION.myAppForm) addUnique(hits, String(pid));
+            if (depth >= 4) return;
+            if (Array.isArray(obj)) {
+                for (var i = 0; i < obj.length && i < 20; i++) pickPageIdFromObj(obj[i], hits, depth + 1, seen);
+                return;
+            }
+            var keys = Object.keys(obj);
+            for (var k = 0; k < keys.length && k < 40; k++) {
+                if (keyLooksLikeForm(keys[k])) pickPageIdFromObj(obj[keys[k]], hits, depth + 1, seen);
+            }
+        }
+        function collectTenantCandidates() {
+            var hits = [];
+            var win = parentWin();
+            var doc = null;
+            try { doc = win.document; } catch (e) { }
+            if (watchedTenantPageId) addUnique(hits, watchedTenantPageId);
+            collectPageIds(win, 0, [], []);
+            if (watchedTenantPageId) addUnique(hits, watchedTenantPageId);
+            if (doc) {
+                try {
+                    var iframes = doc.querySelectorAll("iframe[src]");
+                    for (var i = 0; i < iframes.length; i++) {
+                        var src = iframes[i].src || "";
+                        if (src.indexOf(CQ_DEDUCTION.myAppForm) >= 0) {
+                            var pid = takeQueryParam(src, "pageId");
+                            if (pid) addUnique(hits, pid);
+                        }
+                    }
+                    var attrNodes = doc.querySelectorAll("[pageid], [data-pageid], [data-page-id], [formid], [data-formid]");
+                    for (var a = 0; a < attrNodes.length; a++) {
+                        var el = attrNodes[a];
+                        var formAttr = el.getAttribute("formid") || el.getAttribute("data-formid") || "";
+                        var pageAttr = el.getAttribute("pageid") || el.getAttribute("data-pageid") || el.getAttribute("data-page-id") || "";
+                        if (formAttr === CQ_DEDUCTION.myAppForm && pageAttr) addUnique(hits, pageAttr);
+                    }
+                } catch (e2) { }
+            }
+            try {
+                var wkeys = Object.getOwnPropertyNames(win);
+                for (var w = 0; w < wkeys.length && w < 400; w++) {
+                    var val = null;
+                    try { val = win[wkeys[w]]; } catch (e3) { continue; }
+                    if (!val || (typeof val !== "object" && typeof val !== "function")) continue;
+                    try { pickPageIdFromObj(val, hits, 0, []); } catch (e4) { }
+                }
+            } catch (e5) { }
+            return hits;
+        }
+        function collectGuidIdsNearAppTab() {
+            var out = [];
+            var win = parentWin();
+            var doc = null;
+            try { doc = win.document; } catch (e) { return out; }
+            var sels = ["#homepagetabap", "#flexpanelap", "#appbeta", "[id^='root']"];
+            for (var s = 0; s < sels.length; s++) {
+                var nodes = [];
+                try { nodes = doc.querySelectorAll(sels[s]); } catch (e2) { }
+                for (var n = 0; n < nodes.length; n++) {
+                    var root = nodes[n];
+                    if (isGuidPageId(root.id)) addUnique(out, root.id);
+                    var kids = [];
+                    try { kids = root.querySelectorAll("[id]"); } catch (e3) { }
+                    for (var i = 0; i < kids.length && i < 2000; i++) {
+                        if (isGuidPageId(kids[i].id)) addUnique(out, kids[i].id);
+                    }
+                }
+            }
+            return out;
+        }
+        function findTenantMyAppPageId() {
+            if (watchedTenantPageId) return watchedTenantPageId;
+            var hits = collectTenantCandidates();
+            return hits[0] || "";
+        }
+        function buildTenantTryList(consolePageId) {
+            var list = [];
+            function add(id, src) {
+                if (!id) return;
+                for (var i = 0; i < list.length; i++) if (list[i].id === id) return;
+                list.push({ id: id, src: src });
+            }
+            var hits = collectTenantCandidates();
+            for (var h = 0; h < hits.length; h++) add(hits[h], "scan");
+            var guids = collectGuidIdsNearAppTab();
+            for (var g = 0; g < guids.length && g < 8; g++) add(guids[g], "dom-guid");
+            add(consolePageId, "console-fallback");
+            return list;
+        }
+        function noteTenantFromUrl(url, body) {
+            var u = String(url || "");
+            if (u.indexOf(CQ_DEDUCTION.myAppForm) < 0) return;
+            var pid = takeQueryParam(u, "pageId");
+            if (pid) watchedTenantPageId = pid;
+            if (body) {
+                var text = typeof body === "string" ? body : "";
+                try {
+                    if (body && typeof body === "object" && body.pageId) watchedTenantPageId = body.pageId;
+                    var sp = new URLSearchParams(text);
+                    if (sp.get("pageId")) watchedTenantPageId = sp.get("pageId");
+                } catch (e) { }
+            }
+        }
+        function findParentClickTarget(doc, text, selector) {
+            if (!doc) return null;
+            var nodes = [];
+            try { nodes = doc.querySelectorAll(selector || "div, span, a, li, button, p, td, label"); } catch (e) { return null; }
+            var fallback = null;
+            var best = null;
+            var bestLen = Infinity;
+            var i;
+            for (i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                var raw = collapseWs(el.innerText || el.textContent || "");
+                if (raw !== text) continue;
+                if (!fallback) fallback = el;
+                if (el.offsetWidth === 0 && el.offsetHeight === 0) continue;
+                var len = (el.innerHTML || "").length;
+                if (len < bestLen) { bestLen = len; best = el; }
+            }
+            if (best || fallback) return best || fallback;
+            try {
+                var labeled = doc.querySelectorAll("[title], [aria-label]");
+                for (i = 0; i < labeled.length; i++) {
+                    var lab = labeled[i];
+                    var t = collapseWs(lab.getAttribute("title") || lab.getAttribute("aria-label") || "");
+                    if (t === text) return lab;
+                }
+            } catch (e2) { }
+            return null;
+        }
+        function findClickInTree(win, text, selector, depth, seen) {
+            depth = depth || 0;
+            seen = seen || [];
+            if (!win || depth > 8) return null;
+            var s;
+            for (s = 0; s < seen.length; s++) if (seen[s] === win) return null;
+            seen.push(win);
+            try {
+                var el = findParentClickTarget(win.document, text, selector);
+                if (el) return { win: win, el: el };
+            } catch (e) { }
+            try {
+                var frames = win.frames;
+                var f;
+                for (f = 0; f < frames.length; f++) {
+                    var hit = findClickInTree(frames[f], text, selector, depth + 1, seen);
+                    if (hit) return hit;
+                }
+            } catch (e2) { }
+            return null;
+        }
+        function findClickAnywhere(text, selector) {
+            var roots = [];
+            if (sessionWin) roots.push(sessionWin);
+            try { roots.push(parentWin()); } catch (e0) { }
+            roots.push(window);
+            var r;
+            for (r = 0; r < roots.length; r++) {
+                var hit = findClickInTree(roots[r], text, selector, 0, []);
+                if (hit) return hit;
+            }
+            return null;
+        }
+        function fireParentClick(el, win) {
+            if (!el) return false;
+            try { el.scrollIntoView({ block: "center", inline: "nearest" }); } catch (e) { }
+            var view = win;
+            try { if (!view) view = el.ownerDocument.defaultView; } catch (e1) { }
+            if (!view) view = parentWin();
+            try {
+                var opts = { bubbles: true, cancelable: true, view: view };
+                el.dispatchEvent(new MouseEvent("pointerdown", opts));
+                el.dispatchEvent(new MouseEvent("mousedown", opts));
+                el.dispatchEvent(new MouseEvent("pointerup", opts));
+                el.dispatchEvent(new MouseEvent("mouseup", opts));
+                el.dispatchEvent(new MouseEvent("click", opts));
+            } catch (e2) {
+                try { el.click(); } catch (e3) { return false; }
+            }
+            return true;
+        }
+        function consoleHomeUrl() {
+            var origin = "";
+            try { origin = location.origin; } catch (e) { origin = cqOrigin(); }
+            return origin + "/ierp/";
+        }
+        function makeFetchSession(frameId) {
+            return {
+                frameId: frameId,
+                win: null,
+                lastAppHome: "",
+                lastList: "",
+                lastBill: "",
+                requests: [],
+                timer: 0,
+                listPageId: "",
+                dataFormId: "",
+                dataAppId: "",
+                billFormId: "",
+                pkField: "",
+                postcols: null
+            };
+        }
+        function getFetchSession(frameId) {
+            if (!cqFetchSessions[frameId]) cqFetchSessions[frameId] = makeFetchSession(frameId);
+            return cqFetchSessions[frameId];
+        }
+        function findClickInSession(sess, text, selector) {
+            if (!sess || !sess.win) return null;
+            return findClickInTree(sess.win, text, selector, 0, []);
+        }
+        function findConsolePageIdFrom(win) {
+            var ids = collectPageIds(win, 0, [], []);
+            var i;
+            for (i = 0; i < ids.length; i++) if (isConsoleRootPageId(ids[i])) return ids[i];
+            return "";
+        }
+        function removeFetchFrameById(frameId) {
+            var nodes = [];
+            try {
+                var byId = hostWin().document.getElementById(frameId);
+                if (byId) nodes.push(byId);
+            } catch (e0) { }
+            var n;
+            for (n = 0; n < nodes.length; n++) {
+                var el = nodes[n];
+                try { el.onload = null; } catch (e2) { }
+                try { el.src = "about:blank"; } catch (e3) { }
+                try { if (el.parentNode) el.parentNode.removeChild(el); } catch (e4) { }
+            }
+        }
+        function waitMs(ms) {
+            return new Promise(function (resolve) { setTimeout(resolve, ms); });
+        }
+        function pushSessReq(sess, url, text) {
+            if (!sess) return;
+            var u = String(url || "");
+            var pageId = takeQueryParam(u, "pageId");
+            var formId = takeQueryParam(u, "f");
+            var ac = takeQueryParam(u, "ac");
+            var appId = takeQueryParam(u, "appId");
+            var entry = {
+                t: Date.now(),
+                url: u.slice(0, 500),
+                pageId: pageId,
+                appId: appId,
+                query: { ac: ac, f: formId, appId: appId },
+                response: text
+            };
+            sess.requests.push(entry);
+            if (sess.requests.length > 240) sess.requests.splice(0, sess.requests.length - 240);
+            if (ac !== "loadData" || !text || hasTimeoutText(text)) return;
+            if (formId === "crrc_party_dues_apphome") sess.lastAppHome = text;
+            if (formId === "crrc_deduction_log") sess.lastList = text;
+            if (formId === "crrc_dj_cb_count") {
+                if (isPartyBillPageId(pageId, sess.listPageId, formId)) sess.lastBill = text;
+                else sess.lastList = text;
+            }
+        }
+        function isPartyBillPageId(pageId, listPageId, formId) {
+            var pid = String(pageId || "");
+            if (!pid) return false;
+            if (listPageId && pid.indexOf(listPageId + "_") === 0) return true;
+            if (formId && pid.indexOf("_" + formId + "_") >= 0) return true;
+            return false;
+        }
+        function openFetchFrame(sess) {
+            return new Promise(function (resolve, reject) {
+                if (cqDisposed) return reject(new Error("aborted"));
+                removeFetchFrameById(sess.frameId);
+                var hostDoc = pageDoc();
+                var iframe = hostDoc.createElement("iframe");
+                iframe.id = sess.frameId;
+                iframe.setAttribute("data-cq-fetch", "1");
+                iframe.title = sess.frameId;
+                var leftPx = sess.frameId.indexOf("party") >= 0 ? "8px" : "0";
+                iframe.setAttribute("style", "position:fixed;left:" + leftPx + ";top:0;width:1400px;height:900px;opacity:0;pointer-events:none;border:0;z-index:1;");
+                var url = consoleHomeUrl();
+                iframe.src = url;
+                var settled = false;
+                var startedWait = false;
+                sess.timer = setTimeout(function () {
+                    if (settled || cqDisposed) return;
+                    settled = true;
+                    reject(new Error("主控台 iframe 加载超时 " + url));
+                }, 30000);
+                iframe.onload = function () {
+                    if (startedWait || settled || cqDisposed) return;
+                    startedWait = true;
+                    try { sess.win = iframe.contentWindow; sessionWin = sess.win; } catch (e) { }
+                    hookSessionTree(sess);
+                    waitFor(function () {
+                        return findClickInSession(sess, "党费") || findClickInSession(sess, "应用");
+                    }, 22000, 400, "主控台 iframe 中等待「应用/党费」").then(function (hit) {
+                        if (settled || cqDisposed) return;
+                        settled = true;
+                        clearTimeout(sess.timer);
+                        sess.timer = 0;
+                        resolve(hit && hit.win ? hit.win : sess.win);
+                    }, function (err) {
+                        if (settled || cqDisposed) return;
+                        settled = true;
+                        clearTimeout(sess.timer);
+                        sess.timer = 0;
+                        reject(err);
+                    });
+                };
+                (hostDoc.body || hostDoc.documentElement).appendChild(iframe);
+            });
+        }
+        function ensureFetchSession(sess) {
+            if (cqDisposed) return Promise.reject(new Error("aborted"));
+            if (sess.win && (findClickInSession(sess, "党费") || findClickInSession(sess, "应用"))) {
+                hookSessionTree(sess);
+                clog("复用隐藏主控台 iframe", sess.frameId, safeHref(sess.win));
+                return Promise.resolve(sess.win);
+            }
+            clog("打开隐藏主控台 iframe", sess.frameId, consoleHomeUrl());
+            return openFetchFrame(sess);
+        }
+        function hookFetchOn(win, sess) {
+            if (!win || cqDisposed || !sess) return;
+            if (win.__cqTenantHooked) {
+                win.__cqFetchSess = sess;
+                return;
+            }
+            if (typeof win.fetch !== "function") return;
+            var orig = win.fetch.bind(win);
+            win.__cqOrigFetch = orig;
+            win.__cqTenantHooked = true;
+            win.__cqFetchSess = sess;
+            win.fetch = function (input, init) {
+                if (cqDisposed) return orig(input, init);
+                var url = typeof input === "string" ? input : (input && input.url);
+                noteTenantFromUrl(url, init && init.body);
+                return orig(input, init).then(function (res) {
+                    if (cqDisposed) return res;
+                    try {
+                        var u = String(url || "");
+                        if (u.indexOf("ac=loadData") >= 0) {
+                            res.clone().text().then(function (text) {
+                                if (cqDisposed) return;
+                                pushSessReq(win.__cqFetchSess || sess, u, text);
+                            }).catch(function () { });
+                        }
+                    } catch (e) { }
+                    return res;
+                });
+            };
+            win.__cqOurFetch = win.fetch;
+        }
+        function hookSessionTree(sess) {
+            if (!sess || !sess.win) return;
+            var seen = [];
+            function walk(win, depth) {
+                if (!win || depth > 8) return;
+                var s;
+                for (s = 0; s < seen.length; s++) if (seen[s] === win) return;
+                seen.push(win);
+                try { hookFetchOn(win, sess); } catch (e) { }
+                try {
+                    var frames = win.frames;
+                    var f;
+                    for (f = 0; f < frames.length; f++) walk(frames[f], depth + 1);
+                } catch (e2) { }
+            }
+            walk(sess.win, 0);
+        }
+        function hookParentForTenant() {
+            var dSess = cqFetchSessions["cq-fetch-frame-deduction"];
+            var pSess = cqFetchSessions["cq-fetch-frame-party"];
+            if (dSess) hookSessionTree(dSess);
+            if (pSess) hookSessionTree(pSess);
+        }
+        function waitFor(fn, timeout, step, label) {
+            var t0 = Date.now();
+            return new Promise(function (resolve, reject) {
+                function tick() {
+                    if (cqDisposed) return reject(new Error("aborted"));
+                    var v = fn();
+                    if (v) return resolve(v);
+                    if (Date.now() - t0 > (timeout || 8000)) {
+                        return reject(new Error(label || "等待超时"));
+                    }
+                    setTimeout(tick, step || 250);
+                }
+                tick();
+            });
+        }
+        function cqInvoke(win, appId, formId, action, pageId, params) {
+            var w = win || parentWin();
+            var origin = "";
+            try { origin = w.location.origin; } catch (e0) { origin = cqOrigin(); }
+            var url = origin + "/ierp/form/batchInvokeAction.do?appId=" + encodeURIComponent(appId)
+                + "&f=" + encodeURIComponent(formId) + "&ac=" + encodeURIComponent(action);
+            var body = "pageId=" + encodeURIComponent(pageId)
+                + "&appId=" + encodeURIComponent(appId)
+                + "&params=" + encodeURIComponent(JSON.stringify(params));
+            var fetchFn = (w.fetch ? w.fetch.bind(w) : fetch);
+            return fetchFn(url, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded;charset=utf-8;",
+                    ajax: "true",
+                    cqappid: appId
+                },
+                body: body
+            }).then(function (res) {
+                return res.text().then(function (text) {
+                    if (!res.ok) throw new Error("HTTP " + res.status + " " + text.slice(0, 400));
+                    if (hasTimeoutText(text)) throw new Error("表单会话超时");
+                    try { return JSON.parse(text); } catch (e) { return text; }
+                });
+            });
+        }
+        function parseMaybeJson(data) {
+            if (typeof data !== "string") return data;
+            var text = data;
+            if (text.indexOf(")]}',") === 0) text = text.slice(5);
+            else if (text.indexOf(")]}'") === 0) text = text.slice(4);
+            var brace = text.indexOf("{");
+            var bracket = text.indexOf("[");
+            var start = brace < 0 ? bracket : (bracket < 0 ? brace : Math.min(brace, bracket));
+            if (start > 0) text = text.slice(start);
+            try { return JSON.parse(text); } catch (e) { return data; }
+        }
+        function walkCq(obj, fn, depth, seen) {
+            if (!obj || typeof obj !== "object" || depth > 14) return;
+            if (seen.indexOf(obj) >= 0) return;
+            seen.push(obj);
+            fn(obj);
+            if (Array.isArray(obj)) {
+                var n = Math.min(obj.length, 400);
+                for (var i = 0; i < n; i++) walkCq(obj[i], fn, depth + 1, seen);
+                return;
+            }
+            var keys = Object.keys(obj);
+            for (var k = 0; k < keys.length && k < 400; k++) walkCq(obj[keys[k]], fn, depth + 1, seen);
+        }
+        function cqCell(val) {
+            if (val == null) return "";
+            if (Array.isArray(val)) {
+                if (val.length >= 2 && typeof val[1] === "number") return val[1];
+                if (val.length >= 2 && val[1] != null && val[1] !== "") return val[1];
+                if (val[0] != null) return val[0];
+                return "";
+            }
+            return val;
+        }
+        function deductionFieldLabel(key) {
+            var map = {
+                billno: "单据编号",
+                billstatus: "单据状态",
+                crrc_datefield: "年份",
+                crrc_radiooptgroupfield: "季度",
+                crrc_textfield: "扣分事项",
+                crrc_textfield1: "扣分依据",
+                crrc_decimalfield: "扣分分数",
+                crrc_basedatafield: "被扣分组织",
+                crrc_basedatafield_name: "被扣分组织",
+                "crrc_basedatafield.name": "被扣分组织",
+                crrc_orgfield: "输出部门",
+                crrc_orgfield_name: "输出部门.名称",
+                "crrc_orgfield.name": "输出部门.名称"
+            };
+            if (map[key]) return map[key];
+            if (key.length > 5 && key.slice(key.length - 5) === "_name") {
+                var base = key.slice(0, key.length - 5);
+                if (map[base]) return map[base] + ".名称";
+            }
+            return key;
+        }
+        function deductionRowKey(dataindex) {
+            return String(dataindex || "").split(".").join("_");
+        }
+        function shouldSkipDeductionKey(key, idx) {
+            if (!key) return true;
+            var low = String(key).toLowerCase();
+            if (low === "rk" || low === "fseq" || low === "s" || low === "cprop") return true;
+            if (low === "seq" || low === "rowkey" || low === "id") return true;
+            if (key.length >= 3 && key.slice(key.length - 3) === "_id") return true;
+            if (key.indexOf("entryentity") >= 0) return true;
+            if (idx[key + "_name"] != null || idx[key + ".name"] != null) return true;
+            return false;
+        }
+        function formatDeductionValue(key, raw) {
+            if (raw == null || raw === "") return "";
+            if (key === "billstatus" || key.indexOf("billstatus") >= 0) {
+                var st = String(cqCell(raw));
+                return STATUS_TEXT[st] || st;
+            }
+            if (key === "crrc_radiooptgroupfield" || key.indexOf("radioopt") >= 0 || key === "crrc_combofield" || key.indexOf("combofield") >= 0) {
+                var pd = String(cqCell(raw));
+                return PERIOD_TEXT[pd] || pd;
+            }
+            if (key === "crrc_datefield" || key === "crrc_datetimefield") {
+                if (Array.isArray(raw)) {
+                    var y0 = raw[0];
+                    if (y0 != null && String(y0) !== "") {
+                        var ys = String(y0);
+                        if (ys.length >= 4) return ys.slice(0, 4);
+                    }
+                    if (raw[1] != null) return String(raw[1]).slice(0, 4);
+                }
+                var ds = String(cqCell(raw));
+                return ds.length >= 4 ? ds.slice(0, 4) : ds;
+            }
+            var v = cqCell(raw);
+            if (v && typeof v === "object") return "";
+            return v == null ? "" : v;
+        }
+        function captionText(cap) {
+            if (cap == null) return "";
+            if (typeof cap === "string") return cap;
+            if (typeof cap === "object") return cap.zh_CN || cap.en_US || cap.zh_TW || "";
+            return String(cap);
+        }
+        function collectDeductionCaptions(payload, pack) {
+            var map = {};
+            walkCq(payload, function (obj) {
+                if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+                var di = obj.dataindex != null ? obj.dataindex : (obj.dataIndex != null ? obj.dataIndex : obj.fieldId);
+                var cap = obj.caption != null ? obj.caption : (obj.title != null ? obj.title : obj.header);
+                var text = captionText(cap);
+                if (typeof di === "string" && di && text) {
+                    if (!map[di]) map[di] = text;
+                }
+            }, 0, []);
+            var packCols = pack && (pack.columns || pack.cols || pack.columnMetas);
+            if (Array.isArray(packCols)) {
+                for (var i = 0; i < packCols.length; i++) {
+                    var col = packCols[i];
+                    if (!col || typeof col !== "object") continue;
+                    var cdi = col.dataindex || col.dataIndex || col.fieldId;
+                    var ccap = captionText(col.caption || col.title || col.header);
+                    if (typeof cdi === "string" && cdi && ccap) map[cdi] = ccap;
+                }
+            }
+            return map;
+        }
+        function parseDeductionTable(payload) {
+            var pack = null;
+            walkCq(payload, function (obj) {
+                if (!obj || typeof obj !== "object") return;
+                if (obj.k === "billlistap" && obj.data && Array.isArray(obj.data.rows)) pack = obj.data;
+                else if (!pack && obj.c === "billlistap" && obj.p && Array.isArray(obj.p.rows)) pack = obj.p;
+                else if (!pack && Array.isArray(obj.rows) && obj.dataindex && typeof obj.dataindex === "object" && !Array.isArray(obj.dataindex)) pack = obj;
+            }, 0, []);
+            if (!pack) return { columns: [], rows: [] };
+            var idx = pack.dataindex || {};
+            var captions = collectDeductionCaptions(payload, pack);
+            var keys = Object.keys(idx);
+            keys.sort(function (a, b) { return Number(idx[a]) - Number(idx[b]); });
+            var fieldKeys = [];
+            var used = {};
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                if (shouldSkipDeductionKey(k, idx)) continue;
+                var rowKey = deductionRowKey(k);
+                if (used[rowKey]) continue;
+                used[rowKey] = true;
+                var known = deductionFieldLabel(k);
+                fieldKeys.push({ dataindex: k, caption: known !== k ? known : (captions[k] || k) });
+            }
+            var columns = fieldKeys.map(function (f) {
+                var key = deductionRowKey(f.dataindex);
+                var label = f.caption || deductionFieldLabel(f.dataindex);
+                var numeric = key.indexOf("decimal") >= 0 || label.indexOf("分数") >= 0 || label.indexOf("得分") >= 0;
+                var badge = key.indexOf("billstatus") >= 0 || label.indexOf("状态") >= 0;
+                var compact = numeric || badge
+                    || key === "billno"
+                    || key.indexOf("datefield") >= 0
+                    || key.indexOf("radioopt") >= 0
+                    || label === "年份"
+                    || label === "季度"
+                    || label === "单据编号";
+                return { key: key, label: label, sortable: true, numeric: numeric, badge: badge, compact: compact };
+            });
+            var rows = (pack.rows || []).map(function (row, ridx) {
+                var out = { _rowId: "d" + ridx };
+                for (var j = 0; j < fieldKeys.length; j++) {
+                    var f = fieldKeys[j];
+                    var key = deductionRowKey(f.dataindex);
+                    var pos = idx[f.dataindex];
+                    var raw = pos != null ? row[pos] : "";
+                    var formatted = formatDeductionValue(f.dataindex, raw);
+                    if (columns[j] && columns[j].numeric && formatted !== "" && typeof formatted !== "number") {
+                        var num = Number(formatted);
+                        out[key] = num !== num ? formatted : num;
+                    } else {
+                        out[key] = formatted == null ? "" : formatted;
+                    }
+                }
+                return out;
+            });
+            return { columns: columns, rows: rows, fieldKeys: fieldKeys };
+        }
+        function remountDeductionTable() {
+            var def = TABLE_DEFS.deduction;
+            if (!window.__cqDataTable || !def) return;
+            window.__cqDataTable.mount("deduction", "dt-deduction", def.columns, def.rows, {
+                pageSize: 10,
+                filterPlaceholder: "搜索" + def.label + "…",
+                filterHostId: "dt-filter-deduction"
+            });
+        }
+        function applyDeductionTable(parsed) {
+            if (parsed.columns && parsed.columns.length) TABLE_DEFS.deduction.columns = parsed.columns;
+            TABLE_DEFS.deduction.rows = parsed.rows || [];
+            remountDeductionTable();
+        }
+        function loadDeductionFromCq() {
+            if (cqDisposed) return Promise.resolve([]);
+            if (deductionLoading) return deductionLoading;
+            var sess = getFetchSession("cq-fetch-frame-deduction");
+            var trail = [];
+            function step(name, info) {
+                trail.push({ name: name, info: info || null });
+                clog("step", name, info || "");
+            }
+            var task = Promise.resolve().then(function () {
+                if (cqDisposed) throw new Error("aborted");
+                return ensureFetchSession(sess);
+            }).then(function () {
+                if (cqDisposed) throw new Error("aborted");
+                hookSessionTree(sess);
+                var consolePageId = findConsolePageIdFrom(sess.win);
+                var suffix = extractRootSuffix(consolePageId);
+                step("session", {
+                    consolePageId: consolePageId,
+                    suffix: suffix,
+                    frameId: sess.frameId,
+                    sessionHref: safeHref(sess.win || parentWin())
+                });
+                clog("扣分项 consolePageId", consolePageId, "suffix", suffix, "session", safeHref(sess.win));
+                if (!consolePageId || !suffix) {
+                    throw new Error("未找到主控台 pageId。隐藏 iframe 可能未加载到主控台。");
+                }
+                var menuPageId = CQ_DEDUCTION.menuAppId + suffix;
+                var listPageId = CQ_DEDUCTION.menuItemId + suffix;
+                sess.lastList = "";
+                sess.lastAppHome = "";
+                function treeMenuThenLoad() {
+                    step("treeMenuThenLoad", { menuPageId: menuPageId, listPageId: listPageId });
+                    return cqInvoke(
+                        sess.win,
+                        CQ_DEDUCTION.menuAppId,
+                        CQ_DEDUCTION.menuFormId,
+                        "treeMenuClick",
+                        menuPageId,
+                        [{
+                            key: CQ_DEDUCTION.menuControl,
+                            methodName: "treeMenuClick",
+                            args: [CQ_DEDUCTION.menuRoot, CQ_DEDUCTION.menuItemId],
+                            postData: [{}, []]
+                        }]
+                    ).then(function () {
+                        return cqInvoke(
+                            sess.win,
+                            CQ_DEDUCTION.dataAppId,
+                            CQ_DEDUCTION.dataFormId,
+                            "loadData",
+                            listPageId,
+                            [{ key: "", methodName: "loadData", args: [], postData: [] }]
+                        );
+                    });
+                }
+                return clickAppThenParty(sess, step).then(function () {
+                    var menuHit = findClickInSession(sess, "扣分项台账");
+                    step("find-menu", { hasMenu: !!(menuHit && menuHit.el) });
+                    if (menuHit) {
+                        clog("点击扣分项台账");
+                        fireParentClick(menuHit.el, menuHit.win);
+                        return waitFor(function () { return sess.lastList; }, 15000, 250, "等待扣分项 loadData").catch(function () {
+                            clog("点击后未捕获列表 loadData，改请求链");
+                            step("click-menu-no-payload", {});
+                            return treeMenuThenLoad();
+                        });
+                    }
+                    return treeMenuThenLoad();
+                }).then(function (res) {
+                    if (cqDisposed) return [];
+                    var data = parseMaybeJson(sess.lastList || res);
+                    var parsed = parseDeductionTable(data);
+                    var rows = parsed.rows || [];
+                    var colLabels = (parsed.columns || []).map(function (c) { return c.label; }).join(",");
+                    clog("扣分项 loadData 解析行数", rows.length, "列", colLabels);
+                    if (!rows.length) {
+                        var preview = "";
+                        try { preview = JSON.stringify(data).slice(0, 1200); } catch (e) { preview = String(data).slice(0, 1200); }
+                        clog("扣分项未能解析行，预览", preview);
+                        reportError("deduction-empty", new Error("loadData 已返回但未能识别行"), { trail: trail, preview: preview });
+                    }
+                    deductionReady = !!(parsed.columns && parsed.columns.length) || rows.length > 0;
+                    applyDeductionTable(parsed);
+                    try { window.__cqLastDeductionParse = parsed; } catch (e3) { }
+                    if (deductionReady) {
+                        showAlert("default", "扣分项台账加载成功", "已加载 " + rows.length + " 条，" + (parsed.columns || []).length + " 列");
+                    } else {
+                        showAlert("destructive", "扣分项台账加载失败", "已返回数据但未能识别行，请查看控制台预览");
+                    }
+                    return rows;
+                });
+            }).then(function (rows) {
+                deductionLoading = false;
+                return rows;
+            }, function (err) {
+                deductionLoading = false;
+                if (cqDisposed || (err && err.message === "aborted")) return [];
+                clog("扣分项加载失败", err && err.message);
+                reportError("deduction-load", err, { trail: trail });
+                showAlert("destructive", "扣分项台账加载失败", err && err.message ? String(err.message) : String(err));
+            });
+            deductionLoading = task;
+            return task;
+        }
+        function clickAppThenParty(sess, step) {
+            return Promise.resolve().then(function () {
+                hookSessionTree(sess);
+                var alreadyParty = findClickInSession(sess, "党费");
+                var appHit = findClickInSession(sess, "应用", ".kd-cq-homepage-tab-item-text") || findClickInSession(sess, "应用");
+                if (step) step("before-click-app", { alreadyParty: !!alreadyParty, hasApp: !!appHit, frameId: sess.frameId });
+                if (alreadyParty) return;
+                if (appHit) {
+                    clog("点击应用", sess.frameId);
+                    fireParentClick(appHit.el, appHit.win);
+                }
+            }).then(function () {
+                return waitFor(function () { return findClickInSession(sess, "党费"); }, 15000, 250, "等待出现「党费」入口");
+            }).then(function (partyHit) {
+                hookSessionTree(sess);
+                clog("点击党费", sess.frameId);
+                if (step) step("click-party", { ok: !!(partyHit && partyHit.el) });
+                fireParentClick(partyHit.el, partyHit.win);
+                return waitFor(function () { return sess.lastAppHome; }, 15000, 250, "等待党费首页 loadData").catch(function () {
+                    clog("未捕获到党费首页 loadData，仍继续", sess.frameId);
+                    if (step) step("app-home-payload-miss", { lastAppHomeLen: String(sess.lastAppHome || "").length });
+                    return waitMs(1500);
+                });
+            }).then(function () {
+                hookSessionTree(sess);
+                return waitMs(400);
+            });
+        }
+        try { parentWin().__cqFetchDeduction = loadDeductionFromCq; } catch (e) { }
+        try { window.__cqDisposeOverlay = disposeCqResources; } catch (eDisp) { }
+
+        function partyFieldLabel(key) {
+            var raw = String(key || "");
+            if (raw.indexOf("entry_") === 0) raw = raw.slice(6);
+            var map = {
+                billno: "编号",
+                billstatus: "数据状态",
+                crrc_datetimefield: "统计年",
+                crrc_combofield: "季度",
+                crrc_basedatafield: "组织类型",
+                crrc_basedatafield1: "党组织",
+                crrc_decimalfield13: "合计得分",
+                seq: "分录序号",
+                fseq: "分录序号"
+            };
+            if (map[raw]) return map[raw];
+            if (raw.length > 5 && raw.slice(raw.length - 5) === "_name") {
+                var base = raw.slice(0, raw.length - 5);
+                if (map[base]) return map[base] + ".名称";
+            }
+            return key;
+        }
+        function isReservedForm(formId) {
+            return formId === CQ_DEDUCTION.consoleForm
+                || formId === CQ_DEDUCTION.myAppForm
+                || formId === CQ_DEDUCTION.menuFormId
+                || formId === CQ_PARTY.menuFormId;
+        }
+        function waitForSessReq(sess, pred, timeout, label) {
+            return waitFor(function () {
+                var arr = sess.requests || [];
+                var i;
+                for (i = arr.length - 1; i >= 0; i--) {
+                    if (pred(arr[i])) return arr[i];
+                }
+                return null;
+            }, timeout || 15000, 200, label || "等待苍穹请求");
+        }
+        function isPartyListLoad(r, sess) {
+            if (!r || !r.query || r.query.ac !== "loadData") return false;
+            if (!r.response || r.response.length <= 8 || hasTimeoutText(r.response)) return false;
+            if (isPartyBillPageId(r.pageId, sess.listPageId, CQ_PARTY.dataFormId)) return false;
+            var f = r.query.f;
+            if (!f || isReservedForm(f)) return false;
+            if (sess.listPageId && r.pageId === sess.listPageId) return true;
+            return f === CQ_PARTY.dataFormId && String(r.response).indexOf("billlistap") >= 0;
+        }
+        function isPartyBillLoad(r, sess, minTs) {
+            if (!r || !r.query || r.query.ac !== "loadData") return false;
+            if (!r.response || r.response.length <= 8 || hasTimeoutText(r.response)) return false;
+            if (minTs && r.t && r.t < minTs - 300) return false;
+            if (isPartyBillPageId(r.pageId, sess.listPageId, CQ_PARTY.dataFormId)) return true;
+            return String(r.response).indexOf("entryentity") >= 0;
+        }
+        function findBillListPack(payload) {
+            var pack = null;
+            walkCq(payload, function (obj) {
+                if (!obj || typeof obj !== "object") return;
+                if (obj.k === "billlistap" && obj.data && Array.isArray(obj.data.rows)) pack = obj.data;
+                else if (!pack && obj.c === "billlistap" && obj.p && Array.isArray(obj.p.rows)) pack = obj.p;
+                else if (!pack && Array.isArray(obj.rows) && obj.dataindex && typeof obj.dataindex === "object" && !Array.isArray(obj.dataindex)) pack = obj;
+            }, 0, []);
+            return pack;
+        }
+        function shouldSkipPartyKey(key, idx, opts) {
+            if (!key) return true;
+            opts = opts || {};
+            var low = String(key).toLowerCase();
+            if (low === "rk" || low === "s" || low === "cprop" || low === "l" || low === "vi" || low === "u") return true;
+            if (!opts.keepSeq && (low === "fseq" || low === "seq")) return true;
+            if (low === "rowkey" || low === "id") return true;
+            if (key.length >= 3 && key.slice(key.length - 3) === "_id") return true;
+            if (!opts.keepEntryKey && key.indexOf("entryentity") >= 0) return true;
+            if (idx && (idx[key + "_name"] != null || idx[key + ".name"] != null)) return true;
+            return false;
+        }
+        function mapPartyPack(pack, payload, opts) {
+            opts = opts || {};
+            var idx = pack.dataindex || {};
+            var captions = collectDeductionCaptions(payload || pack, pack);
+            var keys = Object.keys(idx);
+            keys.sort(function (a, b) { return Number(idx[a]) - Number(idx[b]); });
+            var fieldKeys = [];
+            var used = {};
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                if (shouldSkipPartyKey(k, idx, opts) || used[k]) continue;
+                used[k] = true;
+                var cap = captions[k] || partyFieldLabel(k);
+                fieldKeys.push({ dataindex: k, caption: cap });
+            }
+            var rows = (pack.rows || []).map(function (row) {
+                var out = {};
+                var j;
+                for (j = 0; j < fieldKeys.length; j++) {
+                    var f = fieldKeys[j];
+                    var pos = idx[f.dataindex];
+                    var raw = pos != null ? row[pos] : "";
+                    out[f.dataindex] = formatDeductionValue(f.dataindex, raw);
+                }
+                return out;
+            });
+            return { columns: fieldKeys, rows: rows };
+        }
+        function packCellAt(pack, row, key) {
+            var idx = (pack && pack.dataindex) || {};
+            if (idx[key] == null) return "";
+            return cqCell(row[idx[key]]);
+        }
+        function findPkField(pack, payload) {
+            var idx = (pack && pack.dataindex) || {};
+            if (idx[CQ_PARTY.pkField] != null) return CQ_PARTY.pkField;
+            if (idx.id != null) return "id";
+            var found = "";
+            walkCq(parseMaybeJson(payload), function (obj) {
+                if (found || !obj || typeof obj !== "object") return;
+                var pk = obj.pkFieldName || obj.pkfieldname;
+                if (typeof pk !== "string" || !pk) return;
+                var short = pk.split(".").pop();
+                if (idx[pk] != null) found = pk;
+                else if (idx[short] != null) found = short;
+            }, 0, []);
+            if (found) return found;
+            var keys = Object.keys(idx);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                if (keys[i].length > 3 && keys[i].slice(keys[i].length - 3) === "_id") return keys[i];
+            }
+            return CQ_PARTY.pkField;
+        }
+        function extractPartyListBills(payload, sess) {
+            var parsedPayload = parseMaybeJson(payload);
+            var pack = findBillListPack(parsedPayload);
+            if (!pack) return { columns: [], rows: [] };
+            var table = mapPartyPack(pack, parsedPayload, {});
+            var pkField = findPkField(pack, parsedPayload);
+            sess.pkField = pkField;
+            if (Array.isArray(pack.postcols) && pack.postcols.length) sess.postcols = pack.postcols.slice();
+            var rows = (pack.rows || []).map(function (row, i) {
+                var mapped = {};
+                var src = table.rows[i] || {};
+                var sk = Object.keys(src);
+                var s;
+                for (s = 0; s < sk.length; s++) mapped[sk[s]] = src[sk[s]];
+                mapped._pkId = String(packCellAt(pack, row, pkField) || packCellAt(pack, row, "id") || "");
+                mapped._billno = String(mapped.billno || packCellAt(pack, row, "billno") || "");
+                mapped._billstatus = String(packCellAt(pack, row, "billstatus") || "");
+                mapped._rowIndex = i;
+                return mapped;
+            });
+            return { columns: table.columns, rows: rows };
+        }
+        function isEntryName(name) {
+            var s = String(name || "").toLowerCase();
+            return !!s && (s.indexOf("entry") >= 0 || s.indexOf("billentry") >= 0);
+        }
+        function packFromObj(obj) {
+            if (!obj || typeof obj !== "object") return null;
+            if (Array.isArray(obj.rows) && obj.dataindex && typeof obj.dataindex === "object" && !Array.isArray(obj.dataindex)) return obj;
+            if (obj.data && Array.isArray(obj.data.rows) && obj.data.dataindex) return obj.data;
+            if (obj.p && Array.isArray(obj.p.rows) && obj.p.dataindex) return obj.p;
+            return null;
+        }
+        function findEntryPacks(payload) {
+            var packs = [];
+            function add(key, data) {
+                if (!data || !Array.isArray(data.rows)) return;
+                var i;
+                for (i = 0; i < packs.length; i++) if (packs[i].data === data) return;
+                packs.push({ key: String(key || "entry"), data: data });
+            }
+            walkCq(parseMaybeJson(payload), function (obj) {
+                if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+                var k = obj.k || obj.c || obj.key || "";
+                if (isEntryName(k)) {
+                    var p = packFromObj(obj);
+                    if (p) add(k, p);
+                }
+                var keys = Object.keys(obj);
+                var i;
+                for (i = 0; i < keys.length; i++) {
+                    if (!isEntryName(keys[i])) continue;
+                    var pack = packFromObj(obj[keys[i]]);
+                    if (pack) add(keys[i], pack);
+                }
+            }, 0, []);
+            return packs;
+        }
+        function pickBestEntryPack(packs) {
+            if (!packs || !packs.length) return null;
+            var named = [];
+            var i;
+            for (i = 0; i < packs.length; i++) if (isEntryName(packs[i].key)) named.push(packs[i]);
+            var list = named.length ? named : packs;
+            var best = list[0];
+            var j;
+            for (j = 1; j < list.length; j++) {
+                if ((list[j].data.rows || []).length > (best.data.rows || []).length) best = list[j];
+            }
+            return best;
+        }
+        function isSkipHeaderKey(key) {
+            if (!key || key.charAt(0) === "_") return true;
+            var skip = {
+                k: 1, c: 1, a: 1, p: 1, u: 1, l: 1, vi: 1, data: 1, dataindex: 1,
+                rows: 1, cols: 1, columns: 1, pageId: 1, appId: 1, params: 1
+            };
+            if (skip[key]) return true;
+            var low = String(key).toLowerCase();
+            if (low.indexOf("entry") >= 0) return true;
+            if (low === "billlistap" || (low.length >= 2 && low.slice(low.length - 2) === "ap")) return true;
+            return false;
+        }
+        function headerFromListBill(bill) {
+            var header = {};
+            if (!bill) return header;
+            var keys = Object.keys(bill);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                if (keys[i].charAt(0) === "_") continue;
+                header[keys[i]] = bill[keys[i]];
+            }
+            return header;
+        }
+        function setHeaderVal(header, key, raw) {
+            if (isSkipHeaderKey(key)) return;
+            if (raw && typeof raw === "object" && !Array.isArray(raw) && (raw.rows || raw.dataindex)) return;
+            var val = formatDeductionValue(key, raw);
+            if (val == null || val === "") return;
+            if (typeof val === "object") return;
+            if (header[key] == null || header[key] === "") header[key] = val;
+        }
+        function extractBillHeader(payload, listBill) {
+            var header = {};
+            var root = parseMaybeJson(payload);
+            walkCq(root, function (obj) {
+                if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+                var k = obj.k || obj.c;
+                if (typeof k === "string" && k && obj.v !== undefined && !isSkipHeaderKey(k)) {
+                    setHeaderVal(header, k, obj.v);
+                }
+            }, 0, []);
+            var listHeader = headerFromListBill(listBill);
+            var lk = Object.keys(listHeader);
+            var j;
+            for (j = 0; j < lk.length; j++) {
+                if (header[lk[j]] == null || header[lk[j]] === "") header[lk[j]] = listHeader[lk[j]];
+            }
+            return header;
+        }
+        function flattenPartyBill(header, entry, meta) {
+            var out = {};
+            var hk = Object.keys(header || {});
+            var i;
+            for (i = 0; i < hk.length; i++) {
+                if (hk[i].charAt(0) === "_") continue;
+                out[hk[i]] = header[hk[i]];
+            }
+            if (entry) {
+                var ek = Object.keys(entry);
+                var j;
+                for (j = 0; j < ek.length; j++) {
+                    var k = ek[j];
+                    if (k.charAt(0) === "_") continue;
+                    out[Object.prototype.hasOwnProperty.call(out, k) ? "entry_" + k : k] = entry[k];
+                }
+            }
+            out._billPkId = (meta && meta.pk) || "";
+            out._entrySeq = meta && meta.seq != null ? meta.seq : "";
+            return out;
+        }
+        function combinePartyColumns(headerCols, entryCols, header) {
+            var cols = (headerCols || []).slice();
+            var seen = {};
+            var i;
+            for (i = 0; i < cols.length; i++) seen[cols[i].dataindex] = true;
+            var j;
+            for (j = 0; j < (entryCols || []).length; j++) {
+                var c = entryCols[j];
+                var key = header && Object.prototype.hasOwnProperty.call(header, c.dataindex) ? "entry_" + c.dataindex : c.dataindex;
+                if (seen[key]) continue;
+                seen[key] = true;
+                cols.push({ dataindex: key, caption: c.caption || partyFieldLabel(c.dataindex), part: "entry" });
+            }
+            return cols;
+        }
+        function extractPartyBillData(payload, listBill) {
+            var parsedPayload = parseMaybeJson(payload);
+            var header = extractBillHeader(parsedPayload, listBill);
+            var pack = pickBestEntryPack(findEntryPacks(parsedPayload));
+            var mapped = pack ? mapPartyPack(pack.data, parsedPayload, { keepSeq: true }) : { columns: [], rows: [] };
+            var entries = mapped.rows || [];
+            var headerCols = [];
+            var hk = Object.keys(header);
+            var hi;
+            var captions = collectDeductionCaptions(parsedPayload, pack && pack.data);
+            for (hi = 0; hi < hk.length; hi++) {
+                if (hk[hi].charAt(0) === "_") continue;
+                headerCols.push({
+                    dataindex: hk[hi],
+                    caption: captions[hk[hi]] || partyFieldLabel(hk[hi]),
+                    part: "header"
+                });
+            }
+            var pk = (listBill && listBill._pkId) || header[CQ_PARTY.pkField] || "";
+            var flat = [];
+            if (!entries.length) {
+                flat.push(flattenPartyBill(header, null, { pk: pk, seq: -1 }));
+            } else {
+                var ei;
+                for (ei = 0; ei < entries.length; ei++) {
+                    flat.push(flattenPartyBill(header, entries[ei], { pk: pk, seq: ei }));
+                }
+            }
+            return {
+                header: header,
+                headerColumns: headerCols,
+                entries: entries,
+                entryColumns: mapped.columns || [],
+                columns: combinePartyColumns(headerCols, mapped.columns || [], header),
+                rows: flat
+            };
+        }
+        function partyColsToTable(columns, rows) {
+            var defs = [];
+            var used = {};
+            var i;
+            for (i = 0; i < (columns || []).length; i++) {
+                var di = columns[i].dataindex;
+                var key = deductionRowKey(di);
+                if (used[key]) continue;
+                used[key] = true;
+                var label = columns[i].caption || partyFieldLabel(di);
+                if (!label || label === di) label = partyFieldLabel(di);
+                var numeric = key.indexOf("decimal") >= 0 || label.indexOf("分数") >= 0 || label.indexOf("得分") >= 0;
+                var badge = key.indexOf("billstatus") >= 0 || label.indexOf("状态") >= 0;
+                var compact = numeric || badge
+                    || key === "billno"
+                    || key.indexOf("datetimefield") >= 0
+                    || key.indexOf("combofield") >= 0
+                    || label === "统计年"
+                    || label === "季度"
+                    || label === "编号";
+                defs.push({ key: key, label: label, sortable: true, numeric: numeric, badge: badge, compact: compact });
+            }
+            var outRows = (rows || []).map(function (row, ridx) {
+                var o = { _rowId: "p" + ridx };
+                var j;
+                for (j = 0; j < (columns || []).length; j++) {
+                    var k = deductionRowKey(columns[j].dataindex);
+                    var val = row[columns[j].dataindex];
+                    if (defs[j] && defs[j].numeric && val !== "" && typeof val !== "number") {
+                        var num = Number(val);
+                        o[k] = num !== num ? val : num;
+                    } else {
+                        o[k] = val == null ? "" : val;
+                    }
+                }
+                return o;
+            });
+            return { columns: defs, rows: outRows };
+        }
+        function remountPartyTable() {
+            var def = TABLE_DEFS.partyQuarterly;
+            if (!window.__cqDataTable || !def) return;
+            window.__cqDataTable.mount("partyQuarterly", "dt-partyQuarterly", def.columns, def.rows, {
+                pageSize: 20,
+                filterPlaceholder: "搜索" + def.label + "…",
+                filterHostId: "dt-filter-partyQuarterly"
+            });
+        }
+        function applyPartyTable(parsed) {
+            if (parsed.columns && parsed.columns.length) TABLE_DEFS.partyQuarterly.columns = parsed.columns;
+            TABLE_DEFS.partyQuarterly.rows = parsed.rows || [];
+            remountPartyTable();
+        }
+        function findPartyMenu(sess) {
+            var texts = CQ_PARTY.menuTexts;
+            var i;
+            for (i = 0; i < texts.length; i++) {
+                var hit = findClickInSession(sess, texts[i]);
+                if (hit) return { hit: hit, text: texts[i] };
+            }
+            return null;
+        }
+        function findBillLinkInSession(sess, bill) {
+            var no = bill && (bill._billno || bill.billno);
+            if (!no || !sess.win) return null;
+            var doc = sess.win.document;
+            var el = findParentClickTarget(doc, String(no), "span.link-cell-content, span.link-color, a, span")
+                || findParentClickTarget(doc, String(no));
+            if (!el) return null;
+            return { el: el, win: sess.win };
+        }
+        function closeBillInSession(sess, bill) {
+            var no = bill && (bill._billno || bill.billno);
+            var doc = sess.win && sess.win.document;
+            if (!doc) return waitMs(200);
+            if (no) {
+                var tabs = [];
+                try { tabs = doc.querySelectorAll(".kd-cq-tab-item, .kd-cq-homepage-tab-item, [role='tab']"); } catch (e0) { }
+                var i;
+                for (i = 0; i < tabs.length; i++) {
+                    var title = collapseWs(tabs[i].innerText || tabs[i].textContent || "");
+                    if (title.indexOf(String(no)) < 0) continue;
+                    var closeBtn = tabs[i].querySelector(".close, .kd-cq-tab-close, [class*='close']");
+                    if (closeBtn) {
+                        fireParentClick(closeBtn, sess.win);
+                        return waitMs(400);
+                    }
+                }
+            }
+            var btn = findClickInSession(sess, "关闭") || findClickInSession(sess, "取消");
+            if (btn) {
+                fireParentClick(btn.el, btn.win);
+                return waitMs(400);
+            }
+            return waitMs(200);
+        }
+        function partyListSelData(sess, bill) {
+            var postcols = sess.postcols;
+            if (!Array.isArray(postcols) || !postcols.length) {
+                postcols = [sess.pkField || CQ_PARTY.pkField, "billstatus", "billno"];
+            }
+            return postcols.map(function (col) {
+                if (col === "billno") return bill._billno || bill.billno || "";
+                if (col === "billstatus") return bill._billstatus || "";
+                if (col === (sess.pkField || CQ_PARTY.pkField) || String(col).slice(-3) === "_id") return bill._pkId || "";
+                if (bill[col] != null && bill[col] !== "") return String(bill[col]);
+                return "";
+            });
+        }
+        function invokePartyBillOpen(sess, rowIndex, bill) {
+            var appId = sess.dataAppId || CQ_PARTY.dataAppId;
+            var formId = sess.dataFormId || CQ_PARTY.dataFormId;
+            var pageId = sess.listPageId;
+            var field = "billno";
+            var ctrl = CQ_PARTY.listControl;
+            var sel = partyListSelData(sess, bill);
+            return cqInvoke(sess.win, appId, formId, "entryRowClick", pageId, [
+                {
+                    key: ctrl,
+                    methodName: "entryRowClick",
+                    args: [rowIndex, field],
+                    postData: [{
+                        billlistap: {
+                            fieldKey: field,
+                            row: rowIndex,
+                            selRows: [rowIndex],
+                            selDatas: [sel],
+                            isClientNewRow: false,
+                            clientNewRows: ""
+                        }
+                    }, []]
+                },
+                {
+                    key: ctrl,
+                    methodName: "hyperLinkClick",
+                    args: [field, rowIndex],
+                    postData: [{}, []]
+                }
+            ]);
+        }
+        function openOnePartyBill(sess, bill, rowIndex) {
+            var started = Date.now();
+            function waitBill(ms) {
+                return waitForSessReq(sess, function (r) {
+                    return isPartyBillLoad(r, sess, started);
+                }, ms || 20000, "等待单据 loadData");
+            }
+            return waitFor(function () {
+                return findBillLinkInSession(sess, bill);
+            }, 8000, 200, "等待单据编号链接").then(function (link) {
+                clog("点击编号打开单据", bill._billno || bill.billno || "");
+                fireParentClick(link.el, link.win);
+                return waitBill(12000);
+            }).catch(function () {
+                clog("改用 entryRowClick 打开单据", bill._billno || "");
+                return invokePartyBillOpen(sess, rowIndex, bill).then(function () {
+                    return waitBill(20000);
+                });
+            }).then(function (billReq) {
+                if (!billReq) throw new Error("未等到单据 loadData");
+                sess.dataFormId = (billReq.query && billReq.query.f) || sess.dataFormId || CQ_PARTY.dataFormId;
+                sess.dataAppId = billReq.appId || sess.dataAppId || CQ_PARTY.dataAppId;
+                var parsed = extractPartyBillData(billReq.response, bill);
+                if (!parsed.entries.length && String(billReq.response || "").indexOf("entryentity") < 0) {
+                    throw new Error("单据已开但未解析到分录 entryentity");
+                }
+                return closeBillInSession(sess, bill).then(function () { return parsed; });
+            });
+        }
+        function collectPartyEntries(sess, bills) {
+            var allRows = [];
+            var headerCols = [];
+            var entryCols = [];
+            var allHeader = {};
+            var opened = 0;
+            var failed = 0;
+            var entryCount = 0;
+            var n = Math.min(bills.length, CQ_PARTY.maxBills || 40);
+            function mergeCols(into, add) {
+                var seen = {};
+                var i;
+                for (i = 0; i < into.length; i++) seen[into[i].dataindex] = true;
+                for (i = 0; i < (add || []).length; i++) {
+                    if (!add[i] || seen[add[i].dataindex]) continue;
+                    seen[add[i].dataindex] = true;
+                    into.push(add[i]);
+                }
+            }
+            function pushParsed(bill, parsed) {
+                var header = (parsed && parsed.header) || headerFromListBill(bill);
+                var rows = (parsed && parsed.rows) || [];
+                if (!rows.length) rows = [flattenPartyBill(header, null, { pk: bill._pkId || "", seq: -1 })];
+                entryCount += (parsed && parsed.entries ? parsed.entries.length : 0);
+                mergeCols(headerCols, parsed && parsed.headerColumns);
+                mergeCols(entryCols, parsed && parsed.entryColumns);
+                var hk = Object.keys(header);
+                var hi;
+                for (hi = 0; hi < hk.length; hi++) allHeader[hk[hi]] = header[hk[hi]];
+                var r;
+                for (r = 0; r < rows.length; r++) allRows.push(rows[r]);
+            }
+            function step(i) {
+                if (cqDisposed) return Promise.resolve({ rows: allRows, headerCols: headerCols, entryCols: entryCols, allHeader: allHeader, opened: opened, failed: failed, entryCount: entryCount });
+                if (i >= n) {
+                    return Promise.resolve({
+                        rows: allRows,
+                        headerCols: headerCols,
+                        entryCols: entryCols,
+                        allHeader: allHeader,
+                        opened: opened,
+                        failed: failed,
+                        entryCount: entryCount
+                    });
+                }
+                var bill = bills[i];
+                var idx = bill._rowIndex != null ? bill._rowIndex : i;
+                clog("打开单据", (i + 1) + "/" + n, bill._billno || bill.billno || "");
+                hookSessionTree(sess);
+                return openOnePartyBill(sess, bill, idx).then(function (parsed) {
+                    opened += 1;
+                    pushParsed(bill, parsed);
+                    return waitMs(350).then(function () { return step(i + 1); });
+                }, function (err) {
+                    failed += 1;
+                    clog("打开单据失败，保留列表头", bill._billno || bill._pkId, err && err.message);
+                    pushParsed(bill, {
+                        header: headerFromListBill(bill),
+                        headerColumns: [],
+                        entries: [],
+                        entryColumns: [],
+                        rows: [flattenPartyBill(headerFromListBill(bill), null, { pk: bill._pkId || "", seq: -1 })]
+                    });
+                    return waitMs(250).then(function () { return step(i + 1); });
+                });
+            }
+            return step(0);
+        }
+        function loadPartyQuarterlyFromCq() {
+            if (cqDisposed) return Promise.resolve([]);
+            if (partyLoading) return partyLoading;
+            var sess = getFetchSession("cq-fetch-frame-party");
+            var trail = [];
+            function step(name, info) {
+                trail.push({ name: name, info: info || null });
+                clog("pq-step", name, info || "");
+            }
+            var task = Promise.resolve().then(function () {
+                if (cqDisposed) throw new Error("aborted");
+                return ensureFetchSession(sess);
+            }).then(function () {
+                if (cqDisposed) throw new Error("aborted");
+                hookSessionTree(sess);
+                var consolePageId = findConsolePageIdFrom(sess.win);
+                var suffix = extractRootSuffix(consolePageId);
+                step("session", {
+                    consolePageId: consolePageId,
+                    suffix: suffix,
+                    frameId: sess.frameId,
+                    sessionHref: safeHref(sess.win)
+                });
+                clog("季度党群绩效 consolePageId", consolePageId, "suffix", suffix);
+                if (!consolePageId || !suffix) {
+                    throw new Error("未找到主控台 pageId。隐藏 iframe 可能未加载到主控台。");
+                }
+                var menuPageId = CQ_PARTY.menuAppId + suffix;
+                var listPageId = CQ_PARTY.menuItemId + suffix;
+                sess.listPageId = listPageId;
+                sess.dataFormId = CQ_PARTY.dataFormId;
+                sess.dataAppId = CQ_PARTY.dataAppId;
+                sess.lastList = "";
+                sess.lastBill = "";
+                sess.lastAppHome = "";
+                sess.requests = [];
+                function treeMenuThenLoad() {
+                    step("treeMenuThenLoad", { menuPageId: menuPageId, listPageId: listPageId });
+                    return cqInvoke(
+                        sess.win,
+                        CQ_PARTY.menuAppId,
+                        CQ_PARTY.menuFormId,
+                        "treeMenuClick",
+                        menuPageId,
+                        [{
+                            key: CQ_PARTY.menuControl,
+                            methodName: "treeMenuClick",
+                            args: [CQ_PARTY.menuRoot, CQ_PARTY.menuItemId],
+                            postData: [{}, []]
+                        }]
+                    ).then(function () {
+                        return cqInvoke(
+                            sess.win,
+                            CQ_PARTY.dataAppId,
+                            CQ_PARTY.dataFormId,
+                            "loadData",
+                            listPageId,
+                            [{ key: "", methodName: "loadData", args: [], postData: [] }]
+                        );
+                    });
+                }
+                function waitListLoad() {
+                    return waitForSessReq(sess, function (r) {
+                        return isPartyListLoad(r, sess);
+                    }, 15000, "等待季度党群绩效列表 loadData");
+                }
+                return clickAppThenParty(sess, step).then(function () {
+                    var hit = findPartyMenu(sess);
+                    step("find-menu", { hasMenu: !!(hit && hit.hit), text: hit ? hit.text : "" });
+                    if (hit && hit.hit) {
+                        clog("点击", hit.text);
+                        fireParentClick(hit.hit.el, hit.hit.win);
+                        return waitListLoad().catch(function () {
+                            clog("点击后未捕获列表 loadData，改请求链");
+                            step("click-menu-no-payload", {});
+                            return treeMenuThenLoad();
+                        });
+                    }
+                    return treeMenuThenLoad();
+                }).then(function (res) {
+                    if (cqDisposed) return [];
+                    var payload = sess.lastList;
+                    if (!payload && res && res.query) payload = res.response;
+                    if (!payload) payload = res;
+                    var list = extractPartyListBills(payload, sess);
+                    if (!list.rows.length) {
+                        var ri;
+                        for (ri = sess.requests.length - 1; ri >= 0; ri--) {
+                            if (!isPartyListLoad(sess.requests[ri], sess)) continue;
+                            list = extractPartyListBills(sess.requests[ri].response, sess);
+                            payload = sess.requests[ri].response;
+                            if (list.rows.length) break;
+                        }
+                    }
+                    clog("季度党群绩效列表单据", list.rows.length);
+                    if (!list.rows.length) {
+                        partyReady = true;
+                        applyPartyTable({ columns: [], rows: [] });
+                        showAlert("default", "季度党群绩效加载成功", "列表为空，无单据可打开分录");
+                        return [];
+                    }
+                    sess.dataFormId = CQ_PARTY.dataFormId;
+                    return waitFor(function () {
+                        return findBillLinkInSession(sess, list.rows[0]);
+                    }, 8000, 200, "等待列表编号").catch(function () {
+                        return null;
+                    }).then(function () {
+                        return collectPartyEntries(sess, list.rows);
+                    }).then(function (got) {
+                        var cols = combinePartyColumns(got.headerCols, got.entryCols, got.allHeader);
+                        var table = partyColsToTable(cols, got.rows);
+                        partyReady = table.rows.length > 0 || !!(table.columns && table.columns.length);
+                        applyPartyTable(table);
+                        try { window.__cqLastPartyParse = { table: table, opened: got.opened, failed: got.failed, entryCount: got.entryCount }; } catch (e3) { }
+                        clog("季度党群绩效摊平", "单据", got.opened, "失败", got.failed, "分录", got.entryCount, "行", table.rows.length);
+                        if (partyReady) {
+                            showAlert(
+                                "default",
+                                "季度党群绩效加载成功",
+                                "单据 " + got.opened + " 张，分录 " + got.entryCount + " 行，列表 " + table.rows.length + " 条"
+                            );
+                        } else {
+                            showAlert("destructive", "季度党群绩效加载失败", "已返回数据但未能识别行");
+                        }
+                        return table.rows;
+                    });
+                });
+            }).then(function (rows) {
+                partyLoading = false;
+                return rows;
+            }, function (err) {
+                partyLoading = false;
+                if (cqDisposed || (err && err.message === "aborted")) return [];
+                clog("季度党群绩效加载失败", err && err.message);
+                reportError("party-load", err, { trail: trail });
+                showAlert("destructive", "季度党群绩效加载失败", err && err.message ? String(err.message) : String(err));
+            });
+            partyLoading = task;
+            return task;
+        }
+        try { parentWin().__cqFetchPartyQuarterly = loadPartyQuarterlyFromCq; } catch (ePq) { }
+        try { window.__cqFetchPartyQuarterly = loadPartyQuarterlyFromCq; } catch (ePq2) { }
 
         // ---------- 党组织：树 + 表（布局对齐官方选择器，样式走当前 shadcn 主题） ----------
         var orgState = {
@@ -2235,18 +4271,20 @@
             setStatus("已新增「" + org + " / " + typeName + "」 " + no);
         });
 
-        document.addEventListener("keydown", function (e) {
+        onCqKeydown = function (e) {
             if (e.key === "Escape") {
-                if (dlg && !dlg.hidden) { closeDialog(); return; } // 弹窗优先关闭
+                if (dlg && !dlg.hidden) { closeDialog(); return; }
                 unmount();
             }
-        });
+        };
+        document.addEventListener("keydown", onCqKeydown);
         try {
             syncThemeButton();
             initTableData();
             initTabs();
         } catch (err) {
             clog("初始化失败: " + (err && err.message));
+            reportError("init", err, {});
         }
     </script>
 </body>
