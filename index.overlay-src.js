@@ -1683,9 +1683,9 @@ Error generating stack: \`+o.message+\`
                 columns: [
                     { key: "no", label: "单据编号", sortable: true },
                     { key: "statusText", label: "单据状态", sortable: true, badge: true },
-                    { key: "org", label: "党组织", sortable: true },
                     { key: "typeName", label: "配置类型", sortable: true },
-                    { key: "config", label: "配置json", sortable: true, mono: true }
+                    { key: "configDetail", label: "配置详情", sortable: true, wrap: true },
+                    { key: "org", label: "对应党组织", sortable: true, wrap: true }
                 ],
                 rows: []
             },
@@ -1768,23 +1768,6 @@ Error generating stack: \`+o.message+\`
                 grade: GRADES[Math.floor(Math.random() * GRADES.length)],
                 statusText: st.text,
                 statusCode: st.code
-            };
-        }
-        function randConfigRow() {
-            var st = randStatus();
-            var types = [
-                "季度党群绩效评价规则",
-                "季度创先争优评价规则",
-                "年度党群绩效评价规则",
-                "年度创先争优评价规则"
-            ];
-            return {
-                no: randNo("CQ"),
-                statusText: st.text,
-                statusCode: st.code,
-                org: ORGS[Math.floor(Math.random() * ORGS.length)],
-                typeName: types[Math.floor(Math.random() * types.length)],
-                config: JSON.stringify({ auto: Math.random() < 0.5, level: Math.floor(Math.random() * 5) + 1 })
             };
         }
         var DEDUCTION_NAMES = [
@@ -1875,21 +1858,41 @@ Error generating stack: \`+o.message+\`
             var countEl = document.getElementById("org-selected-count");
             if (countEl) countEl.textContent = String(selectedOrgNames().length);
         }
+        var configSelected = {};
+        function onConfigSelectionChange(selection) {
+            configSelected = selection || {};
+        }
         function refreshDataTable(tabId) {
             if (window.__cqDataTable && TABLE_DEFS[tabId] && TABLE_DEFS[tabId].columns) {
-                window.__cqDataTable.setData(tabId, TABLE_DEFS[tabId].rows);
+                if (tabId === "config") {
+                    window.__cqDataTable.setData(tabId, TABLE_DEFS[tabId].rows, {
+                        selectable: true,
+                        selectedIds: configSelected,
+                        onSelectionChange: onConfigSelectionChange
+                    });
+                } else {
+                    window.__cqDataTable.setData(tabId, TABLE_DEFS[tabId].rows);
+                }
             }
         }
         window.__CQ_TABLE_BOOT = function () {
             try {
             if (!window.__cqDataTable) return;
             var dt = window.__cqDataTable;
-            ["quarterly", "annual", "config", "deduction", "partyQuarterly"].forEach(function (id) {
+            ["quarterly", "annual", "deduction", "partyQuarterly"].forEach(function (id) {
                 dt.mount(id, "dt-" + id, TABLE_DEFS[id].columns, TABLE_DEFS[id].rows, {
                     pageSize: 10,
                     filterPlaceholder: "搜索" + TABLE_DEFS[id].label + "…",
                     filterHostId: "dt-filter-" + id
                 });
+            });
+            dt.mount("config", "dt-config", TABLE_DEFS.config.columns, TABLE_DEFS.config.rows, {
+                pageSize: 10,
+                selectable: true,
+                selectedIds: configSelected,
+                onSelectionChange: onConfigSelectionChange,
+                filterPlaceholder: "搜索" + TABLE_DEFS.config.label + "…",
+                filterHostId: "dt-filter-config"
             });
             dt.mount("orgView", "dt-orgView", ORG_TABLE_COLUMNS, [], {
                 pageSize: 20,
@@ -1946,6 +1949,9 @@ Error generating stack: \`+o.message+\`
             if (tabId === "partyQuarterly" && !partyLoading && !partyReady) {
                 loadPartyQuarterlyFromCq();
             }
+            if (tabId === "config" && !configLoading && !configReady) {
+                loadConfigFromCq();
+            }
         }
         function initTabs() {
             document.querySelectorAll(".nav-item").forEach(function (btn) {
@@ -1964,8 +1970,8 @@ Error generating stack: \`+o.message+\`
             TABLE_DEFS.partyQuarterly.rows = [];
             for (var i = 0; i < 8; i++) TABLE_DEFS.quarterly.rows.push(randQuarterlyRow());
             for (var j = 0; j < 6; j++) TABLE_DEFS.annual.rows.push(randAnnualRow());
-            for (var k = 0; k < 5; k++) TABLE_DEFS.config.rows.push(randConfigRow());
             ["quarterly", "annual", "config"].forEach(refreshDataTable);
+            loadConfigFromCq();
         }
         var alertTimer = 0;
         var alertLeaveTimer = 0;
@@ -2092,12 +2098,18 @@ Error generating stack: \`+o.message+\`
             dataFormId: "crrc_dj_org_tree_ext",
             menuTexts: ["党组织查询", "党组织"]
         };
+        var CQ_CONFIG = {
+            dataAppId: "crrc_dj",
+            dataFormId: "crrc_dj_config_new"
+        };
         var deductionLoading = false;
         var deductionReady = false;
         var partyLoading = false;
         var partyReady = false;
         var orgLoading = false;
         var orgReady = false;
+        var configLoading = false;
+        var configReady = false;
         var STATUS_TEXT = { A: "暂存", B: "已提交", C: "已审核" };
         var ORG_TYPE_TEXT = { "1": "党委", "2": "党总支", "3": "党支部", "4": "党小组" };
         var ORG_ENABLE_TEXT = { "0": "禁用", "1": "可用" };
@@ -2202,6 +2214,7 @@ Error generating stack: \`+o.message+\`
             deductionLoading = false;
             partyLoading = false;
             orgLoading = false;
+            configLoading = false;
             if (alertTimer) { clearTimeout(alertTimer); alertTimer = 0; }
             if (alertLeaveTimer) { clearTimeout(alertLeaveTimer); alertLeaveTimer = 0; }
             if (alertTimers && alertTimers.length) {
@@ -2228,6 +2241,7 @@ Error generating stack: \`+o.message+\`
             try { window.__cqFetchDeduction = null; } catch (e2) { }
             try { window.__cqFetchPartyQuarterly = null; } catch (e2b) { }
             try { window.__cqFetchOrg = null; } catch (e2c) { }
+            try { window.__cqFetchConfig = null; } catch (e2d) { }
             try { window.__cqDisposeOverlay = null; } catch (e3) { }
             try { window.__cqDtRoot = null; } catch (e4) { }
             try { unmountHost(); } catch (e5) { }
@@ -2494,6 +2508,9 @@ Error generating stack: \`+o.message+\`
             var i;
             for (i = 0; i < nodes.length; i++) {
                 var el = nodes[i];
+                try {
+                    if (el.closest && el.closest("#shadcn-hello-inject-root")) continue;
+                } catch (eSkip) { }
                 var raw = collapseWs(el.innerText || el.textContent || "");
                 if (raw !== text) continue;
                 if (!fallback) fallback = el;
@@ -4441,6 +4458,270 @@ Error generating stack: \`+o.message+\`
             }
         })();
 
+        // ---------- 苍穹配置单据：按钮绑定与字段读写 ----------
+        var CQ_CONFIG_FIELDS = {
+            type: "crrc_textfield",
+            json: "crrc_largetextfield",
+            billno: "billno",
+            billstatus: "billstatus"
+        };
+        var CQ_TOOLBAR_SEL = ".kd-cq-toolbar-item, .kd-cq-toolbar button, .kd-cq-btn, button, [role='button']";
+        var CQ_DIALOG_SEL = ".kd-modal button, .kd-cq-dialog button, .kd-message-box button, .kd-cq-btn, button, span";
+        var configDlgMode = "add";
+        var configEditRow = null;
+        var configBusy = false;
+        var configPanelLock = false;
+        var configOpenedOfficial = false;
+
+        function isOverlayFrameWin(win) {
+            try {
+                if (!win) return false;
+                var fe = win.frameElement;
+                if (fe && fe.getAttribute("data-cq-fetch") === "1") return true;
+            } catch (e0) { }
+            try {
+                var od = win.document;
+                if (od && od.getElementById("dlg-overlay") && od.getElementById("panel-config") && od.getElementById("tblnew")) return true;
+            } catch (e1) { }
+            return false;
+        }
+        function isOverlayNode(el) {
+            if (!el) return false;
+            try {
+                if (el.closest && el.closest("#shadcn-hello-inject-root")) return true;
+            } catch (e0) { }
+            try {
+                var view = el.ownerDocument && el.ownerDocument.defaultView;
+                if (view && isOverlayFrameWin(view)) return true;
+            } catch (e1) { }
+            return false;
+        }
+        function officialSearchRoots() {
+            var roots = [];
+            function add(win) {
+                if (!win) return;
+                var i;
+                for (i = 0; i < roots.length; i++) if (roots[i] === win) return;
+                roots.push(win);
+            }
+            try { add(hostWin()); } catch (e0) { }
+            try { add(parentWin()); } catch (e1) { }
+            if (sessionWin) add(sessionWin);
+            return roots;
+        }
+        function findOfficialClick(text, selector) {
+            var found = null;
+            function walk(win, depth, seen) {
+                if (found || !win || depth > 8) return;
+                var s;
+                for (s = 0; s < seen.length; s++) if (seen[s] === win) return;
+                seen.push(win);
+                if (isOverlayFrameWin(win)) return;
+                try {
+                    var el = findParentClickTarget(win.document, text, selector);
+                    if (el && !isOverlayNode(el)) found = { win: win, el: el };
+                } catch (e) { }
+                if (found) return;
+                try {
+                    var frames = win.frames;
+                    var f;
+                    for (f = 0; f < frames.length; f++) walk(frames[f], depth + 1, seen);
+                } catch (e2) { }
+            }
+            var roots = officialSearchRoots();
+            var r;
+            for (r = 0; r < roots.length && !found; r++) walk(roots[r], 0, []);
+            return found;
+        }
+        function clickOfficialByText(texts, selector) {
+            if (typeof texts === "string") texts = [texts];
+            var i;
+            for (i = 0; i < texts.length; i++) {
+                var hit = findOfficialClick(texts[i], selector || CQ_TOOLBAR_SEL);
+                if (hit && fireParentClick(hit.el, hit.win)) {
+                    clog("已点击苍穹按钮", texts[i]);
+                    return true;
+                }
+            }
+            return false;
+        }
+        function waitUntil(fn, timeout, label) {
+            var start = Date.now();
+            var limit = timeout || 8000;
+            return new Promise(function (resolve, reject) {
+                function tick() {
+                    if (cqDisposed) return reject(new Error("aborted"));
+                    var v = null;
+                    try { v = fn(); } catch (e) { v = null; }
+                    if (v) return resolve(v);
+                    if (Date.now() - start > limit) return reject(new Error(label || "等待超时"));
+                    setTimeout(tick, 200);
+                }
+                tick();
+            });
+        }
+        function walkOfficialWindows(fn) {
+            var seen = [];
+            function walk(win, depth) {
+                if (!win || depth > 8) return;
+                var s;
+                for (s = 0; s < seen.length; s++) if (seen[s] === win) return;
+                seen.push(win);
+                if (isOverlayFrameWin(win)) return;
+                try { fn(win); } catch (e0) { }
+                try {
+                    var frames = win.frames;
+                    var f;
+                    for (f = 0; f < frames.length; f++) walk(frames[f], depth + 1);
+                } catch (e1) { }
+            }
+            var roots = officialSearchRoots();
+            var r;
+            for (r = 0; r < roots.length; r++) walk(roots[r], 0);
+        }
+        function findOfficialField(fieldId) {
+            var found = null;
+            walkOfficialWindows(function (win) {
+                if (found) return;
+                try {
+                    var doc = win.document;
+                    var el = doc.getElementById(fieldId);
+                    if (el && !isOverlayNode(el)) found = { win: win, el: el, doc: doc };
+                } catch (e) { }
+            });
+            return found;
+        }
+        function fieldInputs(el) {
+            if (!el) return [];
+            var tag = (el.tagName || "").toLowerCase();
+            if (tag === "input" || tag === "textarea") return [el];
+            var list = [];
+            try { list = el.querySelectorAll("textarea, input"); } catch (e) { }
+            var out = [];
+            var i;
+            for (i = 0; i < list.length; i++) out.push(list[i]);
+            if (!out.length && el.isContentEditable) out.push(el);
+            return out;
+        }
+        function fillNativeValue(el, value) {
+            var str = value == null ? "" : String(value);
+            if (el.isContentEditable) {
+                try { el.focus(); } catch (e0) { }
+                el.innerText = str;
+                try { el.dispatchEvent(new Event("input", { bubbles: true })); } catch (e1) { }
+                try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch (e2) { }
+                return;
+            }
+            try {
+                var tag = (el.tagName || "").toLowerCase();
+                var proto = tag === "textarea" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+                var desc = Object.getOwnPropertyDescriptor(proto, "value");
+                if (desc && desc.set) desc.set.call(el, str);
+                else el.value = str;
+            } catch (e3) {
+                el.value = str;
+            }
+            try { el.dispatchEvent(new Event("input", { bubbles: true })); } catch (e4) { }
+            try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch (e5) { }
+            try { el.blur(); } catch (e6) { }
+        }
+        function tryWinFieldApi(win, key, value, reading) {
+            if (!win) return { ok: false };
+            var dollar = win.$;
+            if (typeof dollar === "function") {
+                try {
+                    var field = dollar.call(win, key);
+                    if (reading) {
+                        if (field && typeof field.getValue === "function") {
+                            var gv = field.getValue();
+                            if (gv != null && gv !== "") return { ok: true, value: gv };
+                        }
+                    } else if (field && typeof field.setValue === "function") {
+                        field.setValue(value);
+                        if (typeof field.updateView === "function") field.updateView();
+                        return { ok: true };
+                    }
+                } catch (e0) { }
+            }
+            try {
+                var model = win.formModel || (win.KDApi && win.KDApi.formModel) || null;
+                if (model && typeof model.getValue === "function" && typeof model.setValue === "function") {
+                    if (reading) {
+                        var mv = model.getValue(key);
+                        if (mv != null && mv !== "") return { ok: true, value: mv };
+                    } else {
+                        model.setValue(key, value);
+                        return { ok: true };
+                    }
+                }
+            } catch (e1) { }
+            return { ok: false };
+        }
+        function setOfficialField(fieldId, value) {
+            var hit = findOfficialField(fieldId);
+            if (!hit) return false;
+            var api = tryWinFieldApi(hit.win, fieldId, value, false);
+            if (api.ok) return true;
+            var inputs = fieldInputs(hit.el);
+            if (!inputs.length) return false;
+            var i;
+            for (i = 0; i < inputs.length; i++) fillNativeValue(inputs[i], value);
+            return true;
+        }
+        function getOfficialField(fieldId) {
+            var hit = findOfficialField(fieldId);
+            if (!hit) return "";
+            var api = tryWinFieldApi(hit.win, fieldId, null, true);
+            if (api.ok && api.value != null) return String(cqCell(api.value));
+            var inputs = fieldInputs(hit.el);
+            var i;
+            for (i = 0; i < inputs.length; i++) {
+                var v = inputs[i].isContentEditable ? (inputs[i].innerText || "") : (inputs[i].value || "");
+                if (String(v).trim() !== "") return String(v);
+            }
+            if (fieldId === CQ_CONFIG_FIELDS.json) return "";
+            return collapseWs(hit.el.innerText || hit.el.textContent || "");
+        }
+        function waitOfficialBillFields(timeout) {
+            return waitUntil(function () {
+                return findOfficialField(CQ_CONFIG_FIELDS.json) || findOfficialField(CQ_CONFIG_FIELDS.type);
+            }, timeout || 12000, "等待苍穹单据字段加载");
+        }
+        function selectOfficialListRow(billno) {
+            if (!billno) return false;
+            var hit = findOfficialClick(String(billno), "span.link-cell-content, span.link-color, a, span, td")
+                || findOfficialClick(String(billno));
+            if (!hit) return false;
+            return fireParentClick(hit.el, hit.win);
+        }
+        function formatBillStatus(val) {
+            var s = String(val == null ? "" : cqCell(val)).trim();
+            if (!s) return "暂存";
+            if (STATUS_TEXT[s]) return STATUS_TEXT[s];
+            return s;
+        }
+        function statusCodeOf(text) {
+            var s = String(text || "");
+            if (STATUS_TEXT[s]) return s;
+            var keys = Object.keys(STATUS_TEXT);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                if (STATUS_TEXT[keys[i]] === s) return keys[i];
+            }
+            return "A";
+        }
+        function selectedConfigRows() {
+            var ids = Object.keys(configSelected).filter(function (id) { return configSelected[id]; });
+            if (!ids.length) return [];
+            return TABLE_DEFS.config.rows.filter(function (row) {
+                var rid = String(row._rowId || row.no || "");
+                return ids.indexOf(rid) >= 0 || ids.indexOf(String(row.no || "")) >= 0;
+            });
+        }
+        function cloneJson(v) {
+            try { return JSON.parse(JSON.stringify(v)); } catch (e) { return null; }
+        }
+
         // ---------- 配置类型与动态配置面板 ----------
         var CONFIG_TYPES = {
             quarterly_party_perf: "季度党群绩效评价规则",
@@ -4682,14 +4963,18 @@ Error generating stack: \`+o.message+\`
             };
             paint();
         }
+        function paintConfigDraft(type, data) {
+            if (!dlgConfigPanel) return;
+            if (isPartyPerfType(type)) renderPartyPerfPanel(data);
+            else if (isExcellenceType(type)) renderExcellencePanel(data, type);
+            else if (isGrassrootsType(type)) renderGrassrootsPanel(data);
+            else dlgConfigPanel.innerHTML = "";
+        }
         function renderConfigPanel() {
             if (!dlgConfigPanel || !dlgType) return;
             var type = dlgType.value;
             configDraft = defaultConfigForType(type);
-            if (isPartyPerfType(type)) renderPartyPerfPanel(configDraft);
-            else if (isExcellenceType(type)) renderExcellencePanel(configDraft, type);
-            else if (isGrassrootsType(type)) renderGrassrootsPanel(configDraft);
-            else dlgConfigPanel.innerHTML = "";
+            paintConfigDraft(type, configDraft);
         }
         function validateConfig(type, data) {
             if (isPartyPerfType(type)) {
@@ -4721,40 +5006,514 @@ Error generating stack: \`+o.message+\`
             }
             return "未知配置类型";
         }
-        function buildConfigJson(type, data) {
-            return JSON.stringify({ type: type, typeName: CONFIG_TYPES[type] || type, config: data });
+        function formatConfigDetail(type, data) {
+            data = data || {};
+            if (isPartyPerfType(type) && data.items) {
+                return data.items.map(function (x) {
+                    return (x.label || "") + " " + (x.percent != null ? x.percent : "") + "%";
+                }).join("；");
+            }
+            if (isExcellenceType(type)) {
+                return [data.partyPerfLabel, data.adminPerfLabel, data.excellenceLabel].filter(Boolean).join(" / ");
+            }
+            if (isGrassrootsType(type) && data.items) {
+                return data.items.map(function (x) {
+                    return (x.name || "") + " " + (x.score != null ? x.score : "") + "分";
+                }).join("；");
+            }
+            return "";
         }
-
-        function openDialog() {
-            if (!dlg) { clog("弹窗元素不存在 #dlg-overlay"); return; }
-            if (dlgType) dlgType.selectedIndex = 0;
-            renderConfigPanel();
+        function buildConfigJson(orgs, data) {
+            return JSON.stringify({ orgs: orgs || [], config: data || {} });
+        }
+        function parseConfigPayload(raw) {
+            var empty = { orgs: [], config: null, type: "", typeName: "" };
+            if (raw == null || raw === "") return empty;
+            var obj = raw;
+            if (typeof raw === "string") {
+                try { obj = JSON.parse(raw); } catch (e) { return empty; }
+            }
+            if (!obj || typeof obj !== "object") return empty;
+            var orgs = obj.orgs;
+            if (orgs == null && obj.org != null) orgs = obj.org;
+            if (typeof orgs === "string") {
+                orgs = orgs.split(/[、,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+            }
+            if (!Array.isArray(orgs)) orgs = [];
+            var data = obj.config;
+            if (data == null && (obj.items || obj.partyPerfLabel)) data = obj;
+            return {
+                orgs: orgs,
+                config: data || null,
+                type: obj.type || "",
+                typeName: obj.typeName || ""
+            };
+        }
+        function typeFromField(val) {
+            var s = String(val || "").trim();
+            if (!s) return "";
+            if (CONFIG_TYPES[s]) return s;
+            var keys = Object.keys(CONFIG_TYPES);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                if (CONFIG_TYPES[keys[i]] === s) return keys[i];
+            }
+            return s;
+        }
+        function findOrgIdByName(name, node) {
+            node = node || ORG_TREE;
+            if (node.name === name) return node.id;
+            var ch = node.children || [];
+            var i;
+            for (i = 0; i < ch.length; i++) {
+                var id = findOrgIdByName(name, ch[i]);
+                if (id) return id;
+            }
+            return "";
+        }
+        function selectOrgsByNames(names) {
             resetOrgPicker();
+            var selected = {};
+            (names || []).forEach(function (name) {
+                var id = findOrgIdByName(name) || name;
+                if (id) selected[id] = true;
+            });
+            orgState.selected = selected;
+            refreshOrgDialogTable();
+        }
+        function makeConfigRow(opts) {
+            opts = opts || {};
+            var type = opts.type || "";
+            var typeName = opts.typeName || CONFIG_TYPES[type] || type;
+            var data = opts.config || {};
+            var orgs = opts.orgs || [];
+            if (!Array.isArray(orgs)) orgs = orgs ? [orgs] : [];
+            var org = orgs.join("、");
+            var statusText = opts.statusText || "暂存";
+            return {
+                _rowId: opts._rowId || opts.no || ("cfg-" + Date.now()),
+                no: opts.no || "",
+                statusText: statusText,
+                statusCode: opts.statusCode || statusCodeOf(statusText),
+                type: type,
+                typeName: typeName,
+                org: org,
+                orgs: orgs,
+                config: buildConfigJson(orgs, data),
+                configDetail: formatConfigDetail(type, data)
+            };
+        }
+        function upsertConfigRow(row, replaceNo) {
+            var idx = -1;
+            if (replaceNo) {
+                var i;
+                for (i = 0; i < TABLE_DEFS.config.rows.length; i++) {
+                    if (String(TABLE_DEFS.config.rows[i].no) === String(replaceNo)
+                        || String(TABLE_DEFS.config.rows[i]._rowId) === String(replaceNo)) {
+                        idx = i;
+                        break;
+                    }
+                }
+            }
+            if (idx >= 0) TABLE_DEFS.config.rows[idx] = row;
+            else TABLE_DEFS.config.rows.unshift(row);
+            refreshDataTable("config");
+        }
+        function isConfigFormId(f) {
+            f = String(f || "");
+            return f === CQ_CONFIG.dataFormId || f.indexOf("crrc_dj_config") >= 0;
+        }
+        function collectConfigListContexts() {
+            var list = [];
+            function add(win, href) {
+                href = String(href || "");
+                if (!href) return;
+                var f = takeQueryParam(href, "formId") || takeQueryParam(href, "f") || takeQueryParam(href, "billFormId");
+                var pid = takeQueryParam(href, "pageId") || takeQueryParam(href, "byPageId");
+                var app = takeQueryParam(href, "appId") || CQ_CONFIG.dataAppId;
+                if (!pid) return;
+                if (!isConfigFormId(f) && href.indexOf("crrc_dj_config") < 0) return;
+                var i;
+                for (i = 0; i < list.length; i++) {
+                    if (list[i].pageId === pid && list[i].formId === (isConfigFormId(f) ? f : CQ_CONFIG.dataFormId)) return;
+                }
+                list.push({
+                    win: win || parentWin(),
+                    appId: app,
+                    formId: isConfigFormId(f) ? f : CQ_CONFIG.dataFormId,
+                    pageId: pid
+                });
+            }
+            walkOfficialWindows(function (win) {
+                try { add(win, win.location.href); } catch (e0) { }
+                try {
+                    var doc = win.document;
+                    var nodes = doc.querySelectorAll("iframe[src]");
+                    var i;
+                    for (i = 0; i < nodes.length; i++) add(win, nodes[i].getAttribute("src") || "");
+                } catch (e1) { }
+            });
+            return list;
+        }
+        function mapConfigPackKey(idx, names, allowContains) {
+            var i;
+            for (i = 0; i < names.length; i++) {
+                if (idx[names[i]] != null) return names[i];
+            }
+            if (!allowContains) return "";
+            var keys = Object.keys(idx);
+            var j;
+            for (i = 0; i < keys.length; i++) {
+                for (j = 0; j < names.length; j++) {
+                    if (keys[i].indexOf(names[j]) >= 0) return keys[i];
+                }
+            }
+            return "";
+        }
+        function stringifyConfigCell(val) {
+            if (val == null || val === "") return "";
+            if (typeof val === "string") return val;
+            if (typeof val === "object") {
+                try { return JSON.stringify(val); } catch (e) { return String(cqCell(val) || ""); }
+            }
+            return String(val);
+        }
+        function mapConfigListPayload(payload) {
+            var parsed = parseMaybeJson(payload);
+            var pack = findBillListPack(parsed);
+            if (!pack) return null;
+            var idx = pack.dataindex || {};
+            var billnoKey = mapConfigPackKey(idx, ["billno"]);
+            var statusKey = mapConfigPackKey(idx, ["billstatus"]);
+            var typeKey = mapConfigPackKey(idx, ["crrc_textfield"]);
+            var jsonKey = mapConfigPackKey(idx, ["crrc_largetextfield"], true);
+            if (!jsonKey) jsonKey = mapConfigPackKey(idx, ["largetext"], true);
+            var pkKey = "";
+            var keys = Object.keys(idx);
+            var i;
+            for (i = 0; i < keys.length; i++) {
+                if (keys[i].length > 3 && keys[i].slice(keys[i].length - 3) === "_id") {
+                    pkKey = keys[i];
+                    break;
+                }
+            }
+            return (pack.rows || []).map(function (row, ridx) {
+                var billno = String(packCellAt(pack, row, billnoKey) || "");
+                var statusRaw = String(packCellAt(pack, row, statusKey) || "");
+                var typeVal = String(packCellAt(pack, row, typeKey) || "");
+                var jsonVal = stringifyConfigCell(packCellAt(pack, row, jsonKey));
+                var parsedCfg = parseConfigPayload(jsonVal);
+                var type = typeFromField(typeVal) || parsedCfg.type || typeFromField(parsedCfg.typeName);
+                var typeName = CONFIG_TYPES[type] || parsedCfg.typeName || typeVal || type;
+                var orgs = parsedCfg.orgs && parsedCfg.orgs.length ? parsedCfg.orgs : [];
+                var mapped = makeConfigRow({
+                    _rowId: billno || ("cfg-" + ridx),
+                    no: billno,
+                    statusText: formatBillStatus(statusRaw),
+                    statusCode: STATUS_TEXT[statusRaw] ? statusRaw : statusCodeOf(formatBillStatus(statusRaw)),
+                    type: type,
+                    typeName: typeName,
+                    orgs: orgs,
+                    config: parsedCfg.config || {}
+                });
+                if (jsonVal) mapped.config = jsonVal;
+                if (!mapped.configDetail && jsonVal && jsonVal.charAt(0) !== "{") mapped.configDetail = jsonVal;
+                mapped._pkId = String(packCellAt(pack, row, pkKey) || "");
+                return mapped;
+            });
+        }
+        function headerIndex(headers, names) {
+            var i, j;
+            for (j = 0; j < names.length; j++) {
+                for (i = 0; i < headers.length; i++) {
+                    if (headers[i] === names[j]) return i;
+                }
+            }
+            return -1;
+        }
+        function mapConfigDomTable(table) {
+            if (!table) return null;
+            var ths = table.querySelectorAll("thead th");
+            if (!ths.length) ths = table.querySelectorAll("tr:first-child th");
+            if (!ths.length) return null;
+            var headers = [];
+            var i;
+            for (i = 0; i < ths.length; i++) headers.push(collapseWs(ths[i].innerText || ths[i].textContent || ""));
+            var noIdx = headerIndex(headers, ["单据编号"]);
+            var stIdx = headerIndex(headers, ["单据状态"]);
+            if (noIdx < 0 && stIdx < 0) return null;
+            var typeIdx = headerIndex(headers, ["配置类型", "数据类型"]);
+            var detailIdx = headerIndex(headers, ["配置详情", "配置json", "配置"]);
+            var orgIdx = headerIndex(headers, ["对应党组织", "党组织"]);
+            var bodyRows = table.querySelectorAll("tbody tr");
+            var out = [];
+            var r;
+            for (r = 0; r < bodyRows.length; r++) {
+                var cells = bodyRows[r].querySelectorAll("td");
+                if (!cells.length) continue;
+                function cellAt(idx) {
+                    if (idx < 0 || idx >= cells.length) return "";
+                    return collapseWs(cells[idx].innerText || cells[idx].textContent || "");
+                }
+                var billno = cellAt(noIdx);
+                var statusText = cellAt(stIdx);
+                if (!billno && !statusText) continue;
+                var typeVal = cellAt(typeIdx);
+                var jsonVal = cellAt(detailIdx);
+                var orgText = cellAt(orgIdx);
+                var parsedCfg = parseConfigPayload(jsonVal);
+                var type = typeFromField(typeVal) || parsedCfg.type;
+                var orgs = parsedCfg.orgs.length ? parsedCfg.orgs : (orgText ? orgText.split("、") : []);
+                var mapped = makeConfigRow({
+                    _rowId: billno || ("cfg-dom-" + r),
+                    no: billno,
+                    statusText: formatBillStatus(statusText),
+                    type: type,
+                    typeName: CONFIG_TYPES[type] || typeVal || parsedCfg.typeName,
+                    orgs: orgs,
+                    config: parsedCfg.config || {}
+                });
+                if (jsonVal) mapped.config = jsonVal;
+                if (!mapped.configDetail && jsonVal && jsonVal.charAt(0) !== "{") mapped.configDetail = jsonVal;
+                out.push(mapped);
+            }
+            return out.length ? out : null;
+        }
+        function parseConfigListFromDom() {
+            var rows = [];
+            walkOfficialWindows(function (win) {
+                if (rows.length) return;
+                try {
+                    var doc = win.document;
+                    var tables = doc.querySelectorAll("table");
+                    var t;
+                    for (t = 0; t < tables.length; t++) {
+                        var table = tables[t];
+                        if (isOverlayNode(table)) continue;
+                        var mapped = mapConfigDomTable(table);
+                        if (mapped && mapped.length) {
+                            rows = mapped;
+                            return;
+                        }
+                    }
+                } catch (e) { }
+            });
+            return rows;
+        }
+        function applyConfigRows(rows) {
+            TABLE_DEFS.config.rows = rows || [];
+            configSelected = {};
+            refreshDataTable("config");
+        }
+        async function fetchConfigListRows() {
+            var ctxs = collectConfigListContexts();
+            var i;
+            for (i = 0; i < ctxs.length; i++) {
+                try {
+                    clog("配置项 loadData", ctxs[i].formId, ctxs[i].pageId);
+                    var res = await cqInvoke(
+                        ctxs[i].win,
+                        ctxs[i].appId,
+                        ctxs[i].formId,
+                        "loadData",
+                        ctxs[i].pageId,
+                        [{ key: "", methodName: "loadData", args: [], postData: [] }]
+                    );
+                    var mapped = mapConfigListPayload(res);
+                    if (mapped) return mapped;
+                } catch (e) {
+                    clog("配置项 loadData 失败", ctxs[i].pageId, e && e.message);
+                }
+            }
+            clickOfficialByText(["刷新", "查询"]);
+            await waitMs(600);
+            return parseConfigListFromDom();
+        }
+        function loadConfigFromCq() {
+            if (cqDisposed) return Promise.resolve([]);
+            if (configLoading) return configLoading;
+            var task = fetchConfigListRows().then(function (rows) {
+                if (cqDisposed) return [];
+                applyConfigRows(rows || []);
+                configReady = true;
+                var n = (rows || []).length;
+                showAlert("default", "配置项已加载", n ? ("已加载 " + n + " 条") : "当前没有配置项");
+                return rows || [];
+            }, function (err) {
+                configLoading = false;
+                if (cqDisposed || (err && err.message === "aborted")) return [];
+                clog("配置项加载失败", err && err.message);
+                reportError("config-load", err, {});
+                applyConfigRows([]);
+                showAlert("destructive", "配置项加载失败", err && err.message ? String(err.message) : String(err));
+                return [];
+            }).then(function (rows) {
+                configLoading = false;
+                return rows;
+            });
+            configLoading = task;
+            return task;
+        }
+        try { parentWin().__cqFetchConfig = loadConfigFromCq; } catch (eCfg) { }
+        try { window.__cqFetchConfig = loadConfigFromCq; } catch (eCfg2) { }
+
+        function openConfigDialog(mode, preset) {
+            if (!dlg) { clog("弹窗元素不存在 #dlg-overlay"); return; }
+            configDlgMode = mode || "add";
+            configEditRow = (preset && preset.row) || null;
+            var title = document.getElementById("dlg-title");
+            if (title) title.textContent = configDlgMode === "edit" ? "修改配置项" : "新增配置项";
+            configPanelLock = true;
+            try {
+                if (preset && preset.type && dlgType && CONFIG_TYPES[preset.type]) dlgType.value = preset.type;
+                else if (dlgType) dlgType.selectedIndex = 0;
+                var type = dlgType ? dlgType.value : "";
+                if (preset && preset.config) {
+                    configDraft = cloneJson(preset.config) || defaultConfigForType(type);
+                    paintConfigDraft(type, configDraft);
+                } else {
+                    renderConfigPanel();
+                }
+                if (preset && preset.orgs && preset.orgs.length) selectOrgsByNames(preset.orgs);
+                else resetOrgPicker();
+            } finally {
+                configPanelLock = false;
+            }
             dlg.hidden = false;
             if (dlgType) dlgType.focus();
         }
         function closeDialog() {
             if (dlg) dlg.hidden = true;
+            configEditRow = null;
+            configDlgMode = "add";
         }
-        if (dlgType) dlgType.onchange = renderConfigPanel;
-        bind("tblnew", async () => {
-            var selfBtn = document.getElementById("tblnew");
-            var got = await waitEl("tblnew");
-            var addBtn = got.getElement();
-            if (!addBtn) {
-                setStatus("未找到父页面 #tblnew，父页面新增逻辑未执行");
-                clog("wait('tblnew') 在父页面未找到元素");
+        async function readConfigBill() {
+            await waitOfficialBillFields();
+            var typeVal = getOfficialField(CQ_CONFIG_FIELDS.type);
+            var jsonVal = getOfficialField(CQ_CONFIG_FIELDS.json);
+            return {
+                typeVal: typeVal,
+                jsonVal: jsonVal,
+                billno: getOfficialField(CQ_CONFIG_FIELDS.billno),
+                billstatus: getOfficialField(CQ_CONFIG_FIELDS.billstatus)
+            };
+        }
+        async function writeConfigBill(typeName, json) {
+            try {
+                await waitOfficialBillFields(configOpenedOfficial ? 12000 : 600);
+            } catch (eWait) {
+                throw new Error("未找到苍穹单据字段 crrc_textfield / crrc_largetextfield");
+            }
+            var typeOk = setOfficialField(CQ_CONFIG_FIELDS.type, typeName);
+            var jsonOk = setOfficialField(CQ_CONFIG_FIELDS.json, json);
+            if (!typeOk && !jsonOk) throw new Error("未找到苍穹字段 crrc_textfield / crrc_largetextfield");
+            if (!typeOk) throw new Error("写入配置类型失败（crrc_textfield）");
+            if (!jsonOk) throw new Error("写入配置详情失败（crrc_largetextfield）");
+            await waitMs(250);
+            if (!clickOfficialByText(["保存", "暂存"])) {
+                throw new Error("未找到苍穹「保存」按钮");
+            }
+            await waitMs(800);
+            return {
+                billno: getOfficialField(CQ_CONFIG_FIELDS.billno),
+                billstatus: formatBillStatus(getOfficialField(CQ_CONFIG_FIELDS.billstatus))
+            };
+        }
+        if (dlgType) dlgType.onchange = function () {
+            if (configPanelLock) return;
+            renderConfigPanel();
+        };
+        bind("tblnew", async function () {
+            if (configBusy) return;
+            var clicked = clickOfficialByText(["新增"]);
+            configOpenedOfficial = !!clicked;
+            if (!clicked) {
+                clog("未找到苍穹「新增」按钮，仅打开本地面板");
+                setStatus("未找到苍穹「新增」按钮，已打开本地面板");
+            } else {
+                setStatus("已打开苍穹新增单据，请填写配置后确定");
+            }
+            openConfigDialog("add");
+        });
+        bind("tbl-config-edit", async function () {
+            if (configBusy) return;
+            var rows = selectedConfigRows();
+            if (rows.length !== 1) {
+                setStatus("请先选择一条要修改的配置");
                 return;
             }
-            // 本地单独打开 index.html 时 parent === 当前页，#tblnew 就是自己，不能再 click 以免递归
-            if (addBtn !== selfBtn) {
-                addBtn.click();
-                clog("已 click 父页面 #tblnew", addBtn.tagName);
-            } else {
-                clog("父页面 #tblnew 与当前按钮为同一元素（本地预览），跳过 click");
+            var row = rows[0];
+            if (row.statusCode === "B" || row.statusCode === "C") {
+                setStatus("已提交/已审核的单据不能修改");
+                return;
             }
-            openDialog();
-            setStatus("已触发父页面新增，请填写配置项");
+            configBusy = true;
+            try {
+                if (row.no) selectOfficialListRow(row.no);
+                await waitMs(250);
+                var clicked = clickOfficialByText(["修改", "编辑"]);
+                configOpenedOfficial = !!clicked;
+                if (!clicked) {
+                    setStatus("未找到苍穹「修改」按钮，已用列表中的配置打开");
+                    var parsedLocal = parseConfigPayload(row.config);
+                    openConfigDialog("edit", {
+                        row: row,
+                        type: row.type || typeFromField(row.typeName) || parsedLocal.type,
+                        config: parsedLocal.config,
+                        orgs: parsedLocal.orgs.length ? parsedLocal.orgs : (row.orgs || [])
+                    });
+                    return;
+                }
+                setStatus("正在读取单据配置…");
+                var bill = null;
+                try {
+                    bill = await readConfigBill();
+                } catch (readErr) {
+                    clog("读取单据配置失败，回退列表数据", readErr && readErr.message);
+                }
+                var parsed = parseConfigPayload(bill && bill.jsonVal ? bill.jsonVal : row.config);
+                var type = typeFromField(bill && bill.typeVal) || parsed.type || row.type || typeFromField(row.typeName);
+                openConfigDialog("edit", {
+                    row: row,
+                    type: type,
+                    config: parsed.config,
+                    orgs: parsed.orgs.length ? parsed.orgs : (row.orgs || [])
+                });
+                setStatus("已读取单据配置，修改后确定将重新保存");
+            } catch (err) {
+                setStatus((err && err.message) || "打开修改失败");
+                reportError("config-edit", err, {});
+            } finally {
+                configBusy = false;
+            }
+        });
+        bind("tbl-config-del", async function () {
+            if (configBusy) return;
+            var rows = selectedConfigRows();
+            if (!rows.length) {
+                setStatus("请先选择要删除的配置");
+                return;
+            }
+            var row = rows[0];
+            configBusy = true;
+            try {
+                if (row.no) selectOfficialListRow(row.no);
+                await waitMs(250);
+                if (!clickOfficialByText(["删除"])) {
+                    setStatus("未找到苍穹「删除」按钮");
+                    return;
+                }
+                await waitMs(300);
+                clickOfficialByText(["确定", "是", "确认"], CQ_DIALOG_SEL);
+                await waitMs(500);
+                await loadConfigFromCq();
+                setStatus("已删除「" + (row.no || row.typeName || "") + "」");
+            } catch (err) {
+                setStatus((err && err.message) || "删除失败");
+                reportError("config-del", err, {});
+            } finally {
+                configBusy = false;
+            }
         });
         bind("dlg-close", closeDialog);
         bind("dlg-cancel", closeDialog);
@@ -4764,7 +5523,8 @@ Error generating stack: \`+o.message+\`
                 if (e.target === dlg) closeDialog();
             });
         }
-        bind("dlg-ok", () => {
+        bind("dlg-ok", async function () {
+            if (configBusy) return;
             var names = selectedOrgNames();
             if (!names.length) {
                 setStatus("请选择党组织");
@@ -4777,21 +5537,175 @@ Error generating stack: \`+o.message+\`
                 setStatus(err);
                 return;
             }
-            var cfg = buildConfigJson(type, configDraft);
-            var org = names.join("、");
-            var no = randNo("CQ");
-            TABLE_DEFS.config.rows.unshift({
-                no: no,
-                statusText: "暂存",
-                statusCode: "A",
-                org: org,
-                typeName: typeName,
-                config: cfg
+            var cfg = buildConfigJson(names, configDraft);
+            configBusy = true;
+            try {
+                var wroteOfficial = false;
+                try {
+                    await writeConfigBill(typeName, cfg);
+                    wroteOfficial = true;
+                } catch (writeErr) {
+                    clog("写入苍穹单据失败", writeErr && writeErr.message);
+                    if (findOfficialField(CQ_CONFIG_FIELDS.json) || findOfficialField(CQ_CONFIG_FIELDS.type)) {
+                        setStatus((writeErr && writeErr.message) || "写入苍穹单据失败");
+                        return;
+                    }
+                    setStatus("未检测到苍穹单据字段，已仅更新本地面板");
+                }
+                var modeLabel = configDlgMode === "edit" ? "已修改「" : "已新增「";
+                var summary = names.join("、") + " / " + typeName;
+                if (wroteOfficial) {
+                    switchTab("config");
+                    closeDialog();
+                    await waitMs(500);
+                    await loadConfigFromCq();
+                    setStatus(modeLabel + summary + "」");
+                    return;
+                }
+                var replaceKey = configEditRow && (configEditRow._rowId || configEditRow.no);
+                var row = makeConfigRow({
+                    _rowId: configEditRow && configEditRow._rowId,
+                    no: (configEditRow && configEditRow.no) || "",
+                    statusText: (configEditRow && configEditRow.statusText) || "暂存",
+                    type: type,
+                    typeName: typeName,
+                    orgs: names,
+                    config: configDraft
+                });
+                upsertConfigRow(row, replaceKey);
+                switchTab("config");
+                closeDialog();
+                setStatus(modeLabel + summary + "」");
+            } catch (okErr) {
+                setStatus((okErr && okErr.message) || "保存配置失败");
+                reportError("config-ok", okErr, {});
+            } finally {
+                configBusy = false;
+            }
+        });
+
+        function xmlEscape(s) {
+            return String(s == null ? "" : s)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+        function excelSheetName(name) {
+            var s = String(name || "Sheet1");
+            var bad = String.fromCharCode(92) + "/?*[]:";
+            var out = "";
+            var i;
+            for (i = 0; i < s.length; i++) {
+                out += bad.indexOf(s.charAt(i)) >= 0 ? "_" : s.charAt(i);
+            }
+            if (out.length > 31) out = out.slice(0, 31);
+            return out || "Sheet1";
+        }
+        function exportStamp() {
+            var d = new Date();
+            function pad(n) { return n < 10 ? "0" + n : String(n); }
+            return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate())
+                + "_" + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+        }
+        function triggerBlobDownload(blob, filename) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.rel = "noopener";
+            a.style.display = "none";
+            (document.body || document.documentElement).appendChild(a);
+            a.click();
+            setTimeout(function () {
+                try { URL.revokeObjectURL(url); } catch (e0) { }
+                if (a.parentNode) a.parentNode.removeChild(a);
+            }, 800);
+        }
+        function excelCellXml(value, numeric) {
+            if (numeric && value !== "" && value != null && isFinite(Number(value))) {
+                return '<Cell><Data ss:Type="Number">' + Number(value) + "</Data></Cell>";
+            }
+            var nl = String.fromCharCode(10);
+            var cr = String.fromCharCode(13);
+            var text = String(value == null ? "" : value).split(cr + nl).join(nl).split(cr).join(nl);
+            return '<Cell><Data ss:Type="String">' + xmlEscape(text).split(nl).join("&#10;") + "</Data></Cell>";
+        }
+        function buildExcelXml(sheetName, columns, rows) {
+            var xml = [];
+            xml.push('<?xml version="1.0" encoding="UTF-8"?>');
+            xml.push('<?mso-application progid="Excel.Sheet"?>');
+            xml.push('<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"');
+            xml.push(' xmlns:o="urn:schemas-microsoft-com:office:office"');
+            xml.push(' xmlns:x="urn:schemas-microsoft-com:office:excel"');
+            xml.push(' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">');
+            xml.push('<Styles><Style ss:ID="hdr"><Font ss:Bold="1"/></Style></Styles>');
+            xml.push('<Worksheet ss:Name="' + xmlEscape(excelSheetName(sheetName)) + '"><Table>');
+            xml.push("<Row>");
+            columns.forEach(function (col) {
+                xml.push('<Cell ss:StyleID="hdr"><Data ss:Type="String">' + xmlEscape(col.label || col.key) + "</Data></Cell>");
             });
-            refreshDataTable("config");
-            switchTab("config");
-            closeDialog();
-            setStatus("已新增「" + org + " / " + typeName + "」 " + no);
+            xml.push("</Row>");
+            rows.forEach(function (row) {
+                xml.push("<Row>");
+                columns.forEach(function (col) {
+                    xml.push(excelCellXml(row[col.key], !!col.numeric));
+                });
+                xml.push("</Row>");
+            });
+            xml.push("</Table></Worksheet></Workbook>");
+            return xml.join("");
+        }
+        function getExportSource(tabId) {
+            if (tabId === "orgView") {
+                var view = orgViewTableSource();
+                return {
+                    label: "党组织",
+                    columns: ORG_TABLE_COLUMNS,
+                    rows: mapOrgRows((view && view.rows) || [])
+                };
+            }
+            if (tabId === "orgDialog") {
+                return {
+                    label: "选择党组织",
+                    columns: ORG_DIALOG_COLUMNS,
+                    rows: mapOrgRows(orgTableSource())
+                };
+            }
+            var def = TABLE_DEFS[tabId];
+            if (!def || !def.columns) return null;
+            return {
+                label: def.label || tabId,
+                columns: def.columns,
+                rows: def.rows || []
+            };
+        }
+        function exportCurrentExcel(tabId) {
+            var src = getExportSource(tabId);
+            if (!src) {
+                setStatus("未找到可导出的表格");
+                return;
+            }
+            if (!src.rows.length) {
+                setStatus("当前没有可导出的数据");
+                return;
+            }
+            var xml = buildExcelXml(src.label, src.columns, src.rows);
+            var blob = new Blob([String.fromCharCode(0xFEFF) + xml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+            var filename = src.label + "_" + exportStamp() + ".xls";
+            triggerBlobDownload(blob, filename);
+            setStatus("已导出「" + src.label + "」" + src.rows.length + " 条");
+        }
+        [
+            ["tbl-quarterly-export", "quarterly"],
+            ["tbl-annual-export", "annual"],
+            ["tbl-config-export", "config"],
+            ["tbl-deduction-export", "deduction"],
+            ["tbl-partyQuarterly-export", "partyQuarterly"],
+            ["tbl-orgView-export", "orgView"],
+            ["tbl-orgDialog-export", "orgDialog"]
+        ].forEach(function (pair) {
+            bind(pair[0], function () { exportCurrentExcel(pair[1]); });
         });
 
         onCqKeydown = function (e) {
