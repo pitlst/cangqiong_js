@@ -1,9 +1,7 @@
 (function(){
     // 如果已存在，先移除（避免重复）
     const ROOT_ID = '__shadcn_inject_root__';
-    const HTML_STR = `
-__HTML_REPLACE_STR__
-    `;
+    const HTML_STR = `__HTML_REPLACE_STR__`;
     const existing = document.getElementById(ROOT_ID);
     if (existing) {
         existing.remove();

@@ -1,35 +1,70 @@
-import { NavLink, Route, Routes } from 'react-router-dom'
-import { buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { AboutPage } from '@/pages/About'
-import { HomePage } from '@/pages/Home'
+import { useEffect, useState } from 'react'
+import { ClockIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
-function navClassName({ isActive }: { isActive: boolean }) {
-    return cn(buttonVariants({ variant: isActive ? 'default' : 'ghost', size: 'sm' }))
-}
+import { AppSidebar } from '@/components/app-sidebar'
+import { NAV_LABEL, type NavId } from '@/lib/nav'
+import { OrgView, QuarterlyView, SimpleTableView } from '@/views/pages'
+
+const ANNUAL_ACTIONS = [
+    { key: 'new', label: '新增', variant: 'default' as const },
+    { key: 'edit', label: '修改' },
+    { key: 'del', label: '删除' },
+    { key: 'calc-score', label: '计算绩效得分' },
+    { key: 'calc-eval', label: '计算绩效评价结果' },
+    { key: 'calc-excellence', label: '计算创先争优结果' },
+    { key: 'export', label: '导出' },
+]
+
+const CONFIG_ACTIONS = [
+    { key: 'new', label: '新增', variant: 'default' as const },
+    { key: 'edit', label: '修改' },
+    { key: 'del', label: '删除' },
+    { key: 'export', label: '导出' },
+]
 
 export default function App() {
+    const [active, setActive] = useState<NavId>('quarterly')
+    const [dark, setDark] = useState(false)
+
+    useEffect(() => {
+        toast('配置项已加载', {
+            description: '当前没有配置项',
+            icon: <ClockIcon className="size-4" />,
+            closeButton: true,
+            duration: Infinity,
+        })
+    }, [])
+
+    function toggleTheme() {
+        const next = !dark
+        setDark(next)
+        document.documentElement.classList.toggle('dark', next)
+    }
+
     return (
-        <div className="bg-background flex min-h-svh flex-col">
-            <header className="border-b">
-                <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-4 py-3">
-                    <span className="font-heading text-sm font-medium">iframe_project</span>
-                    <nav className="flex items-center gap-1">
-                        <NavLink to="/" end className={navClassName}>
-                            首页
-                        </NavLink>
-                        <NavLink to="/about" className={navClassName}>
-                            关于
-                        </NavLink>
-                    </nav>
-                </div>
-            </header>
-            <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8">
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                </Routes>
-            </main>
+        <div className="bg-background flex h-svh overflow-hidden">
+            <AppSidebar active={active} dark={dark} onNavigate={setActive} onToggleTheme={toggleTheme} onClose={() => undefined} />
+            <div className="flex min-w-0 flex-1 flex-col px-[22px] py-[18px] pb-3.5">
+                <header className="mb-2.5 flex items-center">
+                    <h1 className="text-lg font-semibold tracking-tight">{NAV_LABEL[active]}</h1>
+                </header>
+                {active === 'quarterly' ? <QuarterlyView /> : null}
+                {active === 'annual' ? (
+                    <SimpleTableView
+                        actions={ANNUAL_ACTIONS}
+                        columns={['单据编号', '评价年度', '党组织', '党群绩效得分', '创先争优得分', '综合得分', '评价等级', '单据状态']}
+                    />
+                ) : null}
+                {active === 'config' ? <SimpleTableView actions={CONFIG_ACTIONS} columns={['编码', '名称', '说明', '更新时间']} /> : null}
+                {active === 'deduction' ? (
+                    <SimpleTableView actions={[{ key: 'export', label: '导出' }]} columns={['单据编号', '党组织', '扣分事项', '扣分分值', '发生日期']} />
+                ) : null}
+                {active === 'partyQuarterly' ? (
+                    <SimpleTableView actions={[{ key: 'export', label: '导出' }]} columns={['单据编号', '评价季度', '党组织', '绩效得分', '单据状态']} />
+                ) : null}
+                {active === 'org' ? <OrgView /> : null}
+            </div>
         </div>
     )
 }
