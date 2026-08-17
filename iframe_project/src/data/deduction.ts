@@ -1,6 +1,6 @@
-import type { DeductionColumn } from '@/lib/cangqiong/types'
+import type { DeductionColumn, DeductionRow } from '@/lib/table-types'
 
-export type { DeductionColumn, DeductionRow, DeductionTable } from '@/lib/cangqiong/types'
+export type { DeductionColumn, DeductionRow, DeductionTable } from '@/lib/table-types'
 
 export const DEFAULT_DEDUCTION_COLUMNS: DeductionColumn[] = [
     { key: 'billno', label: '单据编号', sortable: true, compact: true },
@@ -13,3 +13,5 @@ export const DEFAULT_DEDUCTION_COLUMNS: DeductionColumn[] = [
     { key: 'crrc_basedatafield', label: '被扣分组织', sortable: true },
     { key: 'crrc_orgfield_name', label: '输出部门.名称', sortable: true },
 ]
+
+export const DEDUCTION_ROWS: DeductionRow[] = []

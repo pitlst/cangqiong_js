@@ -1,4 +1,6 @@
-import type { DeductionColumn } from '@/lib/cangqiong/types'
+import type { DeductionColumn, OrgNode } from '@/lib/table-types'
+
+export type { OrgNode } from '@/lib/table-types'
 
 export const DEFAULT_ORG_COLUMNS: DeductionColumn[] = [
     { key: 'number', label: '组织编码', sortable: true, compact: true },
@@ -9,3 +11,9 @@ export const DEFAULT_ORG_COLUMNS: DeductionColumn[] = [
     { key: 'level', label: '层级', sortable: true, compact: true },
     { key: 'status', label: '状态', sortable: true, badge: true, compact: true },
 ]
+
+export const DEFAULT_ORG_TREE: OrgNode = {
+    id: 'all',
+    name: '全部组织',
+    children: [],
+}

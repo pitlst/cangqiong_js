@@ -8,6 +8,7 @@ import { defineConfig, type Plugin } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const CQ_PROXY_TARGET = 'https://cangqiongtestzelc.crrcgc.cc:6888'
 
 /** 苍穹 MySQL utf8/utf8mb3 存不下 4 字节字符；写成 JS `\ud83d\udcbf`，入库是 ASCII，运行时还原 */
 const NON_BMP = /[\u{10000}-\u{10FFFF}]/gu
@@ -181,6 +182,24 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+        },
+    },
+    server: {
+        proxy: {
+            '/ierp': {
+                target: CQ_PROXY_TARGET,
+                changeOrigin: true,
+                secure: false,
+            },
+        },
+    },
+    preview: {
+        proxy: {
+            '/ierp': {
+                target: CQ_PROXY_TARGET,
+                changeOrigin: true,
+                secure: false,
+            },
         },
     },
     build: {

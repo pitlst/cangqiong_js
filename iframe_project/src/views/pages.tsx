@@ -5,16 +5,17 @@ import { makeCqColumns } from '@/components/data-table/deduction-columns'
 import { labelColumns } from '@/components/data-table/label-columns'
 import { quarterlyColumns } from '@/components/data-table/quarterly-columns'
 import { DataToolbar } from '@/components/data-toolbar'
+import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
+import { CONFIG_ROWS, DEFAULT_CONFIG_COLUMNS } from '@/data/config'
 import { DEFAULT_DEDUCTION_COLUMNS, type DeductionColumn, type DeductionRow, type DeductionTable } from '@/data/deduction'
-import { DEFAULT_ORG_COLUMNS } from '@/data/org'
+import { DEFAULT_ORG_COLUMNS, type OrgNode } from '@/data/org'
 import { DEFAULT_PARTY_COLUMNS } from '@/data/party'
 import { QUARTERLY_EXPORT_COLUMNS, QUARTERLY_ROWS } from '@/data/quarterly'
-import { fetchDeductionItems, fetchDeductionItemsWithToast, getCachedDeductionError, getCachedDeductionItems } from '@/lib/cangqiong/deduction'
-import { fetchOrgTree, fetchOrgTreeWithToast, getCachedOrgError, getCachedOrgTree } from '@/lib/cangqiong/org'
-import { fetchPartyQuarterly, fetchPartyQuarterlyWithToast, getCachedPartyError, getCachedPartyQuarterly } from '@/lib/cangqiong/party'
-import { canFetchFromCangqiong } from '@/lib/cangqiong/session'
-import type { OrgNode } from '@/lib/cangqiong/types'
+import { fetchDeductionItems, fetchDeductionItemsWithToast, getCachedDeductionError, getCachedDeductionItems } from '@/lib/openapi/deduction'
+import { fetchOrgTree, fetchOrgTreeWithToast, getCachedOrgError, getCachedOrgTree } from '@/lib/openapi/org'
+import { fetchPartyQuarterly, fetchPartyQuarterlyWithToast, getCachedPartyError, getCachedPartyQuarterly } from '@/lib/openapi/party'
+import { cqErrorMessage } from '@/lib/openapi/client'
 import { exportTableToExcel } from '@/lib/excel'
 import { NAV_LABEL } from '@/lib/nav'
 import { cn } from '@/lib/utils'
@@ -29,45 +30,33 @@ const QUARTERLY_ACTIONS = [
     { key: 'export', label: '导出' },
 ]
 
-export function QuarterlyView() {
-    return (
-        <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-            <DataToolbar
-                actions={QUARTERLY_ACTIONS}
-                onAction={(key) => {
-                    if (key !== 'export') return
-                    exportTableToExcel({
-                        filename: NAV_LABEL.quarterly,
-                        columns: QUARTERLY_EXPORT_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
-                        rows: QUARTERLY_ROWS,
-                    })
-                }}
-            />
-            <DataTable columns={quarterlyColumns} data={QUARTERLY_ROWS} getRowId={(row) => row.id} />
-        </div>
-    )
-}
+const CONFIG_ACTIONS = [
+    { key: 'new', label: '新增', variant: 'default' as const },
+    { key: 'edit', label: '修改' },
+    { key: 'del', label: '删除' },
+    { key: 'export', label: '导出' },
+]
 
-type FetchStatus = 'idle' | 'loading' | 'ready' | 'error' | 'offline'
+type ToolbarAction = { key: string; label: string; variant?: 'default' | 'outline'; disabled?: boolean }
+
+type FetchStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 function errorMessage(err: unknown) {
-    if (err instanceof Error && err.message) return err.message
-    return String(err || '未知错误')
+    return cqErrorMessage(err)
 }
 
-type CqFetchedTableProps = {
+type FetchedTableViewProps = {
     defaultColumns: DeductionColumn[]
     getCached: () => DeductionTable | null
     getError: () => string
     load: () => Promise<DeductionTable>
     refresh: () => Promise<DeductionTable>
     exportName: string
-    offlineText: string
     loadingText: string
     emptyText: string
 }
 
-function CqFetchedTable({ defaultColumns, getCached, getError, load, refresh, exportName, offlineText, loadingText, emptyText }: CqFetchedTableProps) {
+function FetchedTableView({ defaultColumns, getCached, getError, load, refresh, exportName, loadingText, emptyText }: FetchedTableViewProps) {
     const [status, setStatus] = useState<FetchStatus>('idle')
     const [columns, setColumns] = useState<DeductionColumn[]>(defaultColumns)
     const [rows, setRows] = useState<DeductionRow[]>([])
@@ -81,11 +70,6 @@ function CqFetchedTable({ defaultColumns, getCached, getError, load, refresh, ex
     }
 
     async function run(force: boolean) {
-        if (!canFetchFromCangqiong()) {
-            setStatus('offline')
-            setError(offlineText)
-            return
-        }
         setStatus('loading')
         setError('')
         try {
@@ -96,7 +80,6 @@ function CqFetchedTable({ defaultColumns, getCached, getError, load, refresh, ex
         }
     }
 
-    // 进入页面时只接一次：命中启动并发缓存，或加入已在飞的请求
     useEffect(() => {
         const cached = getCached()
         if (cached) {
@@ -114,7 +97,7 @@ function CqFetchedTable({ defaultColumns, getCached, getError, load, refresh, ex
     }, [])
 
     const tableColumns = useMemo(() => makeCqColumns(columns), [columns])
-    const empty = status === 'loading' ? loadingText : status === 'offline' || status === 'error' ? error || '加载失败' : emptyText
+    const empty = status === 'loading' ? loadingText : status === 'error' ? error || '加载失败' : emptyText
     const loading = status === 'loading'
 
     return (
@@ -140,17 +123,35 @@ function CqFetchedTable({ defaultColumns, getCached, getError, load, refresh, ex
     )
 }
 
+export function QuarterlyView() {
+    return (
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+            <DataToolbar
+                actions={QUARTERLY_ACTIONS}
+                onAction={(key) => {
+                    if (key !== 'export') return
+                    exportTableToExcel({
+                        filename: NAV_LABEL.quarterly,
+                        columns: QUARTERLY_EXPORT_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+                        rows: QUARTERLY_ROWS,
+                    })
+                }}
+            />
+            <DataTable columns={quarterlyColumns} data={QUARTERLY_ROWS} getRowId={(row) => row.id} />
+        </div>
+    )
+}
+
 export function DeductionView() {
     return (
-        <CqFetchedTable
+        <FetchedTableView
             defaultColumns={DEFAULT_DEDUCTION_COLUMNS}
             getCached={getCachedDeductionItems}
             getError={getCachedDeductionError}
             load={() => fetchDeductionItems()}
             refresh={() => fetchDeductionItemsWithToast({ force: true })}
             exportName={NAV_LABEL.deduction}
-            offlineText="当前不在苍穹环境，无法拉取扣分项"
-            loadingText="正在从苍穹加载扣分项…"
+            loadingText="正在加载扣分项…"
             emptyText="暂无扣分项"
         />
     )
@@ -158,22 +159,162 @@ export function DeductionView() {
 
 export function PartyQuarterlyView() {
     return (
-        <CqFetchedTable
+        <FetchedTableView
             defaultColumns={DEFAULT_PARTY_COLUMNS}
             getCached={getCachedPartyQuarterly}
             getError={getCachedPartyError}
             load={() => fetchPartyQuarterly()}
             refresh={() => fetchPartyQuarterlyWithToast({ force: true })}
             exportName={NAV_LABEL.partyQuarterly}
-            offlineText="当前不在苍穹环境，无法拉取季度党群绩效"
-            loadingText="正在从苍穹加载季度党群绩效…"
+            loadingText="正在加载季度党群绩效…"
             emptyText="暂无季度党群绩效"
         />
     )
 }
 
+type ConfigFormValues = {
+    billno?: string
+    crrc_textfield: string
+    crrc_largetextfield: string
+}
+
+export function ConfigView() {
+    const [rows, setRows] = useState<DeductionRow[]>(CONFIG_ROWS)
+    const [selectedRowId, setSelectedRowId] = useState('')
+    const [formOpen, setFormOpen] = useState(false)
+    const [formMode, setFormMode] = useState<'new' | 'edit'>('new')
+    const [formValues, setFormValues] = useState<ConfigFormValues>({ crrc_textfield: '', crrc_largetextfield: '' })
+
+    const tableColumns = useMemo(() => makeCqColumns(DEFAULT_CONFIG_COLUMNS), [])
+    const selectedRow = rows.find((row) => row._rowId === selectedRowId) || null
+
+    function openNewForm() {
+        setFormMode('new')
+        setFormValues({ billno: '', crrc_textfield: '', crrc_largetextfield: '' })
+        setFormOpen(true)
+    }
+
+    function openEditForm() {
+        if (!selectedRow) return
+        setFormMode('edit')
+        setFormValues({
+            billno: String(selectedRow.billno || ''),
+            crrc_textfield: String(selectedRow.crrc_textfield || ''),
+            crrc_largetextfield: String(selectedRow.crrc_largetextfield || ''),
+        })
+        setFormOpen(true)
+    }
+
+    function handleDelete() {
+        if (!selectedRow) return
+        const label = String(selectedRow.billno || selectedRow._rowId)
+        if (!window.confirm(`确定删除配置项「${label}」？`)) return
+        setRows((prev) => prev.filter((row) => row._rowId !== selectedRowId))
+        setSelectedRowId('')
+    }
+
+    function handleSave() {
+        if (!formValues.crrc_textfield.trim()) return
+        if (formMode === 'new') {
+            const id = `cfg-${Date.now()}`
+            setRows((prev) => [
+                ...prev,
+                {
+                    _rowId: id,
+                    billno: formValues.billno || '',
+                    billstatus: '暂存',
+                    crrc_textfield: formValues.crrc_textfield,
+                    crrc_largetextfield: formValues.crrc_largetextfield,
+                },
+            ])
+        } else if (selectedRow) {
+            setRows((prev) =>
+                prev.map((row) =>
+                    row._rowId === selectedRow._rowId
+                        ? {
+                              ...row,
+                              billno: formValues.billno || '',
+                              crrc_textfield: formValues.crrc_textfield,
+                              crrc_largetextfield: formValues.crrc_largetextfield,
+                          }
+                        : row,
+                ),
+            )
+        }
+        setFormOpen(false)
+    }
+
+    return (
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2.5">
+            <DataToolbar
+                actions={[
+                    { key: 'new', label: '新增', variant: 'default' },
+                    { key: 'edit', label: '修改', disabled: !selectedRow },
+                    { key: 'del', label: '删除', disabled: !selectedRow },
+                    ...CONFIG_ACTIONS.filter((a) => a.key === 'export'),
+                ]}
+                onAction={(key) => {
+                    if (key === 'new') openNewForm()
+                    if (key === 'edit') openEditForm()
+                    if (key === 'del') handleDelete()
+                    if (key === 'export') {
+                        exportTableToExcel({
+                            filename: NAV_LABEL.config,
+                            columns: DEFAULT_CONFIG_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+                            rows,
+                        })
+                    }
+                }}
+            />
+            <DataTable
+                columns={tableColumns}
+                data={rows}
+                emptyText="暂无配置项"
+                getRowId={(row) => row._rowId}
+                selectedRowId={selectedRowId}
+                onRowSelect={(row) => setSelectedRowId(row._rowId)}
+            />
+            {formOpen ? (
+                <div className="bg-background/80 absolute inset-0 z-20 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-card flex w-full max-w-lg flex-col gap-3 rounded-lg border p-4 shadow-lg">
+                        <h2 className="text-base font-semibold">{formMode === 'new' ? '新增配置项' : '修改配置项'}</h2>
+                        <label className="flex flex-col gap-1 text-sm">
+                            <span className="text-muted-foreground">单据编号</span>
+                            <input
+                                className="border-input bg-background rounded-md border px-3 py-2"
+                                value={formValues.billno || ''}
+                                onChange={(e) => setFormValues((prev) => ({ ...prev, billno: e.target.value }))}
+                            />
+                        </label>
+                        <label className="flex flex-col gap-1 text-sm">
+                            <span className="text-muted-foreground">数据类型</span>
+                            <input
+                                className="border-input bg-background rounded-md border px-3 py-2"
+                                value={formValues.crrc_textfield}
+                                onChange={(e) => setFormValues((prev) => ({ ...prev, crrc_textfield: e.target.value }))}
+                            />
+                        </label>
+                        <label className="flex flex-col gap-1 text-sm">
+                            <span className="text-muted-foreground">配置（JSON 或文本）</span>
+                            <textarea
+                                className="border-input bg-background min-h-32 rounded-md border px-3 py-2 font-mono text-sm"
+                                value={formValues.crrc_largetextfield}
+                                onChange={(e) => setFormValues((prev) => ({ ...prev, crrc_largetextfield: e.target.value }))}
+                            />
+                        </label>
+                        <div className="flex justify-end gap-2 pt-1">
+                            <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>取消</Button>
+                            <Button type="button" onClick={handleSave}>保存</Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
 type SimpleTableViewProps = {
-    actions: { key: string; label: string; variant?: 'default' | 'outline' }[]
+    actions: ToolbarAction[]
     columns: string[]
     exportName: string
     emptyText?: string
@@ -382,11 +523,6 @@ export function OrgView() {
     }
 
     async function run(force: boolean) {
-        if (!canFetchFromCangqiong()) {
-            setStatus('offline')
-            setError('当前不在苍穹环境，无法拉取党组织')
-            return
-        }
         setStatus('loading')
         setError('')
         try {
@@ -410,6 +546,7 @@ export function OrgView() {
             return
         }
         void run(false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
     }, [])
 
     const meta = findOrgNode(tree, activeId)
@@ -418,7 +555,7 @@ export function OrgView() {
     const childRows = (current?.children || []).map((child) => orgToRow(child, current && current.id === 'all' ? '' : current?.name || parentName))
     const tableColumns = useMemo(() => makeCqColumns(DEFAULT_ORG_COLUMNS), [])
     const loading = status === 'loading'
-    const emptyText = status === 'loading' ? '正在从苍穹加载党组织…' : status === 'offline' || status === 'error' ? error || '加载失败' : '当前节点下级组织'
+    const emptyText = status === 'loading' ? '正在加载党组织…' : status === 'error' ? error || '加载失败' : '当前节点下级组织'
 
     return (
         <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border">
@@ -443,9 +580,19 @@ export function OrgView() {
             <div className="flex min-w-0 flex-1 flex-col gap-2.5 p-3">
                 <div className="flex items-center justify-between gap-2">
                     <DataToolbar
-                        actions={[{ key: 'refresh', label: loading ? '加载中…' : '刷新', variant: 'default', disabled: loading }]}
+                        actions={[
+                            { key: 'refresh', label: loading ? '加载中…' : '刷新', variant: 'default', disabled: loading },
+                            { key: 'export', label: '导出', disabled: loading },
+                        ]}
                         onAction={(key) => {
                             if (key === 'refresh') void run(true)
+                            if (key === 'export') {
+                                exportTableToExcel({
+                                    filename: NAV_LABEL.org,
+                                    columns: DEFAULT_ORG_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+                                    rows: childRows,
+                                })
+                            }
                         }}
                     />
                     <span className="text-muted-foreground text-xs">当前节点：{current?.name || '—'}</span>

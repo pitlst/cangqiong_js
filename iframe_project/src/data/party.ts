@@ -1,6 +1,6 @@
-import type { DeductionColumn } from '@/lib/cangqiong/types'
+import type { DeductionColumn, DeductionRow } from '@/lib/table-types'
 
-export type { DeductionColumn, DeductionRow, DeductionTable } from '@/lib/cangqiong/types'
+export type { DeductionColumn, DeductionRow, DeductionTable } from '@/lib/table-types'
 
 export const DEFAULT_PARTY_COLUMNS: DeductionColumn[] = [
     { key: 'crrc_basedatafield1', label: '党组织', sortable: true },
@@ -9,3 +9,5 @@ export const DEFAULT_PARTY_COLUMNS: DeductionColumn[] = [
     { key: 'billno', label: '编号', sortable: true, compact: true },
     { key: 'billstatus', label: '数据状态', sortable: true, badge: true, compact: true },
 ]
+
+export const PARTY_ROWS: DeductionRow[] = []

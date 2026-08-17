@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table'
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -10,9 +11,11 @@ type DataTableProps<TData extends RowData> = {
     data: TData[]
     emptyText?: string
     getRowId?: (originalRow: TData, index: number) => string
+    selectedRowId?: string
+    onRowSelect?: (row: TData) => void
 }
 
-export function DataTable<TData extends RowData>({ columns, data, emptyText = '暂无数据', getRowId }: DataTableProps<TData>) {
+export function DataTable<TData extends RowData>({ columns, data, emptyText = '暂无数据', getRowId, selectedRowId, onRowSelect }: DataTableProps<TData>) {
     const table = useTable(
         {
             features: dataTableFeatures,
@@ -25,6 +28,7 @@ export function DataTable<TData extends RowData>({ columns, data, emptyText = '�
                     pageIndex: 0,
                     pageSize: 10,
                 },
+                rowSelection: selectedRowId ? { [selectedRowId]: true } : {},
             },
         },
         (state) => ({
@@ -37,6 +41,17 @@ export function DataTable<TData extends RowData>({ columns, data, emptyText = '�
     const pageCount = Math.max(table.getPageCount(), 1)
     const colSpan = table.getVisibleLeafColumns().length || columns.length
     const rows = table.getRowModel().rows
+
+    useEffect(() => {
+        const currentKeys = Object.keys(table.state.rowSelection).filter((key) => table.state.rowSelection[key])
+        if (selectedRowId) {
+            if (currentKeys.length === 1 && currentKeys[0] === selectedRowId) return
+            table.setRowSelection({ [selectedRowId]: true })
+            return
+        }
+        if (!currentKeys.length) return
+        table.setRowSelection({})
+    }, [selectedRowId])
 
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-2.5">
@@ -63,7 +78,10 @@ export function DataTable<TData extends RowData>({ columns, data, emptyText = '�
                                         'hover:bg-primary/8 data-[state=selected]:bg-primary/10 cursor-pointer',
                                         row.getIsSelected() && 'bg-primary/10',
                                     )}
-                                    onClick={() => table.setRowSelection({ [row.id]: true })}
+                                    onClick={() => {
+                                        table.setRowSelection({ [row.id]: true })
+                                        onRowSelect?.(row.original)
+                                    }}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
