@@ -3,8 +3,10 @@ import { ClockIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { AppSidebar } from '@/components/app-sidebar'
+import { fetchDeductionItemsWithToast } from '@/lib/cangqiong/deduction'
+import { canFetchFromCangqiong } from '@/lib/cangqiong/session'
 import { NAV_LABEL, type NavId } from '@/lib/nav'
-import { OrgView, QuarterlyView, SimpleTableView } from '@/views/pages'
+import { DeductionView, OrgView, QuarterlyView, SimpleTableView } from '@/views/pages'
 
 const ANNUAL_ACTIONS = [
     { key: 'new', label: '新增', variant: 'default' as const },
@@ -34,6 +36,8 @@ export default function App() {
             closeButton: true,
             duration: Infinity,
         })
+        if (!canFetchFromCangqiong()) return
+        void fetchDeductionItemsWithToast().catch(() => undefined)
     }, [])
 
     function toggleTheme() {
@@ -45,7 +49,7 @@ export default function App() {
     return (
         <div className="bg-background flex h-svh overflow-hidden">
             <AppSidebar active={active} dark={dark} onNavigate={setActive} onToggleTheme={toggleTheme} onClose={() => undefined} />
-            <div className="flex min-w-0 flex-1 flex-col px-[22px] py-[18px] pb-3.5">
+            <div className="flex min-w-0 flex-1 flex-col px-5.5 py-4.5 pb-3.5">
                 <header className="mb-2.5 flex items-center">
                     <h1 className="text-lg font-semibold tracking-tight">{NAV_LABEL[active]}</h1>
                 </header>
@@ -57,9 +61,7 @@ export default function App() {
                     />
                 ) : null}
                 {active === 'config' ? <SimpleTableView actions={CONFIG_ACTIONS} columns={['编码', '名称', '说明', '更新时间']} /> : null}
-                {active === 'deduction' ? (
-                    <SimpleTableView actions={[{ key: 'export', label: '导出' }]} columns={['单据编号', '党组织', '扣分事项', '扣分分值', '发生日期']} />
-                ) : null}
+                {active === 'deduction' ? <DeductionView /> : null}
                 {active === 'partyQuarterly' ? (
                     <SimpleTableView actions={[{ key: 'export', label: '导出' }]} columns={['单据编号', '评价季度', '党组织', '绩效得分', '单据状态']} />
                 ) : null}

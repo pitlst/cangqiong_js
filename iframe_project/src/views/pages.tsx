@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
+import { deductionColumns } from '@/components/data-table/deduction-columns'
 import { labelColumns } from '@/components/data-table/label-columns'
 import { quarterlyColumns } from '@/components/data-table/quarterly-columns'
 import { DataToolbar } from '@/components/data-toolbar'
 import { DataTable } from '@/components/ui/data-table'
+import { DEFAULT_DEDUCTION_COLUMNS, type DeductionColumn, type DeductionRow } from '@/data/deduction'
 import { QUARTERLY_ROWS } from '@/data/quarterly'
+import { fetchDeductionItems, fetchDeductionItemsWithToast, getCachedDeductionError, getCachedDeductionItems } from '@/lib/cangqiong/deduction'
+import { canFetchFromCangqiong } from '@/lib/cangqiong/session'
 import { cn } from '@/lib/utils'
 
 const QUARTERLY_ACTIONS = [
@@ -22,6 +26,78 @@ export function QuarterlyView() {
         <div className="flex min-h-0 flex-1 flex-col gap-2.5">
             <DataToolbar actions={QUARTERLY_ACTIONS} />
             <DataTable columns={quarterlyColumns} data={QUARTERLY_ROWS} getRowId={(row) => row.id} />
+        </div>
+    )
+}
+
+type DeductionStatus = 'idle' | 'loading' | 'ready' | 'error' | 'offline'
+
+function errorMessage(err: unknown) {
+    if (err instanceof Error && err.message) return err.message
+    return String(err || '未知错误')
+}
+
+export function DeductionView() {
+    const [status, setStatus] = useState<DeductionStatus>('idle')
+    const [columns, setColumns] = useState<DeductionColumn[]>(DEFAULT_DEDUCTION_COLUMNS)
+    const [rows, setRows] = useState<DeductionRow[]>([])
+    const [error, setError] = useState('')
+
+    function applyTable(table: { columns: DeductionColumn[]; rows: DeductionRow[] }) {
+        setColumns(table.columns.length ? table.columns : DEFAULT_DEDUCTION_COLUMNS)
+        setRows(table.rows)
+        setStatus('ready')
+        setError('')
+    }
+
+    async function loadDeduction(force = false) {
+        if (!canFetchFromCangqiong()) {
+            setStatus('offline')
+            setError('当前不在苍穹环境，无法拉取扣分项')
+            return
+        }
+        setStatus('loading')
+        setError('')
+        try {
+            const table = force ? await fetchDeductionItemsWithToast({ force: true }) : await fetchDeductionItems()
+            applyTable(table)
+        } catch (err) {
+            setError(errorMessage(err))
+            setStatus('error')
+        }
+    }
+
+    useEffect(() => {
+        const cached = getCachedDeductionItems()
+        if (cached) {
+            applyTable(cached)
+            return
+        }
+        const cachedError = getCachedDeductionError()
+        if (cachedError) {
+            setStatus('error')
+            setError(cachedError)
+            return
+        }
+        void loadDeduction()
+    }, [])
+
+    const tableColumns = useMemo(() => deductionColumns(columns), [columns])
+    const emptyText = status === 'loading' ? '正在从苍穹加载扣分项…' : status === 'offline' || status === 'error' ? error || '加载失败' : '暂无扣分项'
+    const loading = status === 'loading'
+
+    return (
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+            <DataToolbar
+                actions={[
+                    { key: 'refresh', label: loading ? '加载中…' : '刷新', variant: 'default', disabled: loading },
+                    { key: 'export', label: '导出', disabled: loading },
+                ]}
+                onAction={(key) => {
+                    if (key === 'refresh') void loadDeduction(true)
+                }}
+            />
+            <DataTable key={columns.map((col) => col.key).join('|')} columns={tableColumns} data={rows} emptyText={emptyText} getRowId={(row) => row._rowId} />
         </div>
     )
 }
