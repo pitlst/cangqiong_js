@@ -20,7 +20,7 @@ export function getCachedQuarterlyError() {
 }
 
 async function loadQuarterlyFromOpenApi(): Promise<QuarterlyRow[]> {
-    const bills = await cqQueryAll<Record<string, unknown>>(CQ_API_PATH.quarterly, { data: {} })
+    const bills = await cqQueryAll<Record<string, unknown>>(CQ_API_PATH.djconfig_select, { data: {} })
     return mapQuarterlyRows(bills)
 }
 

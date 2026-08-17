@@ -11,6 +11,7 @@ export function mapDeductionRows(bills: Record<string, unknown>[]): DeductionRow
     // 入参 bills：每项为一张单据（含 billno、billstatus、entryentity 分录等）
     // 出参 DeductionRow[]：每行需有 _rowId，其余 key 对齐表格列
     //
+    console.log(bills)
     void bills
     return []
     // ========== 扣分项映射结束 ==========
