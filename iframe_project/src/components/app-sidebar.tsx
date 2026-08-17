@@ -75,7 +75,7 @@ export function AppSidebar({ active, dark, onNavigate, onToggleTheme, onClose }:
                             </Button>
                         }
                     />
-                    <TooltipContent>关闭</TooltipContent>
+                    <TooltipContent>关闭 (Esc)</TooltipContent>
                 </Tooltip>
             </div>
         </aside>

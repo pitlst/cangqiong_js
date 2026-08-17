@@ -1,1 +1,0 @@
-node build.js runtime.js ../iframe_project/dist/index.html dist/index.js

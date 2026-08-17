@@ -35,6 +35,8 @@ export type CqWindow = Window & {
     __cqTenantHooked?: boolean
     __cqFetchSess?: FetchSession
     __cqFetchDeduction?: () => Promise<unknown>
+    __cqFetchPartyQuarterly?: () => Promise<unknown>
+    __cqFetchOrg?: () => Promise<unknown>
 }
 
 export type DeductionColumn = {
@@ -55,4 +57,19 @@ export type DeductionRow = {
 export type DeductionTable = {
     columns: DeductionColumn[]
     rows: DeductionRow[]
+}
+
+export type OrgNode = {
+    id: string
+    name: string
+    parentid?: string
+    parentName?: string
+    status?: string
+    orgType?: string
+    foundedAt?: string
+    number?: string
+    level?: string | number
+    longnumber?: string
+    enable?: string
+    children: OrgNode[]
 }

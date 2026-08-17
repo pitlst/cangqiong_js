@@ -6,7 +6,7 @@ import { DEFAULT_DEDUCTION_COLUMNS, type DeductionColumn, type DeductionRow } fr
 
 const columnHelper = createColumnHelper<DataTableFeatures, DeductionRow>()
 
-export function deductionColumns(cols: DeductionColumn[] = DEFAULT_DEDUCTION_COLUMNS) {
+export function makeCqColumns(cols: DeductionColumn[] = DEFAULT_DEDUCTION_COLUMNS) {
     const list = cols.length ? cols : DEFAULT_DEDUCTION_COLUMNS
     return columnHelper.columns(
         list.map((col) =>
@@ -35,3 +35,5 @@ export function deductionColumns(cols: DeductionColumn[] = DEFAULT_DEDUCTION_COL
         ),
     )
 }
+
+export const deductionColumns = makeCqColumns

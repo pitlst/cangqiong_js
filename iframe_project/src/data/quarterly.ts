@@ -13,6 +13,17 @@ export type QuarterlyRow = {
     status: DocStatus
 }
 
+export const QUARTERLY_EXPORT_COLUMNS = [
+    { key: 'billNo', label: '单据编号' },
+    { key: 'quarter', label: '评价季度' },
+    { key: 'orgName', label: '党组织' },
+    { key: 'partyScore', label: '党群绩效得分' },
+    { key: 'excellenceScore', label: '创先争优得分' },
+    { key: 'totalScore', label: '综合得分' },
+    { key: 'grade', label: '评价等级' },
+    { key: 'status', label: '单据状态' },
+] as const
+
 export const QUARTERLY_ROWS: QuarterlyRow[] = [
     {
         id: '1',

@@ -2,6 +2,8 @@ import type { ClickHit, CqSessReq, CqWindow, FetchSession } from '@/lib/cangqion
 
 export const UI_FRAME_ID = '__iframe_project_root__'
 export const DEDUCTION_FRAME_ID = 'cq-fetch-frame-deduction'
+export const PARTY_FRAME_ID = 'cq-fetch-frame-party'
+export const ORG_FRAME_ID = 'cq-fetch-frame-org'
 
 export const CQ_DEDUCTION = {
     partyAppName: '党费',
@@ -13,6 +15,33 @@ export const CQ_DEDUCTION = {
     dataAppId: 'crrc_dj',
     dataFormId: 'crrc_deduction_log',
     menuText: '扣分项台账',
+    consoleForm: 'pc_main_console',
+    myAppForm: 'tenant_myapp',
+}
+
+export const CQ_PARTY = {
+    menuAppId: 'crrc_party_dues',
+    menuFormId: 'crrc_party_dues_apphome',
+    menuControl: 'navigationbar',
+    menuRoot: 'root',
+    menuItemId: '2546583953733611520',
+    dataAppId: 'crrc_dj',
+    dataFormId: 'crrc_dj_cb_count',
+    listControl: 'billlistap',
+    pkField: 'crrc_dj_cb_count_id',
+    menuTexts: ['季度党群绩效贡献度', '季度党群绩效'],
+    maxBills: 40,
+}
+
+export const CQ_ORG = {
+    menuAppId: 'crrc_party_dues',
+    menuFormId: 'crrc_party_dues_apphome',
+    menuControl: 'navigationbar',
+    menuRoot: 'root',
+    menuItemId: '2546603181119401984',
+    dataAppId: 'crrc_dj',
+    dataFormId: 'crrc_dj_org_tree_ext',
+    menuTexts: ['党组织查询', '党组织'],
 }
 
 const SKIP_CLICK_ROOTS = ['#shadcn-hello-inject-root', `#${UI_FRAME_ID}`]
@@ -117,12 +146,12 @@ function pageDoc(): Document {
     }
 }
 
-function hasTimeoutText(s: string) {
+export function hasTimeoutText(s: string) {
     const text = String(s || '')
     return text.includes('pagetimeout') || text.includes('会话超时')
 }
 
-function collapseWs(s: string) {
+export function collapseWs(s: string) {
     return String(s || '')
         .replace(/[\s\u00a0]+/g, ' ')
         .trim()
@@ -252,6 +281,18 @@ function requestUrl(input: RequestInfo | URL) {
     }
 }
 
+export function isCqDisposed() {
+    return cqDisposed
+}
+
+function isPartyBillPageId(pageId: string, listPageId: string, formId: string) {
+    const pid = String(pageId || '')
+    if (!pid) return false
+    if (listPageId && pid.indexOf(`${listPageId}_`) === 0) return true
+    if (formId && pid.indexOf(`_${formId}_`) >= 0) return true
+    return false
+}
+
 function pushSessReq(sess: FetchSession | undefined, url: string, text: string) {
     if (!sess) return
     const u = String(url || '')
@@ -272,6 +313,11 @@ function pushSessReq(sess: FetchSession | undefined, url: string, text: string) 
     if (ac !== 'loadData' || !text || hasTimeoutText(text)) return
     if (formId === CQ_DEDUCTION.menuFormId) sess.lastAppHome = text
     if (formId === CQ_DEDUCTION.dataFormId) sess.lastList = text
+    if (formId === CQ_ORG.dataFormId) sess.lastList = text
+    if (formId === CQ_PARTY.dataFormId) {
+        if (isPartyBillPageId(pageId, sess.listPageId, formId)) sess.lastBill = text
+        else sess.lastList = text
+    }
 }
 
 function hookFetchOn(win: CqWindow | null, sess: FetchSession) {
@@ -331,7 +377,7 @@ export function hookSessionTree(sess: FetchSession) {
     walk(sess.win, 0)
 }
 
-function findParentClickTarget(doc: Document | null, text: string, selector?: string) {
+export function findParentClickTarget(doc: Document | null, text: string, selector?: string) {
     if (!doc) return null
     let nodes: NodeListOf<Element>
     try {
@@ -460,6 +506,21 @@ export function waitFor<T>(fn: () => T | null | undefined | false | '', timeout:
     })
 }
 
+export function waitForSessReq(sess: FetchSession, pred: (r: CqSessReq) => boolean, timeout: number, label: string) {
+    return waitFor(
+        () => {
+            const arr = sess.requests || []
+            for (let i = arr.length - 1; i >= 0; i -= 1) {
+                if (pred(arr[i])) return arr[i]
+            }
+            return null
+        },
+        timeout || 15000,
+        200,
+        label || '等待苍穹请求',
+    )
+}
+
 function removeFetchFrameById(frameId: string) {
     const nodes: HTMLElement[] = []
     try {
@@ -499,7 +560,10 @@ function openFetchFrame(sess: FetchSession) {
         iframe.id = sess.frameId
         iframe.setAttribute('data-cq-fetch', '1')
         iframe.title = sess.frameId
-        iframe.setAttribute('style', 'position:fixed;left:0;top:0;width:1400px;height:900px;opacity:0;pointer-events:none;border:0;z-index:1;')
+        let leftPx = '0'
+        if (sess.frameId.includes('party')) leftPx = '8px'
+        if (sess.frameId.includes('-org')) leftPx = '16px'
+        iframe.setAttribute('style', `position:fixed;left:${leftPx};top:0;width:1400px;height:900px;opacity:0;pointer-events:none;border:0;z-index:1;`)
         const url = consoleHomeUrl()
         iframe.src = url
         let settled = false
@@ -642,6 +706,144 @@ export function disposeCqFetchResources() {
     for (const id of ids) {
         const sess = cqFetchSessions[id]
         if (sess && sess.timer) clearTimeout(sess.timer)
+        if (sess && sess.win) {
+            walkWinTree(sess.win, (win) => unhookFetchOn(win as CqWindow))
+        }
         removeFetchFrameById(id)
+        delete cqFetchSessions[id]
+    }
+    try {
+        const list = pageDoc().querySelectorAll("iframe[data-cq-fetch='1']")
+        for (let i = 0; i < list.length; i += 1) {
+            const el = list[i] as HTMLIFrameElement
+            try {
+                el.onload = null
+            } catch {
+                /* ignore */
+            }
+            try {
+                el.src = 'about:blank'
+            } catch {
+                /* ignore */
+            }
+            try {
+                if (el.parentNode) el.parentNode.removeChild(el)
+            } catch {
+                /* ignore */
+            }
+        }
+    } catch {
+        /* ignore */
+    }
+    try {
+        ;(hostWin() as CqWindow).__cqFetchDeduction = undefined
+        ;(hostWin() as CqWindow).__cqFetchPartyQuarterly = undefined
+        ;(hostWin() as CqWindow).__cqFetchOrg = undefined
+    } catch {
+        /* ignore */
+    }
+    try {
+        ;(window as CqWindow).__cqFetchDeduction = undefined
+        ;(window as CqWindow).__cqFetchPartyQuarterly = undefined
+        ;(window as CqWindow).__cqFetchOrg = undefined
+    } catch {
+        /* ignore */
+    }
+}
+
+function unhookFetchOn(win: CqWindow | null) {
+    if (!win) return
+    try {
+        if (win.__cqOrigFetch) win.fetch = win.__cqOrigFetch
+        try {
+            delete win.__cqOrigFetch
+        } catch {
+            win.__cqOrigFetch = undefined
+        }
+        try {
+            delete win.__cqTenantHooked
+        } catch {
+            win.__cqTenantHooked = false
+        }
+        try {
+            delete win.__cqOurFetch
+        } catch {
+            win.__cqOurFetch = undefined
+        }
+        try {
+            delete win.__cqFetchSess
+        } catch {
+            win.__cqFetchSess = undefined
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
+function walkWinTree(win: Window | null, fn: (w: Window) => void, depth = 0, seen: Window[] = []) {
+    if (!win || depth > 8 || seen.includes(win)) return
+    seen.push(win)
+    try {
+        fn(win)
+    } catch {
+        /* ignore */
+    }
+    try {
+        const frames = win.frames
+        for (let f = 0; f < frames.length; f += 1) walkWinTree(frames[f], fn, depth + 1, seen)
+    } catch {
+        /* ignore */
+    }
+}
+
+function removeElement(el: Element | null) {
+    if (!el || !el.parentNode) return false
+    try {
+        el.parentNode.removeChild(el)
+        return true
+    } catch {
+        return false
+    }
+}
+
+export function closeIframeProject() {
+    try {
+        disposeCqFetchResources()
+    } catch {
+        /* ignore */
+    }
+    const candidates: Element[] = []
+    try {
+        if (window.frameElement) candidates.push(window.frameElement)
+    } catch {
+        /* ignore */
+    }
+    try {
+        const byId = hostWin().document.getElementById(UI_FRAME_ID)
+        if (byId) candidates.push(byId)
+    } catch {
+        /* ignore */
+    }
+    try {
+        if (window.parent && window.parent !== window) {
+            const byId = window.parent.document.getElementById(UI_FRAME_ID)
+            if (byId) candidates.push(byId)
+        }
+    } catch {
+        /* ignore */
+    }
+    const seen: Element[] = []
+    let removed = false
+    for (const el of candidates) {
+        if (seen.includes(el)) continue
+        seen.push(el)
+        if (removeElement(el)) removed = true
+    }
+    if (removed) return
+    try {
+        const root = document.getElementById('root')
+        if (root) root.replaceChildren()
+    } catch {
+        /* ignore */
     }
 }

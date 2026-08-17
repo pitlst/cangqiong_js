@@ -4,9 +4,11 @@ import { toast } from 'sonner'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { fetchDeductionItemsWithToast } from '@/lib/cangqiong/deduction'
-import { canFetchFromCangqiong } from '@/lib/cangqiong/session'
+import { fetchOrgTreeWithToast } from '@/lib/cangqiong/org'
+import { fetchPartyQuarterlyWithToast } from '@/lib/cangqiong/party'
+import { canFetchFromCangqiong, closeIframeProject } from '@/lib/cangqiong/session'
 import { NAV_LABEL, type NavId } from '@/lib/nav'
-import { DeductionView, OrgView, QuarterlyView, SimpleTableView } from '@/views/pages'
+import { DeductionView, OrgView, PartyQuarterlyView, QuarterlyView, SimpleTableView } from '@/views/pages'
 
 const ANNUAL_ACTIONS = [
     { key: 'new', label: '新增', variant: 'default' as const },
@@ -37,7 +39,19 @@ export default function App() {
             duration: Infinity,
         })
         if (!canFetchFromCangqiong()) return
-        void fetchDeductionItemsWithToast().catch(() => undefined)
+        void Promise.all([
+            fetchDeductionItemsWithToast().catch(() => undefined),
+            fetchPartyQuarterlyWithToast().catch(() => undefined),
+            fetchOrgTreeWithToast().catch(() => undefined),
+        ])
+    }, [])
+
+    useEffect(() => {
+        function onKeydown(event: KeyboardEvent) {
+            if (event.key === 'Escape') closeIframeProject()
+        }
+        document.addEventListener('keydown', onKeydown)
+        return () => document.removeEventListener('keydown', onKeydown)
     }, [])
 
     function toggleTheme() {
@@ -48,7 +62,7 @@ export default function App() {
 
     return (
         <div className="bg-background flex h-svh overflow-hidden">
-            <AppSidebar active={active} dark={dark} onNavigate={setActive} onToggleTheme={toggleTheme} onClose={() => undefined} />
+            <AppSidebar active={active} dark={dark} onNavigate={setActive} onToggleTheme={toggleTheme} onClose={closeIframeProject} />
             <div className="flex min-w-0 flex-1 flex-col px-5.5 py-4.5 pb-3.5">
                 <header className="mb-2.5 flex items-center">
                     <h1 className="text-lg font-semibold tracking-tight">{NAV_LABEL[active]}</h1>
@@ -56,15 +70,16 @@ export default function App() {
                 {active === 'quarterly' ? <QuarterlyView /> : null}
                 {active === 'annual' ? (
                     <SimpleTableView
+                        exportName={NAV_LABEL.annual}
                         actions={ANNUAL_ACTIONS}
                         columns={['单据编号', '评价年度', '党组织', '党群绩效得分', '创先争优得分', '综合得分', '评价等级', '单据状态']}
                     />
                 ) : null}
-                {active === 'config' ? <SimpleTableView actions={CONFIG_ACTIONS} columns={['编码', '名称', '说明', '更新时间']} /> : null}
-                {active === 'deduction' ? <DeductionView /> : null}
-                {active === 'partyQuarterly' ? (
-                    <SimpleTableView actions={[{ key: 'export', label: '导出' }]} columns={['单据编号', '评价季度', '党组织', '绩效得分', '单据状态']} />
+                {active === 'config' ? (
+                    <SimpleTableView exportName={NAV_LABEL.config} actions={CONFIG_ACTIONS} columns={['编码', '名称', '说明', '更新时间']} />
                 ) : null}
+                {active === 'deduction' ? <DeductionView /> : null}
+                {active === 'partyQuarterly' ? <PartyQuarterlyView /> : null}
                 {active === 'org' ? <OrgView /> : null}
             </div>
         </div>
