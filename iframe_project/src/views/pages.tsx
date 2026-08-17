@@ -11,10 +11,11 @@ import { CONFIG_ROWS, DEFAULT_CONFIG_COLUMNS } from '@/data/config'
 import { DEFAULT_DEDUCTION_COLUMNS, type DeductionColumn, type DeductionRow, type DeductionTable } from '@/data/deduction'
 import { DEFAULT_ORG_COLUMNS, type OrgNode } from '@/data/org'
 import { DEFAULT_PARTY_COLUMNS } from '@/data/party'
-import { QUARTERLY_EXPORT_COLUMNS, QUARTERLY_ROWS } from '@/data/quarterly'
-import { fetchDeductionItems, fetchDeductionItemsWithToast, getCachedDeductionError, getCachedDeductionItems } from '@/lib/openapi/deduction'
-import { fetchOrgTree, fetchOrgTreeWithToast, getCachedOrgError, getCachedOrgTree } from '@/lib/openapi/org'
-import { fetchPartyQuarterly, fetchPartyQuarterlyWithToast, getCachedPartyError, getCachedPartyQuarterly } from '@/lib/openapi/party'
+import { QUARTERLY_EXPORT_COLUMNS, type QuarterlyRow } from '@/data/quarterly'
+import { fetchDeductionItems, fetchDeductionItemsWithToast, getCachedDeductionError, getCachedDeductionItems } from '@/lib/custom/deduction'
+import { fetchOrgTree, fetchOrgTreeWithToast, getCachedOrgError, getCachedOrgTree } from '@/lib/custom/org'
+import { fetchPartyQuarterly, fetchPartyQuarterlyWithToast, getCachedPartyError, getCachedPartyQuarterly } from '@/lib/custom/party'
+import { fetchQuarterly, fetchQuarterlyWithToast, getCachedQuarterly, getCachedQuarterlyError } from '@/lib/custom/quarterly'
 import { cqErrorMessage } from '@/lib/openapi/client'
 import { exportTableToExcel } from '@/lib/excel'
 import { NAV_LABEL } from '@/lib/nav'
@@ -124,20 +125,62 @@ function FetchedTableView({ defaultColumns, getCached, getError, load, refresh, 
 }
 
 export function QuarterlyView() {
+    const [status, setStatus] = useState<FetchStatus>('idle')
+    const [rows, setRows] = useState<QuarterlyRow[]>([])
+    const [error, setError] = useState('')
+
+    async function run(force: boolean) {
+        setStatus('loading')
+        setError('')
+        try {
+            const data = force ? await fetchQuarterlyWithToast({ force: true }) : await fetchQuarterly()
+            setRows(data)
+            setStatus('ready')
+        } catch (err) {
+            setError(errorMessage(err))
+            setStatus('error')
+        }
+    }
+
+    useEffect(() => {
+        const cached = getCachedQuarterly()
+        if (cached) {
+            setRows(cached)
+            setStatus('ready')
+            return
+        }
+        const cachedError = getCachedQuarterlyError()
+        if (cachedError) {
+            setStatus('error')
+            setError(cachedError)
+            return
+        }
+        void run(false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
+    }, [])
+
+    const loading = status === 'loading'
+    const emptyText = status === 'loading' ? '正在加载季度评价结果…' : status === 'error' ? error || '加载失败' : '暂无季度评价结果'
+
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-2.5">
             <DataToolbar
-                actions={QUARTERLY_ACTIONS}
+                actions={[
+                    { key: 'refresh', label: loading ? '加载中…' : '刷新', variant: 'default', disabled: loading },
+                    ...QUARTERLY_ACTIONS.filter((action) => action.key !== 'export'),
+                    { key: 'export', label: '导出', disabled: loading },
+                ]}
                 onAction={(key) => {
+                    if (key === 'refresh') void run(true)
                     if (key !== 'export') return
                     exportTableToExcel({
                         filename: NAV_LABEL.quarterly,
                         columns: QUARTERLY_EXPORT_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
-                        rows: QUARTERLY_ROWS,
+                        rows,
                     })
                 }}
             />
-            <DataTable columns={quarterlyColumns} data={QUARTERLY_ROWS} getRowId={(row) => row.id} />
+            <DataTable columns={quarterlyColumns} data={rows} emptyText={emptyText} getRowId={(row) => row.id} />
         </div>
     )
 }
@@ -232,11 +275,11 @@ export function ConfigView() {
                 prev.map((row) =>
                     row._rowId === selectedRow._rowId
                         ? {
-                              ...row,
-                              billno: formValues.billno || '',
-                              crrc_textfield: formValues.crrc_textfield,
-                              crrc_largetextfield: formValues.crrc_largetextfield,
-                          }
+                            ...row,
+                            billno: formValues.billno || '',
+                            crrc_textfield: formValues.crrc_textfield,
+                            crrc_largetextfield: formValues.crrc_largetextfield,
+                        }
                         : row,
                 ),
             )
@@ -489,16 +532,16 @@ function OrgTreeItem({
             </div>
             {hasKids && isOpen
                 ? node.children.map((child) => (
-                      <OrgTreeItem
-                          key={child.id}
-                          node={child}
-                          activeId={activeId}
-                          expanded={expanded}
-                          depth={depth + 1}
-                          onSelect={onSelect}
-                          onToggle={onToggle}
-                      />
-                  ))
+                    <OrgTreeItem
+                        key={child.id}
+                        node={child}
+                        activeId={activeId}
+                        expanded={expanded}
+                        depth={depth + 1}
+                        onSelect={onSelect}
+                        onToggle={onToggle}
+                    />
+                ))
                 : null}
         </div>
     )

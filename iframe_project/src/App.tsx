@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 
 import { AppSidebar } from '@/components/app-sidebar'
-import { fetchDeductionItemsWithToast } from '@/lib/openapi/deduction'
-import { fetchOrgTreeWithToast } from '@/lib/openapi/org'
-import { fetchPartyQuarterlyWithToast } from '@/lib/openapi/party'
+import { fetchDeductionItemsWithToast } from '@/lib/custom/deduction'
+import { fetchOrgTreeWithToast } from '@/lib/custom/org'
+import { fetchPartyQuarterlyWithToast } from '@/lib/custom/party'
+import { fetchQuarterlyWithToast } from '@/lib/custom/quarterly'
 import { closeOverlay } from '@/lib/shell'
 import { NAV_LABEL, type NavId } from '@/lib/nav'
 import { DeductionView, ConfigView, OrgView, PartyQuarterlyView, QuarterlyView, SimpleTableView } from '@/views/pages'
@@ -24,6 +25,7 @@ export default function App() {
 
     useEffect(() => {
         void Promise.all([
+            fetchQuarterlyWithToast().catch(() => undefined),
             fetchDeductionItemsWithToast().catch(() => undefined),
             fetchPartyQuarterlyWithToast().catch(() => undefined),
             fetchOrgTreeWithToast().catch(() => undefined),

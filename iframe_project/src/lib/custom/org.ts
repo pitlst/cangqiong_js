@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 
 import { CQ_API_PATH } from '@/lib/openapi/config'
 import { cqErrorMessage, cqQueryAll } from '@/lib/openapi/client'
-import { mapOrgTree } from '@/lib/openapi/mappers'
+import { mapOrgTree } from '@/lib/custom/org.mapper'
 import type { OrgNode } from '@/lib/table-types'
 
 export const ORG_TOAST_ID = 'cq-org-load'

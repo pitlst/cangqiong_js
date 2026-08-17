@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { DEFAULT_PARTY_COLUMNS } from '@/data/party'
 import { CQ_API_PATH } from '@/lib/openapi/config'
 import { cqErrorMessage, cqQueryAll } from '@/lib/openapi/client'
-import { mapPartyQuarterlyRows } from '@/lib/openapi/mappers'
+import { mapPartyQuarterlyRows } from '@/lib/custom/party.mapper'
 import type { DeductionTable } from '@/lib/table-types'
 
 export const PARTY_TOAST_ID = 'cq-party-load'

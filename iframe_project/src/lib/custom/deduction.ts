@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { DEFAULT_DEDUCTION_COLUMNS } from '@/data/deduction'
 import { CQ_API_PATH } from '@/lib/openapi/config'
 import { cqErrorMessage, cqQueryAll } from '@/lib/openapi/client'
-import { mapDeductionRows } from '@/lib/openapi/mappers'
+import { mapDeductionRows } from '@/lib/custom/deduction.mapper'
 import type { DeductionTable } from '@/lib/table-types'
 
 export const DEDUCTION_TOAST_ID = 'cq-deduction-load'
