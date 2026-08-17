@@ -1,4 +1,4 @@
-export type NavId = 'quarterly' | 'annual' | 'config' | 'deduction' | 'partyQuarterly' | 'org'
+export type NavId = 'quarterly' | 'annual' | 'config' | 'deduction' | 'contribution_degree' | 'org'
 
 export const PRIMARY_NAV: { id: NavId; label: string }[] = [
     { id: 'quarterly', label: '季度评价结果' },
@@ -8,7 +8,7 @@ export const PRIMARY_NAV: { id: NavId; label: string }[] = [
 
 export const SOURCE_NAV: { id: NavId; label: string }[] = [
     { id: 'deduction', label: '扣分项台账' },
-    { id: 'partyQuarterly', label: '季度党群绩效' },
+    { id: 'contribution_degree', label: '季度党群绩效贡献度' },
     { id: 'org', label: '党组织查询' },
 ]
 
@@ -17,6 +17,6 @@ export const NAV_LABEL: Record<NavId, string> = {
     annual: '年度评价结果',
     config: '配置项管理',
     deduction: '扣分项台账',
-    partyQuarterly: '季度党群绩效',
+    contribution_degree: '季度党群绩效贡献度',
     org: '党组织查询',
 }

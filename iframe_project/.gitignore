@@ -24,3 +24,4 @@ yarn.lock
 *.sln
 *.sw?
 src/lib/openapi/config.ts
+src/old
