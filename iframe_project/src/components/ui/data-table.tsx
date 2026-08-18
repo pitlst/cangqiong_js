@@ -18,6 +18,7 @@ type DataTableProps<TData extends RowData> = {
     selectTone?: 'primary' | 'muted'
     enableSearch?: boolean
     toolbar?: ReactNode
+    pageSize?: number
 }
 
 export function DataTable<TData extends RowData>({
@@ -30,6 +31,7 @@ export function DataTable<TData extends RowData>({
     selectTone = 'primary',
     enableSearch = false,
     toolbar,
+    pageSize = 10,
 }: DataTableProps<TData>) {
     const table = useTable(
         {
@@ -42,7 +44,7 @@ export function DataTable<TData extends RowData>({
             initialState: {
                 pagination: {
                     pageIndex: 0,
-                    pageSize: 10,
+                    pageSize,
                 },
                 rowSelection: selectedRowId ? { [selectedRowId]: true } : {},
             },

@@ -556,28 +556,6 @@ export function AnnualView() {
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5">
-            <DataToolbar
-                actions={[
-                    { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
-                    { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
-                    { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
-                    { key: 'calc-score', label: '计算绩效得分', disabled: loading },
-                    { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
-                    { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
-                    { key: 'export', label: '导出', disabled: loading },
-                ]}
-                onAction={(key) => {
-                    if (key === 'refresh') void run(true)
-                    if (key === 'new') openAddForm()
-                    if (key === 'del') requestDelete()
-                    if (key !== 'export') return
-                    exportTableToExcel({
-                        filename: NAV_LABEL.annual,
-                        columns: PARSE_BILL_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
-                        rows,
-                    })
-                }}
-            />
             <div className="relative flex min-h-0 flex-1 flex-col">
                 <DataTable
                     columns={annualColumns}
@@ -587,6 +565,30 @@ export function AnnualView() {
                     selectedRowId={selectedRowId}
                     onRowSelect={(row) => openEditForm(row)}
                     enableSearch
+                    toolbar={
+                        <DataToolbar
+                            actions={[
+                                { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
+                                { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
+                                { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
+                                { key: 'calc-score', label: '计算绩效得分', disabled: loading },
+                                { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
+                                { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
+                                { key: 'export', label: '导出', disabled: loading },
+                            ]}
+                            onAction={(key) => {
+                                if (key === 'refresh') void run(true)
+                                if (key === 'new') openAddForm()
+                                if (key === 'del') requestDelete()
+                                if (key !== 'export') return
+                                exportTableToExcel({
+                                    filename: NAV_LABEL.annual,
+                                    columns: PARSE_BILL_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+                                    rows,
+                                })
+                            }}
+                        />
+                    }
                 />
             </div>
             {formOpen ? (

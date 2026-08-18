@@ -29,8 +29,8 @@ export function DetailSection({
     children: ReactNode
 }) {
     return (
-        <Collapsible defaultOpen={defaultOpen} className={cn('flex min-h-0 flex-col', className)}>
-            <div className="flex items-center gap-2 py-2">
+        <Collapsible defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
+            <div className="flex shrink-0 items-center gap-2 py-2">
                 <CollapsibleTrigger
                     render={
                         <Button type="button" variant="ghost" className="h-auto min-w-0 flex-1 justify-start gap-2 px-1.5 text-left" />
@@ -42,7 +42,7 @@ export function DetailSection({
                 </CollapsibleTrigger>
                 {extra}
             </div>
-            <CollapsibleContent className="flex min-h-0 flex-col">{children}</CollapsibleContent>
+            <CollapsibleContent className="flex min-h-0 flex-1 flex-col">{children}</CollapsibleContent>
         </Collapsible>
     )
 }

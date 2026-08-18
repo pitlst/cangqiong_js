@@ -31,9 +31,11 @@ export default function App() {
         <div className="bg-background flex h-svh overflow-hidden">
             <AppSidebar active={active} dark={dark} onNavigate={setActive} onToggleTheme={toggleTheme} onClose={closeOverlay} />
             <div className="flex min-w-0 flex-1 flex-col px-5.5 py-4.5 pb-3.5">
-                <header className="mb-2.5 flex items-center">
-                    <h1 className="text-lg font-semibold tracking-tight">{NAV_LABEL[active]}</h1>
-                </header>
+                {active !== 'org' ? (
+                    <header className="mb-2.5 flex items-center">
+                        <h1 className="text-lg font-semibold tracking-tight">{NAV_LABEL[active]}</h1>
+                    </header>
+                ) : null}
                 {active === 'quarterly' ? <QuarterlyView /> : null}
                 {active === 'annual' ? <AnnualView /> : null}
                 {active === 'config' ? <DjconfigView /> : null}
