@@ -88,6 +88,27 @@ export type BillDeleteResponse = {
     } | null
 }
 
+export type BillPushRow = {
+    billno: string
+}
+
+export type BillPushRequest = {
+    data: BillPushRow
+}
+
+export type BillPushResponse = {
+    status: boolean
+    errorCode: string
+    message: string | null
+    data: {
+        failCount?: string
+        filter?: string
+        successCount?: string
+        totalCount?: string
+        result?: BillDeleteResult[]
+    } | null
+}
+
 export type CrrcBillPageResponse = CqPageResponse<BillRow>
 
 export const BILL_COLUMNS = [

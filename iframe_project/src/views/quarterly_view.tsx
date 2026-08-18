@@ -30,6 +30,7 @@ import { type BillAddRow, type BillRow as DjConfigBillRow } from '@/lib/api/djco
 import { fetch_data } from '@/lib/api/djconfig_select'
 import { add_data } from '@/lib/api/djconfig_add'
 import { delete_data } from '@/lib/api/djconfig_delete'
+import { push_data } from '@/lib/api/djconfig_push'
 import { toast } from 'sonner'
 
 // 解析后的单据分录
@@ -487,6 +488,7 @@ export function QuarterlyView() {
     const [formOpen, setFormOpen] = useState(false)
     const [saving, setSaving] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<ParseBillRow | null>(null)
+    const [pushTarget, setPushTarget] = useState<ParseBillRow | null>(null)
 
     async function run(force: boolean) {
         setStatus('loading')
@@ -593,6 +595,32 @@ export function QuarterlyView() {
         }
     }
 
+    function requestPush() {
+        const target = rows.find((row) => row.id === selectedRowId)
+        if (!target) {
+            toast.error('请先选择一行')
+            return
+        }
+        setPushTarget(target)
+    }
+
+    async function confirmPush() {
+        if (!pushTarget) return
+        setSaving(true)
+        try {
+            await push_data(pushTarget.billno)
+            toast.success('提交成功')
+            setPushTarget(null)
+            setFormOpen(false)
+            setEditingBill(null)
+            await run(true)
+        } catch (err) {
+            toast.error('提交失败', { description: get_err_message(err) })
+        } finally {
+            setSaving(false)
+        }
+    }
+
     const loading = status === 'loading' || saving
     const emptyText = status === 'loading' ? '正在加载季度评价结果…' : status === 'error' ? error || '加载失败' : '暂无季度评价结果'
 
@@ -613,6 +641,7 @@ export function QuarterlyView() {
                                 { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
                                 { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
                                 { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
+                                { key: 'push', label: saving ? '提交中…' : '提交', disabled: loading },
                                 { key: 'calc-score', label: '计算绩效得分', disabled: loading },
                                 { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
                                 { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
@@ -622,6 +651,7 @@ export function QuarterlyView() {
                                 if (key === 'refresh') void run(true)
                                 if (key === 'new') openAddForm()
                                 if (key === 'del') requestDelete()
+                                if (key === 'push') requestPush()
                                 if (key !== 'export') return
                                 exportTableToExcel({
                                     filename: NAV_LABEL.quarterly,
@@ -658,6 +688,25 @@ export function QuarterlyView() {
                         <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
                         <AlertDialogAction variant="destructive" disabled={saving} onClick={() => void confirmDelete()}>
                             {saving ? '删除中…' : '删除'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog
+                open={!!pushTarget}
+                onOpenChange={(open) => {
+                    if (!open && !saving) setPushTarget(null)
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确定提交？</AlertDialogTitle>
+                        <AlertDialogDescription>将提交单据「{pushTarget?.billno || '-'}」。</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
+                        <AlertDialogAction disabled={saving} onClick={() => void confirmPush()}>
+                            {saving ? '提交中…' : '提交'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
