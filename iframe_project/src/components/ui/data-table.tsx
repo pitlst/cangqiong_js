@@ -32,6 +32,10 @@ function selected_ids(selection: Record<string, boolean>) {
     return Object.keys(selection).filter((id) => selection[id])
 }
 
+function selection_of(ids: string[]) {
+    return Object.fromEntries(ids.map((id) => [id, true as const]))
+}
+
 function same_ids(left: string[], right: string[]) {
     if (left.length !== right.length) return false
     const set = new Set(left)
@@ -121,7 +125,7 @@ export function DataTable<TData extends RowData>({
     }
 
     function apply_selection(ids: string[]) {
-        const next = Object.fromEntries(ids.map((id) => [id, true]))
+        const next = selection_of(ids)
         table.setRowSelection(next)
         emit_selection(next)
     }
@@ -139,7 +143,7 @@ export function DataTable<TData extends RowData>({
             const nextIds = selectedRowIds ?? []
             const currentIds = selected_ids(table.state.rowSelection)
             if (same_ids(nextIds, currentIds)) return
-            table.setRowSelection(Object.fromEntries(nextIds.map((id) => [id, true])))
+            table.setRowSelection(selection_of(nextIds))
             return
         }
         const currentKeys = selected_ids(table.state.rowSelection)

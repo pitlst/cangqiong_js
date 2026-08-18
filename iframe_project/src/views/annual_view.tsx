@@ -32,7 +32,7 @@ import { add_data } from '@/lib/api/djconfig_add'
 import { delete_data } from '@/lib/api/djconfig_delete'
 import { push_data } from '@/lib/api/djconfig_push'
 import { pull_data } from '@/lib/api/djconfig_pull'
-import { calculate_annual_cxzy_eval, SubmittedPeriodBillError, type EvalBill } from '@/lib/calc_quarterly_eval'
+import { calculate_annual_cxzy_eval, calculate_annual_party_eval, calculate_annual_party_score, DuplicateOrgConfigError, SubmittedPeriodBillError, type EvalBill } from '@/lib/calc_quarterly_eval'
 import { toast } from 'sonner'
 
 type ParseBillEntry = {
@@ -478,6 +478,7 @@ export function AnnualView() {
     const [pushTarget, setPushTarget] = useState<ParseBillRow[]>([])
     const [pullTarget, setPullTarget] = useState<ParseBillRow[]>([])
     const [calculating, setCalculating] = useState(false)
+    const [calcKind, setCalcKind] = useState<'score' | 'eval' | 'cxzy'>('score')
     const [calcYearOpen, setCalcYearOpen] = useState(false)
     const [calcYear, setCalcYear] = useState('')
 
@@ -649,11 +650,96 @@ export function AnnualView() {
         }
     }
 
+    function requestCalcScore() {
+        setCalcYear(String(new Date().getFullYear()))
+        setFormOpen(false)
+        setEditingBill(null)
+        setCalcKind('score')
+        setCalcYearOpen(true)
+    }
+
+    function requestCalcEval() {
+        setCalcYear(String(new Date().getFullYear()))
+        setFormOpen(false)
+        setEditingBill(null)
+        setCalcKind('eval')
+        setCalcYearOpen(true)
+    }
+
     function requestCalcCxzy() {
         setCalcYear(String(new Date().getFullYear()))
         setFormOpen(false)
         setEditingBill(null)
+        setCalcKind('cxzy')
         setCalcYearOpen(true)
+    }
+
+    async function confirmCalcScore() {
+        if (!calcYear.trim()) {
+            toast.warning('请选择年份')
+            return
+        }
+        const year = calcYear.trim()
+        setCalcYearOpen(false)
+        setCalculating(true)
+        const toastId = toast.loading(`正在计算${year}党群绩效得分`)
+        try {
+            const { bills, delete_billnos } = await calculate_annual_party_score(year)
+            if (!bills.length) {
+                toast.warning('没有可计算的党组织', { id: toastId })
+                return
+            }
+            for (const billno of delete_billnos) {
+                await delete_data(billno)
+            }
+            await add_data(bills.map(bill_to_add_row))
+            toast.success('计算党群绩效得分完成', { id: toastId, description: `更新了 ${bills.length} 行数据` })
+            await run(true)
+        } catch (err) {
+            if (err instanceof DuplicateOrgConfigError) {
+                toast.warning(err.message, { id: toastId })
+                return
+            }
+            toast.error('计算党群绩效得分失败', { id: toastId, description: get_err_message(err) })
+        } finally {
+            setCalculating(false)
+        }
+    }
+
+    async function confirmCalcEval() {
+        if (!calcYear.trim()) {
+            toast.warning('请选择年份')
+            return
+        }
+        const year = calcYear.trim()
+        setCalcYearOpen(false)
+        setCalculating(true)
+        const toastId = toast.loading(`正在计算${year}绩效评价结果`)
+        try {
+            const { bills, delete_billnos, tied_reason } = await calculate_annual_party_eval(year)
+            if (!bills.length) {
+                toast.warning('没有可计算的党组织', { id: toastId })
+                return
+            }
+            for (const billno of delete_billnos) {
+                await delete_data(billno)
+            }
+            await add_data(bills.map(bill_to_add_row))
+            if (tied_reason) {
+                toast.warning('无法计算', { id: toastId, description: `${tied_reason} 更新了 ${bills.length} 行数据` })
+            } else {
+                toast.success('计算绩效评价结果完成', { id: toastId, description: `更新了 ${bills.length} 行数据` })
+            }
+            await run(true)
+        } catch (err) {
+            if (err instanceof DuplicateOrgConfigError) {
+                toast.warning(err.message, { id: toastId })
+                return
+            }
+            toast.error('计算绩效评价结果失败', { id: toastId, description: get_err_message(err) })
+        } finally {
+            setCalculating(false)
+        }
     }
 
     async function confirmCalcCxzy() {
@@ -673,7 +759,7 @@ export function AnnualView() {
             if (bills.length) {
                 await add_data(bills.map(bill_to_add_row))
             }
-            toast.success('计算创先争优结果完成', { id: toastId })
+            toast.success('计算创先争优结果完成', { id: toastId, description: `更新了 ${bills.length} 行数据` })
             await run(true)
         } catch (err) {
             if (err instanceof SubmittedPeriodBillError) {
@@ -710,8 +796,9 @@ export function AnnualView() {
                                 { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
                                 { key: 'push', label: saving ? '提交中…' : '提交', disabled: loading },
                                 { key: 'pull', label: saving ? '撤销中…' : '撤销', disabled: loading },
-                                { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
-                                { key: 'calc-excellence', label: calculating ? '计算中…' : '计算创先争优结果', disabled: loading },
+                                { key: 'calc-score', label: calculating && calcKind === 'score' ? '计算中…' : '计算党群绩效得分', disabled: loading },
+                                { key: 'calc-eval', label: calculating && calcKind === 'eval' ? '计算中…' : '计算绩效评价结果', disabled: loading },
+                                { key: 'calc-excellence', label: calculating && calcKind === 'cxzy' ? '计算中…' : '计算创先争优结果', disabled: loading },
                                 { key: 'export', label: '导出', disabled: loading },
                             ]}
                             onAction={(key) => {
@@ -720,6 +807,8 @@ export function AnnualView() {
                                 if (key === 'del') requestDelete()
                                 if (key === 'push') requestPush()
                                 if (key === 'pull') requestPull()
+                                if (key === 'calc-score') requestCalcScore()
+                                if (key === 'calc-eval') requestCalcEval()
                                 if (key === 'calc-excellence') requestCalcCxzy()
                                 if (key !== 'export') return
                                 exportTableToExcel({
@@ -769,7 +858,9 @@ export function AnnualView() {
             >
                 <DialogContent className="sm:max-w-md" showCloseButton={!calculating}>
                     <DialogHeader>
-                        <DialogTitle>计算创先争优结果</DialogTitle>
+                        <DialogTitle>
+                            {calcKind === 'score' ? '计算党群绩效得分' : calcKind === 'eval' ? '计算绩效评价结果' : '计算创先争优结果'}
+                        </DialogTitle>
                     </DialogHeader>
                     <p className="text-sm text-muted-foreground">请确认要计算的年份。</p>
                     <FieldGroup>
@@ -795,7 +886,11 @@ export function AnnualView() {
                         <Button type="button" variant="outline" disabled={calculating} onClick={() => setCalcYearOpen(false)}>
                             取消
                         </Button>
-                        <Button type="button" disabled={calculating} onClick={() => void confirmCalcCxzy()}>
+                        <Button
+                            type="button"
+                            disabled={calculating}
+                            onClick={() => void (calcKind === 'score' ? confirmCalcScore() : calcKind === 'eval' ? confirmCalcEval() : confirmCalcCxzy())}
+                        >
                             {calculating ? '计算中…' : '开始计算'}
                         </Button>
                     </DialogFooter>

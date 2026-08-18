@@ -8,12 +8,16 @@ import { fetch_data as fetch_org, trans_data as trans_org, type ParseOrgRow } fr
 import { as_number, as_string } from '@/lib/utils'
 
 const QUARTERLY_BILL_TYPE = 'JDPJ'
+const ANNUAL_BILL_TYPE = 'NDPJ'
 const QUARTERLY_RESULT_TYPE = '季度评价结果'
 const ANNUAL_RESULT_TYPE = '年度评价结果'
+const QUARTERLY_SCORE_ITEM = '季度党群绩效结果'
 
 export const QUARTERLY_GRASSROOTS_TYPE = '季度基层党组织创先争优评价项点'
 export const QUARTERLY_PARTY_RULE_TYPE = '季度党群绩效评价规则'
 export const QUARTERLY_CXZY_RULE_TYPE = '季度创先争优评价规则'
+export const ANNUAL_GRASSROOTS_TYPE = '年度基层党组织创先争优评价项点'
+export const ANNUAL_PARTY_RULE_TYPE = '年度党群绩效评价规则'
 export const ANNUAL_CXZY_RULE_TYPE = '年度创先争优评价规则'
 
 export type EvalEntry = {
@@ -37,6 +41,7 @@ export type EvalBill = {
 export type CalcQuarterlyEvalResult = {
     bills: EvalBill[]
     delete_billnos: string[]
+    tied_reason?: string
 }
 
 export class DuplicateOrgConfigError extends Error {
@@ -46,13 +51,6 @@ export class DuplicateOrgConfigError extends Error {
         super(`党组织「${org_names.join('、')}」的配置项被重复设定`)
         this.name = 'DuplicateOrgConfigError'
         this.org_names = org_names
-    }
-}
-
-export class TiedScoreEvalError extends Error {
-    constructor() {
-        super('无法计算')
-        this.name = 'TiedScoreEvalError'
     }
 }
 
@@ -246,8 +244,8 @@ function contribution_entries(entry: ContributionEntry): EvalEntry[] {
     return rows
 }
 
-function alloc_quarterly_billno(used: Set<string>, now = new Date()) {
-    const prefix = `${QUARTERLY_BILL_TYPE}-${format(now, 'yyyyMMdd')}-`
+function alloc_typed_billno(type: string, used: Set<string>, now = new Date()) {
+    const prefix = `${type}-${format(now, 'yyyyMMdd')}-`
     let serial = 0
     for (const billno of used) {
         if (!billno.startsWith(prefix)) continue
@@ -261,6 +259,10 @@ function alloc_quarterly_billno(used: Set<string>, now = new Date()) {
     } while (used.has(next))
     used.add(next)
     return next
+}
+
+function alloc_quarterly_billno(used: Set<string>, now = new Date()) {
+    return alloc_typed_billno(QUARTERLY_BILL_TYPE, used, now)
 }
 
 function trans_quarterly(row: DjConfigBillRow): EvalBill {
@@ -291,15 +293,28 @@ function bill_matches_org(bill: EvalBill, org: ParseOrgRow) {
     return names_match(bill.party_name, org.name, org.fullname)
 }
 
-function has_tied_score_across_evals(group: EvalBill[]) {
-    const eval_by_score = new Map<number, string>()
+function find_tied_score_across_evals(group: EvalBill[]) {
+    const bills_by_score = new Map<number, EvalBill[]>()
     for (const bill of group) {
         if (!bill.party_evaluation) continue
-        const existing = eval_by_score.get(bill.party_score)
-        if (existing && existing !== bill.party_evaluation) return true
-        eval_by_score.set(bill.party_score, bill.party_evaluation)
+        const list = bills_by_score.get(bill.party_score) ?? []
+        list.push(bill)
+        bills_by_score.set(bill.party_score, list)
     }
-    return false
+    const ties: { score: number; bills: EvalBill[] }[] = []
+    for (const [score, bills] of bills_by_score) {
+        const evals = new Set(bills.map((bill) => bill.party_evaluation))
+        if (evals.size > 1) ties.push({ score, bills })
+    }
+    return ties
+}
+
+function tied_score_reason(ties: { score: number; bills: EvalBill[] }[]) {
+    const details = ties.map((tie) => {
+        const parts = tie.bills.map((bill) => `党组织「${bill.party_name}」为「${bill.party_evaluation}」`).join('、')
+        return `${parts}，党群绩效得分均为 ${tie.score}`
+    })
+    return `不同评价的绩效有相同的分数。${details.join('；')}`
 }
 
 function collect_duplicate_org_names(configs: ConfigBill[], orgs: ParseOrgRow[]) {
@@ -394,8 +409,22 @@ export async function calculate_quarterly_party_eval(year: string, quarter: stri
         throw new DuplicateOrgConfigError(duplicate_orgs)
     }
 
-    const assigned = drafts.map((bill) => ({ ...bill }))
+    const assigned = assign_party_evaluations(drafts, party_rules, orgs)
+    const unique_billnos = new Set(assigned.bills.map((bill) => bill.billno))
+    if (unique_billnos.size !== assigned.bills.length) {
+        throw new Error('生成的单据编号存在重复')
+    }
+    return {
+        bills: assigned.bills,
+        delete_billnos: [...new Set(delete_billnos)],
+        tied_reason: assigned.tied_reason,
+    }
+}
+
+function assign_party_evaluations(bills: EvalBill[], party_rules: ConfigBill[], orgs: ParseOrgRow[]) {
+    const assigned = bills.map((bill) => ({ ...bill }))
     const used = new Set<string>()
+    const all_ties: { score: number; bills: EvalBill[] }[] = []
     for (const config of party_rules) {
         const group = assigned
             .filter((bill) => !used.has(bill.billno) && covers_party(config.org_ids, bill.party_name, orgs))
@@ -414,16 +443,15 @@ export async function calculate_quarterly_party_eval(year: string, quarter: stri
                 used.add(bill.billno)
             }
         })
-        if (has_tied_score_across_evals(group)) {
-            throw new TiedScoreEvalError()
+        all_ties.push(...find_tied_score_across_evals(group))
+    }
+    const tied_reason = all_ties.length ? tied_score_reason(all_ties) : undefined
+    for (const tie of all_ties) {
+        for (const bill of tie.bills) {
+            bill.party_evaluation = ''
         }
     }
-
-    const unique_billnos = new Set(assigned.map((bill) => bill.billno))
-    if (unique_billnos.size !== assigned.length) {
-        throw new Error('生成的单据编号存在重复')
-    }
-    return { bills: assigned, delete_billnos: [...new Set(delete_billnos)] }
+    return { bills: assigned, tied_reason }
 }
 
 function match_cxzy_rule(rules: CxzyRule[], party_evaluation: string, administrative_evaluation: string) {
@@ -479,4 +507,163 @@ export async function calculate_annual_cxzy_eval(year: string): Promise<CalcQuar
         result_type: ANNUAL_RESULT_TYPE,
         rule_type: ANNUAL_CXZY_RULE_TYPE,
     })
+}
+
+export async function calculate_annual_party_eval(year: string): Promise<CalcQuarterlyEvalResult> {
+    const [config_raw, org_raw] = await Promise.all([fetch_djconfig({ force: true }), fetch_org({ force: true })])
+    const configs = config_raw.map(trans_config)
+    const orgs = trans_org(org_raw)
+    const existing = config_raw.filter((row) => row.crrc_textfield === ANNUAL_RESULT_TYPE).map(trans_quarterly)
+    const party_rules = configs.filter((row) => row.submitted && row.data_type === ANNUAL_PARTY_RULE_TYPE)
+
+    const duplicate_orgs = collect_duplicate_org_names(party_rules, orgs)
+    if (duplicate_orgs.length) {
+        throw new DuplicateOrgConfigError(duplicate_orgs)
+    }
+
+    const targets = existing.filter((bill) => same_year(bill.year, year))
+    const assigned = assign_party_evaluations(targets, party_rules, orgs)
+    const unique_billnos = new Set(assigned.bills.map((bill) => bill.billno))
+    if (unique_billnos.size !== assigned.bills.length) {
+        throw new Error('生成的单据编号存在重复')
+    }
+    return {
+        bills: assigned.bills,
+        delete_billnos: assigned.bills.map((bill) => bill.billno),
+        tied_reason: assigned.tied_reason,
+    }
+}
+
+function is_annual_quarter_text(quarter: string) {
+    return quarter.replace(/\s+/g, '').includes('年度')
+}
+
+function is_quarterly_score_item(item: EvalEntry, index: number, entries: EvalEntry[]) {
+    if (entries.some((row) => row.item_name.trim() === QUARTERLY_SCORE_ITEM)) {
+        return item.item_name.trim() === QUARTERLY_SCORE_ITEM
+    }
+    return index === 0
+}
+
+function quarterly_avg_party_score(party_name: string, year: string, quarterly: { raw: DjConfigBillRow; bill: EvalBill }[]) {
+    const by_quarter = new Map<string, number>()
+    for (const { raw, bill } of quarterly) {
+        if (!is_submitted(raw)) continue
+        if (!same_year(bill.year, year)) continue
+        if (!names_match(party_name, bill.party_name)) continue
+        const key = quarter_key(bill.quarter)
+        if (!key) continue
+        by_quarter.set(key, bill.party_score)
+    }
+    if (!by_quarter.size) return 0
+    let sum = 0
+    for (const score of by_quarter.values()) sum += score
+    return sum / by_quarter.size
+}
+
+function build_annual_score_bill(
+    party_name: string,
+    year: string,
+    billno: string,
+    grassroots: ConfigBill[],
+    quarterly: { raw: DjConfigBillRow; bill: EvalBill }[],
+    deductions: ReturnType<typeof trans_deduction>,
+    orgs: ParseOrgRow[],
+    preserved: Pick<EvalBill, 'party_evaluation' | 'administrative_evaluation' | 'cxzy_evaluation'>,
+): EvalBill {
+    const entry: EvalEntry[] = []
+    for (const config of grassroots) {
+        if (!covers_party(config.org_ids, party_name, orgs)) continue
+        config.entry.forEach((item, index) => {
+            if (is_quarterly_score_item(item, index, config.entry)) {
+                entry.push({
+                    item_name: item.item_name,
+                    item_score: quarterly_avg_party_score(party_name, year, quarterly) * item.item_score,
+                })
+                return
+            }
+            entry.push({
+                item_name: item.item_name,
+                item_score: item.item_score * 100,
+            })
+        })
+    }
+    for (const deduction of deductions) {
+        for (const item of deduction.entry) {
+            const item_year = item.year || deduction.year
+            const item_quarter = item.quarter || deduction.quarter
+            if (!same_year(item_year, year)) continue
+            if (!is_annual_quarter_text(item_quarter)) continue
+            if (!names_match(party_name, item.org_name, item.org_fullname)) continue
+            entry.push({ item_name: item.item, item_score: -item.score })
+        }
+    }
+    return {
+        billno,
+        billstatus_title: '暂存',
+        party_name,
+        year,
+        quarter: '',
+        party_score: entry.reduce((sum, item) => sum + item.item_score, 0),
+        party_evaluation: preserved.party_evaluation,
+        administrative_evaluation: preserved.administrative_evaluation,
+        cxzy_evaluation: preserved.cxzy_evaluation,
+        entry,
+    }
+}
+
+export async function calculate_annual_party_score(year: string): Promise<CalcQuarterlyEvalResult> {
+    const [config_raw, deduction_raw, org_raw] = await Promise.all([
+        fetch_djconfig({ force: true }),
+        fetch_deduction({ force: true }),
+        fetch_org({ force: true }),
+    ])
+    const configs = config_raw.map(trans_config)
+    const deductions = trans_deduction(deduction_raw)
+    const orgs = trans_org(org_raw)
+    const existing = config_raw.filter((row) => row.crrc_textfield === ANNUAL_RESULT_TYPE).map(trans_quarterly)
+    const quarterly = config_raw
+        .filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE)
+        .map((row) => ({ raw: row, bill: trans_quarterly(row) }))
+    const grassroots = configs.filter((row) => row.submitted && row.data_type === ANNUAL_GRASSROOTS_TYPE)
+
+    const duplicate_orgs = collect_duplicate_org_names(grassroots, orgs)
+    if (duplicate_orgs.length) {
+        throw new DuplicateOrgConfigError(duplicate_orgs)
+    }
+
+    const consumed = new Set<string>()
+    const delete_billnos: string[] = []
+    const drafts: EvalBill[] = []
+    const used_billnos = new Set(config_raw.map((row) => row.billno).filter(Boolean))
+
+    for (const org of orgs) {
+        const party_name = org.name.trim()
+        if (!party_name) continue
+        const matches = existing.filter((bill) => !consumed.has(bill.billno) && bill_matches_org(bill, org) && same_year(bill.year, year))
+        let billno = ''
+        const preserved = {
+            party_evaluation: '',
+            administrative_evaluation: '',
+            cxzy_evaluation: '',
+        }
+        for (const bill of matches) {
+            consumed.add(bill.billno)
+            delete_billnos.push(bill.billno)
+            if (!billno) billno = bill.billno
+            if (bill.party_evaluation || bill.administrative_evaluation || bill.cxzy_evaluation) {
+                preserved.party_evaluation = bill.party_evaluation
+                preserved.administrative_evaluation = bill.administrative_evaluation
+                preserved.cxzy_evaluation = bill.cxzy_evaluation
+            }
+        }
+        if (!billno) billno = alloc_typed_billno(ANNUAL_BILL_TYPE, used_billnos)
+        drafts.push(build_annual_score_bill(party_name, year, billno, grassroots, quarterly, deductions, orgs, preserved))
+    }
+
+    const unique_billnos = new Set(drafts.map((bill) => bill.billno))
+    if (unique_billnos.size !== drafts.length) {
+        throw new Error('生成的单据编号存在重复')
+    }
+    return { bills: drafts, delete_billnos: [...new Set(delete_billnos)] }
 }

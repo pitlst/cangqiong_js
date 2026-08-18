@@ -32,7 +32,7 @@ import { add_data } from '@/lib/api/djconfig_add'
 import { delete_data } from '@/lib/api/djconfig_delete'
 import { push_data } from '@/lib/api/djconfig_push'
 import { pull_data } from '@/lib/api/djconfig_pull'
-import { calculate_quarterly_cxzy_eval, calculate_quarterly_party_eval, DuplicateOrgConfigError, SubmittedPeriodBillError, TiedScoreEvalError, quarter_key, type EvalBill } from '@/lib/calc_quarterly_eval'
+import { calculate_quarterly_cxzy_eval, calculate_quarterly_party_eval, DuplicateOrgConfigError, SubmittedPeriodBillError, quarter_key, type EvalBill } from '@/lib/calc_quarterly_eval'
 import { toast } from 'sonner'
 
 // 解析后的单据分录
@@ -748,7 +748,7 @@ export function QuarterlyView() {
         setCalculating(true)
         const toastId = toast.loading(`正在计算${year}${quarter}绩效评价结果`)
         try {
-            const { bills, delete_billnos } = await calculate_quarterly_party_eval(year, quarter)
+            const { bills, delete_billnos, tied_reason } = await calculate_quarterly_party_eval(year, quarter)
             if (!bills.length) {
                 toast.warning('没有可计算的党组织', { id: toastId })
                 return
@@ -757,15 +757,15 @@ export function QuarterlyView() {
                 await delete_data(billno)
             }
             await add_data(bills.map(bill_to_add_row))
-            toast.success('计算绩效评价结果完成', { id: toastId })
+            if (tied_reason) {
+                toast.warning('无法计算', { id: toastId, description: `${tied_reason} 更新了 ${bills.length} 行数据` })
+            } else {
+                toast.success('计算绩效评价结果完成', { id: toastId, description: `更新了 ${bills.length} 行数据` })
+            }
             await run(true)
         } catch (err) {
             if (err instanceof DuplicateOrgConfigError) {
                 toast.warning(err.message, { id: toastId })
-                return
-            }
-            if (err instanceof TiedScoreEvalError) {
-                toast.warning('无法计算', { id: toastId })
                 return
             }
             toast.error('计算绩效评价结果失败', { id: toastId, description: get_err_message(err) })
@@ -796,7 +796,7 @@ export function QuarterlyView() {
             if (bills.length) {
                 await add_data(bills.map(bill_to_add_row))
             }
-            toast.success('计算创先争优结果完成', { id: toastId })
+            toast.success('计算创先争优结果完成', { id: toastId, description: `更新了 ${bills.length} 行数据` })
             await run(true)
         } catch (err) {
             if (err instanceof SubmittedPeriodBillError) {
