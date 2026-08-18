@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { DetailSection } from '@/components/bill-detail'
 import { type DataTableFeatures } from '@/components/data-table-features'
 import { DataToolbar } from '@/components/data-toolbar'
+import { OrgSelectField } from '@/components/org-select-field'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -266,6 +267,7 @@ function AnnualBillForm({
             },
     )
     const [selectedEntryId, setSelectedEntryId] = useState('')
+    const [orgPickerOpen, setOrgPickerOpen] = useState(false)
     const addEntryHelper = useMemo(() => createColumnHelper<DataTableFeatures, AddEntryRow>(), [])
     const addEntryColumns = useMemo(
         () =>
@@ -335,6 +337,7 @@ function AnnualBillForm({
         <Dialog
             open
             onOpenChange={(open) => {
+                if (!open && orgPickerOpen) return
                 if (!open && !saving) onClose()
             }}
         >
@@ -359,12 +362,12 @@ function AnnualBillForm({
                         <FieldLabel htmlFor="annual-party-name">
                             所属党组织<span className="text-destructive">*</span>
                         </FieldLabel>
-                        <Input
+                        <OrgSelectField
                             id="annual-party-name"
-                            required
-                            aria-required
                             value={form.party_name}
-                            onChange={(e) => setForm((prev) => ({ ...prev, party_name: e.target.value }))}
+                            disabled={saving}
+                            onChange={(name) => setForm((prev) => ({ ...prev, party_name: name }))}
+                            onOpenChange={setOrgPickerOpen}
                         />
                     </Field>
                     <Field className="min-w-0 gap-1">

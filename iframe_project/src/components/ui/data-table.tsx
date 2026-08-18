@@ -31,7 +31,7 @@ export function DataTable<TData extends RowData>({
     selectTone = 'primary',
     enableSearch = false,
     toolbar,
-    pageSize = 10,
+    pageSize = 50,
 }: DataTableProps<TData>) {
     const table = useTable(
         {

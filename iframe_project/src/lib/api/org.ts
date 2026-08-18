@@ -150,6 +150,33 @@ export function flatten_tree(nodes: OrgTreeNode[]): OrgTreeNode[] {
     return out
 }
 
+function node_matches_keyword(node: OrgTreeNode, keyword: string) {
+    const q = keyword.trim().toLowerCase()
+    if (!q) return true
+    return [node.name, node.fullname, node.number, node.longnumber, node.parent_name, node.crrc_combofield_title].some((value) =>
+        value.toLowerCase().includes(q),
+    )
+}
+
+/** 按关键字过滤党组织树：命中节点保留整棵子树，未命中则只保留命中分支 */
+export function filter_tree(nodes: OrgTreeNode[], keyword: string): OrgTreeNode[] {
+    const q = keyword.trim()
+    if (!q) return nodes
+    const walk = (list: OrgTreeNode[]): OrgTreeNode[] => {
+        const out: OrgTreeNode[] = []
+        for (const node of list) {
+            if (node_matches_keyword(node, q)) {
+                out.push(node)
+                continue
+            }
+            const children = walk(node.children)
+            if (children.length) out.push({ ...node, children })
+        }
+        return out
+    }
+    return walk(nodes)
+}
+
 export function find_node(nodes: OrgTreeNode[], id: string): OrgTreeNode | null {
     for (const node of nodes) {
         if (node.id === id) return node
@@ -166,6 +193,15 @@ export function find_path(nodes: OrgTreeNode[], id: string): OrgTreeNode[] {
         if (child_path.length) return [node, ...child_path]
     }
     return []
+}
+
+export function find_node_by_name(nodes: OrgTreeNode[], name: string): OrgTreeNode | null {
+    const q = name.trim()
+    if (!q) return null
+    for (const node of flatten_tree(nodes)) {
+        if (node.name === q) return node
+    }
+    return null
 }
 
 /** 右侧表格行：选中「全部」返回整树；否则按「包含本级」取本节点及/或全部下级 */

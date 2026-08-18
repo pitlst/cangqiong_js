@@ -1,33 +1,46 @@
 import { ChevronRightIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ORG_ALL_ID, type OrgTreeNode } from '@/lib/api/org'
+import { flatten_tree, ORG_ALL_ID, type OrgTreeNode } from '@/lib/api/org'
 import { cn } from '@/lib/utils'
 
-type OrgTreeProps = {
+type OrgTreeBase = {
     roots: OrgTreeNode[]
-    selectedId: string
     expandedIds: Set<string>
-    onSelect: (id: string) => void
     onExpandedChange: (id: string, open: boolean) => void
 }
 
-function TreeItem({
-    node,
-    depth,
-    selectedId,
-    expandedIds,
-    onSelect,
-    onExpandedChange,
-}: {
+type OrgTreeSingle = OrgTreeBase & {
+    multiple?: false
+    selectedId: string
+    onSelect: (id: string) => void
+}
+
+type OrgTreeMultiple = OrgTreeBase & {
+    multiple: true
+    selectedIds: Set<string>
+    onSelectedIdsChange: (ids: Set<string>) => void
+}
+
+export type OrgTreeProps = OrgTreeSingle | OrgTreeMultiple
+
+type TreeItemShared = {
     node: OrgTreeNode
     depth: number
-} & Omit<OrgTreeProps, 'roots'>) {
+    expandedIds: Set<string>
+    onExpandedChange: (id: string, open: boolean) => void
+    multiple: boolean
+    isSelected: (id: string) => boolean
+    onItemClick: (id: string) => void
+}
+
+function TreeItem({ node, depth, expandedIds, onExpandedChange, multiple, isSelected, onItemClick }: TreeItemShared) {
     const hasChildren = node.children.length > 0
     const open = expandedIds.has(node.id)
-    const selected = selectedId === node.id
+    const selected = isSelected(node.id)
 
     const row = (
         <div className="flex min-w-0 items-center" style={{ paddingLeft: depth * 12 }}>
@@ -39,12 +52,20 @@ function TreeItem({
             ) : (
                 <span className="size-5 shrink-0" />
             )}
+            {multiple ? (
+                <Checkbox
+                    checked={selected}
+                    className="mr-1"
+                    onClick={(event) => event.stopPropagation()}
+                    onCheckedChange={() => onItemClick(node.id)}
+                />
+            ) : null}
             <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className={cn('h-7 min-w-0 flex-1 justify-start px-1.5 font-normal', selected && 'bg-primary/10 text-primary hover:bg-primary/10')}
-                onClick={() => onSelect(node.id)}
+                onClick={() => onItemClick(node.id)}
             >
                 <span className="truncate">{node.name}</span>
             </Button>
@@ -62,10 +83,11 @@ function TreeItem({
                         key={child.id}
                         node={child}
                         depth={depth + 1}
-                        selectedId={selectedId}
                         expandedIds={expandedIds}
-                        onSelect={onSelect}
                         onExpandedChange={onExpandedChange}
+                        multiple={multiple}
+                        isSelected={isSelected}
+                        onItemClick={onItemClick}
                     />
                 ))}
             </CollapsibleContent>
@@ -73,9 +95,42 @@ function TreeItem({
     )
 }
 
-export function OrgTree({ roots, selectedId, expandedIds, onSelect, onExpandedChange }: OrgTreeProps) {
+export function OrgTree(props: OrgTreeProps) {
+    const { roots, expandedIds, onExpandedChange } = props
+    const allIds = props.multiple === true ? flatten_tree(roots).map((node) => node.id) : []
+    const selectedCount = props.multiple === true ? allIds.filter((id) => props.selectedIds.has(id)).length : 0
+    const allChecked = props.multiple === true && allIds.length > 0 && selectedCount === allIds.length
     const allOpen = expandedIds.has(ORG_ALL_ID)
-    const allSelected = selectedId === ORG_ALL_ID
+    const allSelected = props.multiple === true ? allChecked : props.selectedId === ORG_ALL_ID
+
+    function isSelected(id: string) {
+        return props.multiple === true ? props.selectedIds.has(id) : props.selectedId === id
+    }
+
+    function onItemClick(id: string) {
+        if (props.multiple !== true) {
+            props.onSelect(id)
+            return
+        }
+        const next = new Set(props.selectedIds)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        props.onSelectedIdsChange(next)
+    }
+
+    function onAllClick() {
+        if (props.multiple !== true) {
+            props.onSelect(ORG_ALL_ID)
+            return
+        }
+        const next = new Set(props.selectedIds)
+        if (allChecked) {
+            for (const id of allIds) next.delete(id)
+        } else {
+            for (const id of allIds) next.add(id)
+        }
+        props.onSelectedIdsChange(next)
+    }
 
     return (
         <ScrollArea className="h-full">
@@ -86,6 +141,14 @@ export function OrgTree({ roots, selectedId, expandedIds, onSelect, onExpandedCh
                             <ChevronRightIcon className={cn('size-3.5 transition-transform', allOpen && 'rotate-90')} />
                             <span className="sr-only">{allOpen ? '收起' : '展开'}</span>
                         </CollapsibleTrigger>
+                        {props.multiple === true ? (
+                            <Checkbox
+                                checked={allChecked}
+                                className="mr-1"
+                                onClick={(event) => event.stopPropagation()}
+                                onCheckedChange={() => onAllClick()}
+                            />
+                        ) : null}
                         <Button
                             type="button"
                             variant="ghost"
@@ -94,7 +157,7 @@ export function OrgTree({ roots, selectedId, expandedIds, onSelect, onExpandedCh
                                 'h-7 min-w-0 flex-1 justify-start px-1.5 font-normal',
                                 allSelected && 'bg-primary/10 text-primary hover:bg-primary/10',
                             )}
-                            onClick={() => onSelect(ORG_ALL_ID)}
+                            onClick={onAllClick}
                         >
                             全部
                         </Button>
@@ -105,10 +168,11 @@ export function OrgTree({ roots, selectedId, expandedIds, onSelect, onExpandedCh
                                 key={node.id}
                                 node={node}
                                 depth={1}
-                                selectedId={selectedId}
                                 expandedIds={expandedIds}
-                                onSelect={onSelect}
                                 onExpandedChange={onExpandedChange}
+                                multiple={props.multiple === true}
+                                isSelected={isSelected}
+                                onItemClick={onItemClick}
                             />
                         ))}
                     </CollapsibleContent>
