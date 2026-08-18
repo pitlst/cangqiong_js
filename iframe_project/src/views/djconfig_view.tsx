@@ -331,6 +331,44 @@ function trans_data(source_data: DjConfigBillRow[]): ParseBillRow[] {
     })
 }
 
+function is_submitted_bill(row: ParseBillRow) {
+    return row.billstatus !== 'A' && row.billstatus_title !== '暂存'
+}
+
+function orgs_overlap(left: string[], right: string[]) {
+    if (!left.length || !right.length) return false
+    const set = new Set(left)
+    return right.some((id) => set.has(id))
+}
+
+function find_submitted_type_org_conflict(target: ParseBillRow, rows: ParseBillRow[]) {
+    const other = rows.find(
+        (row) =>
+            row.id !== target.id &&
+            row.data_type === target.data_type &&
+            is_submitted_bill(row) &&
+            orgs_overlap(row.org_ids, target.org_ids),
+    )
+    return other ?? null
+}
+
+function party_rule_ratios(tag: Record<string, unknown>) {
+    const values = parse_rule_items(tag.items)
+        .map((item) => Number(item.value))
+        .filter((value) => Number.isFinite(value))
+    const sum = values.reduce((total, value) => total + value, 0)
+    if (Math.abs(sum - 100) < 1e-6) return values.map((value) => value / 100)
+    return values
+}
+
+function org_percent_divides(orgCount: number, ratios: number[]) {
+    if (!ratios.length) return false
+    return ratios.every((ratio) => {
+        const assigned = orgCount * ratio
+        return Number.isFinite(assigned) && Math.abs(assigned - Math.round(assigned)) < 1e-6
+    })
+}
+
 function next_config_billno(existing: string[], now = new Date()): string {
     const prefix = `${CONFIG_BILL_TYPE}-${format(now, 'yyyyMMdd')}-`
     let maxSerial = 0
@@ -363,7 +401,7 @@ function to_add_row(form: FormValues, tag: Record<string, unknown>): BillAddRow 
         billno: form.billno.trim(),
         billstatus: 'A',
         crrc_textfield: form.data_type.trim(),
-        crrc_largetextfield: json,
+        crrc_largetextfield: form.config_name.trim(),
         crrc_largetextfield_tag: json,
     }
 }
@@ -1099,6 +1137,17 @@ export function DjconfigView() {
             toast.error('请先选择一行')
             return
         }
+        const conflict = find_submitted_type_org_conflict(target, rows)
+        if (conflict) {
+            toast.warning('数据格式不正确', {
+                description: `相同党组织的相同数据类型已有已提交规则：${target.billno}、${conflict.billno}`,
+            })
+            return
+        }
+        if (is_party_perf_type(target.data_type) && !org_percent_divides(target.org_ids.length, party_rule_ratios(target.tag))) {
+            toast.warning('数据格式不正确', { description: '党组织数量和百分比不能整除' })
+            return
+        }
         setPushTarget(target)
     }
 
@@ -1131,7 +1180,9 @@ export function DjconfigView() {
                     emptyText={emptyText}
                     getRowId={(row) => row.id}
                     selectedRowId={selectedRowId}
-                    onRowSelect={(row) => openEditForm(row)}
+                    onRowSelect={(row) => setSelectedRowId(row.id)}
+                    onRowOpen={(row) => openEditForm(row)}
+                    enableSelectColumn
                     enableSearch
                     toolbar={
                         <DataToolbar

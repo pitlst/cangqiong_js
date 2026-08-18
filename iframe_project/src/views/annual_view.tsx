@@ -594,7 +594,9 @@ export function AnnualView() {
                     emptyText={emptyText}
                     getRowId={(row) => row.id}
                     selectedRowId={selectedRowId}
-                    onRowSelect={(row) => openEditForm(row)}
+                    onRowSelect={(row) => setSelectedRowId(row.id)}
+                    onRowOpen={(row) => openEditForm(row)}
+                    enableSelectColumn
                     enableSearch
                     toolbar={
                         <DataToolbar
@@ -603,7 +605,6 @@ export function AnnualView() {
                                 { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
                                 { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
                                 { key: 'push', label: saving ? '提交中…' : '提交', disabled: loading },
-                                { key: 'calc-score', label: '计算绩效得分', disabled: loading },
                                 { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
                                 { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
                                 { key: 'export', label: '导出', disabled: loading },

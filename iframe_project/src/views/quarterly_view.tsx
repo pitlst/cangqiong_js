@@ -31,6 +31,7 @@ import { fetch_data } from '@/lib/api/djconfig_select'
 import { add_data } from '@/lib/api/djconfig_add'
 import { delete_data } from '@/lib/api/djconfig_delete'
 import { push_data } from '@/lib/api/djconfig_push'
+import { calculate_quarterly_party_eval, DuplicateOrgConfigError, TiedScoreEvalError, quarter_key, type EvalBill } from '@/lib/calc_quarterly_eval'
 import { toast } from 'sonner'
 
 // 解析后的单据分录
@@ -239,6 +240,48 @@ function to_add_row(form: AddFormValues): BillAddRow {
         crrc_largetextfield: json,
         crrc_largetextfield_tag: json,
     }
+}
+
+function bill_to_add_row(bill: EvalBill): BillAddRow {
+    const tag = {
+        entry: bill.entry,
+        party_name: bill.party_name,
+        year: bill.year,
+        quarter: bill.quarter,
+        party_score: bill.party_score,
+        party_evaluation: bill.party_evaluation,
+        administrative_evaluation: bill.administrative_evaluation,
+        cxzy_evaluation: bill.cxzy_evaluation,
+    }
+    const json = JSON.stringify(tag)
+    return {
+        billno: bill.billno,
+        billstatus: 'A',
+        crrc_textfield: '季度评价结果',
+        crrc_largetextfield: json,
+        crrc_largetextfield_tag: json,
+    }
+}
+
+function unique_periods(bills: ParseBillRow[]) {
+    const seen = new Map<string, { year: string; quarter: string }>()
+    for (const bill of bills) {
+        const year = bill.year.trim()
+        const quarter = bill.quarter.trim()
+        const key = `${year}\0${quarter_key(quarter)}`
+        if (!year || !quarter_key(quarter) || seen.has(key)) continue
+        seen.set(key, { year, quarter })
+    }
+    return [...seen.values()]
+}
+
+function to_quarter_option(value: string): (typeof QUARTERS)[number] {
+    const key = quarter_key(value)
+    if (key === '1') return '第一季度'
+    if (key === '2') return '第二季度'
+    if (key === '3') return '第三季度'
+    if (key === '4') return '第四季度'
+    return current_quarter()
 }
 
 function bill_to_form(bill: ParseBillRow): AddFormValues {
@@ -487,8 +530,12 @@ export function QuarterlyView() {
     const [editingBill, setEditingBill] = useState<ParseBillRow | null>(null)
     const [formOpen, setFormOpen] = useState(false)
     const [saving, setSaving] = useState(false)
+    const [calculating, setCalculating] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<ParseBillRow | null>(null)
     const [pushTarget, setPushTarget] = useState<ParseBillRow | null>(null)
+    const [calcPeriodOpen, setCalcPeriodOpen] = useState(false)
+    const [calcYear, setCalcYear] = useState('')
+    const [calcQuarter, setCalcQuarter] = useState('')
 
     async function run(force: boolean) {
         setStatus('loading')
@@ -621,7 +668,59 @@ export function QuarterlyView() {
         }
     }
 
-    const loading = status === 'loading' || saving
+    function requestCalcEval() {
+        const drafts = rows.filter((row) => row.billstatus_title === '暂存')
+        const periods = unique_periods(drafts)
+        const period = periods.length === 1 ? periods[0] : null
+        setCalcYear(period?.year || String(new Date().getFullYear()))
+        setCalcQuarter(period ? to_quarter_option(period.quarter) : current_quarter())
+        setFormOpen(false)
+        setEditingBill(null)
+        setCalcPeriodOpen(true)
+    }
+
+    async function confirmCalcEval() {
+        if (!calcYear.trim()) {
+            toast.warning('请选择年份')
+            return
+        }
+        if (!calcQuarter.trim()) {
+            toast.warning('请选择季度')
+            return
+        }
+        const year = calcYear.trim()
+        const quarter = calcQuarter.trim()
+        setCalcPeriodOpen(false)
+        setCalculating(true)
+        const toastId = toast.loading(`正在计算${year}${quarter}绩效评价结果`)
+        try {
+            const { bills, delete_billnos } = await calculate_quarterly_party_eval(year, quarter)
+            if (!bills.length) {
+                toast.warning('没有可计算的党组织', { id: toastId })
+                return
+            }
+            for (const billno of delete_billnos) {
+                await delete_data(billno)
+            }
+            await add_data(bills.map(bill_to_add_row))
+            toast.success('计算绩效评价结果完成', { id: toastId })
+            await run(true)
+        } catch (err) {
+            if (err instanceof DuplicateOrgConfigError) {
+                toast.warning(err.message, { id: toastId })
+                return
+            }
+            if (err instanceof TiedScoreEvalError) {
+                toast.warning('无法计算', { id: toastId })
+                return
+            }
+            toast.error('计算绩效评价结果失败', { id: toastId, description: get_err_message(err) })
+        } finally {
+            setCalculating(false)
+        }
+    }
+
+    const loading = status === 'loading' || saving || calculating
     const emptyText = status === 'loading' ? '正在加载季度评价结果…' : status === 'error' ? error || '加载失败' : '暂无季度评价结果'
 
     return (
@@ -633,7 +732,9 @@ export function QuarterlyView() {
                     emptyText={emptyText}
                     getRowId={(row) => row.id}
                     selectedRowId={selectedRowId}
-                    onRowSelect={(row) => openEditForm(row)}
+                    onRowSelect={(row) => setSelectedRowId(row.id)}
+                    onRowOpen={(row) => openEditForm(row)}
+                    enableSelectColumn
                     enableSearch
                     toolbar={
                         <DataToolbar
@@ -642,8 +743,7 @@ export function QuarterlyView() {
                                 { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
                                 { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
                                 { key: 'push', label: saving ? '提交中…' : '提交', disabled: loading },
-                                { key: 'calc-score', label: '计算绩效得分', disabled: loading },
-                                { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
+                                { key: 'calc-eval', label: calculating ? '计算中…' : '计算绩效评价结果', disabled: loading },
                                 { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
                                 { key: 'export', label: '导出', disabled: loading },
                             ]}
@@ -652,6 +752,7 @@ export function QuarterlyView() {
                                 if (key === 'new') openAddForm()
                                 if (key === 'del') requestDelete()
                                 if (key === 'push') requestPush()
+                                if (key === 'calc-eval') requestCalcEval()
                                 if (key !== 'export') return
                                 exportTableToExcel({
                                     filename: NAV_LABEL.quarterly,
@@ -692,6 +793,63 @@ export function QuarterlyView() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <Dialog
+                open={calcPeriodOpen}
+                onOpenChange={(open) => {
+                    if (!open && !calculating) setCalcPeriodOpen(false)
+                }}
+            >
+                <DialogContent className="sm:max-w-md" showCloseButton={!calculating}>
+                    <DialogHeader>
+                        <DialogTitle>计算绩效评价结果</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">请确认要计算的年份和季度。</p>
+                    <FieldGroup className="grid grid-cols-2 gap-3">
+                        <Field className="min-w-0 gap-1">
+                            <FieldLabel>
+                                年份<span className="text-destructive">*</span>
+                            </FieldLabel>
+                            <Select value={calcYear} onValueChange={(value) => setCalcYear(value ?? '')}>
+                                <SelectTrigger className="h-7 w-full min-w-0" aria-required>
+                                    <SelectValue placeholder="请选择年份" />
+                                </SelectTrigger>
+                                <SelectContent align="start" alignItemWithTrigger={false}>
+                                    {YEARS.map((item) => (
+                                        <SelectItem key={item} value={item}>
+                                            {item}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </Field>
+                        <Field className="min-w-0 gap-1">
+                            <FieldLabel>
+                                季度<span className="text-destructive">*</span>
+                            </FieldLabel>
+                            <Select value={calcQuarter} onValueChange={(value) => setCalcQuarter(value ?? '')}>
+                                <SelectTrigger className="h-7 w-full min-w-0" aria-required>
+                                    <SelectValue placeholder="请选择季度" />
+                                </SelectTrigger>
+                                <SelectContent align="start" alignItemWithTrigger={false}>
+                                    {QUARTERS.map((item) => (
+                                        <SelectItem key={item} value={item}>
+                                            {item}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </Field>
+                    </FieldGroup>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" disabled={calculating} onClick={() => setCalcPeriodOpen(false)}>
+                            取消
+                        </Button>
+                        <Button type="button" disabled={calculating} onClick={() => void confirmCalcEval()}>
+                            {calculating ? '计算中…' : '开始计算'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             <AlertDialog
                 open={!!pushTarget}
                 onOpenChange={(open) => {

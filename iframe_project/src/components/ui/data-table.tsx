@@ -5,7 +5,9 @@ import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { TablePager } from '@/components/table-pager'
 import { dataTableFeatures, type DataTableFeatures } from '@/components/data-table-features'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 type DataTableProps<TData extends RowData> = {
@@ -15,8 +17,10 @@ type DataTableProps<TData extends RowData> = {
     getRowId?: (originalRow: TData, index: number) => string
     selectedRowId?: string
     onRowSelect?: (row: TData) => void
+    onRowOpen?: (row: TData) => void
     selectTone?: 'primary' | 'muted'
     enableSearch?: boolean
+    enableSelectColumn?: boolean
     toolbar?: ReactNode
     pageSize?: number
 }
@@ -28,8 +32,10 @@ export function DataTable<TData extends RowData>({
     getRowId,
     selectedRowId,
     onRowSelect,
+    onRowOpen,
     selectTone = 'primary',
     enableSearch = false,
+    enableSelectColumn = false,
     toolbar,
     pageSize = 50,
 }: DataTableProps<TData>) {
@@ -59,7 +65,7 @@ export function DataTable<TData extends RowData>({
 
     const pagination = table.state.pagination
     const pageCount = Math.max(table.getPageCount(), 1)
-    const colSpan = table.getVisibleLeafColumns().length || columns.length
+    const colSpan = (table.getVisibleLeafColumns().length || columns.length) + (enableSelectColumn ? 1 : 0)
     const rows = table.getRowModel().rows
     const searchValue = typeof table.state.globalFilter === 'string' ? table.state.globalFilter : ''
 
@@ -97,6 +103,7 @@ export function DataTable<TData extends RowData>({
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                                {enableSelectColumn ? <TableHead className="text-muted-foreground w-12">选择</TableHead> : null}
                                 {headerGroup.headers.map((header) => {
                                     const canSort = header.column.getCanSort()
                                     const sorted = header.column.getIsSorted()
@@ -141,11 +148,30 @@ export function DataTable<TData extends RowData>({
                                     )}
                                     onClick={(event) => {
                                         const target = event.target as HTMLElement
-                                        if (target.closest('input, textarea, select, button')) return
+                                        if (target.closest('input, textarea, select, button, label')) return
+                                        if (onRowOpen) {
+                                            onRowOpen(row.original)
+                                            return
+                                        }
                                         table.setRowSelection({ [row.id]: true })
                                         onRowSelect?.(row.original)
                                     }}
                                 >
+                                    {enableSelectColumn ? (
+                                        <TableCell className="w-12">
+                                            <Label
+                                                className="justify-center"
+                                                onClick={(event) => {
+                                                    event.preventDefault()
+                                                    event.stopPropagation()
+                                                    table.setRowSelection({ [row.id]: true })
+                                                    onRowSelect?.(row.original)
+                                                }}
+                                            >
+                                                <Checkbox checked={row.getIsSelected()} />
+                                            </Label>
+                                        </TableCell>
+                                    ) : null}
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
                                             <table.FlexRender cell={cell} />
