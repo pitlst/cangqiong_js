@@ -38,7 +38,7 @@ export function DetailSection({
                 >
                     <span className="bg-primary h-4 w-0.75 shrink-0 rounded-sm" />
                     <span className="text-sm font-medium">{title}</span>
-                    <ChevronDownIcon className="text-muted-foreground size-4 -rotate-90 transition-transform in-data-[panel-open]:rotate-0" />
+                    <ChevronDownIcon className="text-muted-foreground size-4 -rotate-90 transition-transform in-data-panel-open:rotate-0" />
                 </CollapsibleTrigger>
                 {extra}
             </div>

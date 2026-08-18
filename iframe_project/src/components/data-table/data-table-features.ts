@@ -5,6 +5,7 @@ import {
     createPaginatedRowModel,
     createSortedRowModel,
     filterFn_includesString,
+    globalFilteringFeature,
     rowPaginationFeature,
     rowSelectionFeature,
     rowSortingFeature,
@@ -16,6 +17,7 @@ import {
 export const dataTableFeatures = tableFeatures({
     columnFilteringFeature,
     columnVisibilityFeature,
+    globalFilteringFeature,
     rowPaginationFeature,
     rowSelectionFeature,
     rowSortingFeature,

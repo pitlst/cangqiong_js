@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { XIcon } from 'lucide-react'
 
-import { DetailSection, InfoField } from '@/components/bill-detail'
-import { StatusBadge, format_text } from '@/components/data-table/deduction-columns'
+import { DetailSection } from '@/components/bill-detail'
+import { StatusBadge } from '@/components/data-table/deduction-columns'
 import { type DataTableFeatures } from '@/components/data-table/data-table-features'
 import { DataToolbar } from '@/components/data-toolbar'
 import {
@@ -19,7 +18,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -42,7 +40,7 @@ type ParseBillEntry = {
 type ParseBillRow = {
     id: string
     billno: string
-    billstatus: string
+    billstatus_title: string
     auditdate: string | null
     modifytime: string
     createtime: string
@@ -61,7 +59,7 @@ const annualColumns = columnHelper.columns([
     columnHelper.accessor('billno', {
         header: '单据编号',
     }),
-    columnHelper.accessor('billstatus', {
+    columnHelper.accessor('billstatus_title', {
         header: '单据状态',
         cell: ({ getValue }) => {
             const status = getValue()
@@ -106,21 +104,9 @@ const annualColumns = columnHelper.columns([
     }),
 ])
 
-const entryHelper = createColumnHelper<DataTableFeatures, ParseBillEntry>()
-const annualEntryColumns = entryHelper.columns([
-    entryHelper.accessor('item_name', {
-        header: '项点名称',
-        cell: ({ getValue }) => <div className="max-w-md whitespace-normal">{format_text(getValue())}</div>,
-    }),
-    entryHelper.accessor('item_score', {
-        header: () => <div className="text-right">分数</div>,
-        cell: ({ getValue }) => <div className="text-right">{getValue()}</div>,
-    }),
-])
-
 const PARSE_BILL_COLUMNS = [
     { key: 'billno', label: '单据编号' },
-    { key: 'billstatus', label: '单据状态' },
+    { key: 'billstatus_title', label: '单据状态' },
     { key: 'party_name', label: '所属党组织' },
     { key: 'year', label: '年份' },
     { key: 'party_score', label: '党群绩效得分' },
@@ -130,11 +116,6 @@ const PARSE_BILL_COLUMNS = [
     { key: 'auditdate', label: '审核日期' },
     { key: 'createtime', label: '创建时间' },
     { key: 'modifytime', label: '修改时间' },
-] as const
-
-const PARSE_ENTRY_COLUMNS = [
-    { key: 'item_name', label: '项点名称' },
-    { key: 'item_score', label: '分数' },
 ] as const
 
 function parse_entry(raw: unknown): ParseBillEntry[] {
@@ -154,7 +135,7 @@ function trans_data(source_data: DjConfigBillRow[]): ParseBillRow[] {
         return {
             id: row.id,
             billno: row.billno,
-            billstatus: row.billstatus,
+            billstatus_title: row.billstatus_title,
             auditdate: row.auditdate,
             modifytime: row.modifytime,
             createtime: row.createtime,
@@ -243,23 +224,48 @@ function to_add_row(form: AddFormValues): BillAddRow {
     }
 }
 
-function AnnualAddForm({
+function bill_to_form(bill: ParseBillRow): AddFormValues {
+    return {
+        billno: bill.billno,
+        party_name: bill.party_name,
+        year: bill.year,
+        party_score: String(bill.party_score),
+        party_evaluation: bill.party_evaluation,
+        administrative_evaluation: bill.administrative_evaluation,
+        cxzy_evaluation: bill.cxzy_evaluation,
+        entry: bill.entry.length
+            ? bill.entry.map((item) => ({
+                  _rowId: `entry-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  item_name: item.item_name,
+                  item_score: String(item.item_score),
+              }))
+            : [new_entry_row()],
+    }
+}
+
+function AnnualBillForm({
     saving,
     existingBillnos,
+    initial,
     onClose,
     onSubmit,
 }: {
     saving: boolean
     existingBillnos: string[]
+    initial: ParseBillRow | null
     onClose: () => void
     onSubmit: (form: AddFormValues) => void
 }) {
-    const [form, setForm] = useState<AddFormValues>(() => ({
-        ...EMPTY_ADD_FORM,
-        billno: next_annual_billno(existingBillnos),
-        year: String(new Date().getFullYear()),
-        entry: [new_entry_row()],
-    }))
+    const [form, setForm] = useState<AddFormValues>(() =>
+        initial
+            ? bill_to_form(initial)
+            : {
+                  ...EMPTY_ADD_FORM,
+                  billno: next_annual_billno(existingBillnos),
+                  year: String(new Date().getFullYear()),
+                  entry: [new_entry_row()],
+              },
+    )
     const [selectedEntryId, setSelectedEntryId] = useState('')
     const addEntryHelper = useMemo(() => createColumnHelper<DataTableFeatures, AddEntryRow>(), [])
     const addEntryColumns = useMemo(
@@ -335,7 +341,7 @@ function AnnualAddForm({
         >
             <DialogContent className="flex max-h-[90vh] w-full flex-col gap-3 overflow-hidden sm:max-w-6xl" showCloseButton={!saving}>
                 <DialogHeader>
-                    <DialogTitle>新增年度评价结果</DialogTitle>
+                    <DialogTitle>{initial ? '修改年度评价结果' : '新增年度评价结果'}</DialogTitle>
                 </DialogHeader>
                 <FieldGroup className="grid grid-cols-4 gap-x-3 gap-y-2">
                     <Field className="min-w-0 gap-1">
@@ -435,92 +441,15 @@ function AnnualAddForm({
     )
 }
 
-function AnnualDetail({ bill, onClose }: { bill: ParseBillRow; onClose: () => void }) {
-    const entries = bill.entry ?? []
-
-    useEffect(() => {
-        function onKeydown(event: KeyboardEvent) {
-            if (event.key !== 'Escape') return
-            event.preventDefault()
-            event.stopImmediatePropagation()
-            onClose()
-        }
-        document.addEventListener('keydown', onKeydown, true)
-        return () => document.removeEventListener('keydown', onKeydown, true)
-    }, [onClose])
-
-    return (
-        <Card className="bg-background absolute inset-0 z-20 gap-0 rounded-none py-2 ring-0">
-            <CardHeader className="border-b pb-2">
-                <CardTitle>单据详情 · {bill.billno || '-'}</CardTitle>
-                <CardAction>
-                    <Button type="button" variant="outline" size="icon-sm" aria-label="关闭" onClick={onClose}>
-                        <XIcon />
-                    </Button>
-                </CardAction>
-            </CardHeader>
-            <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pt-2">
-                <DetailSection title="基本信息">
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 px-1 pb-3 lg:grid-cols-3">
-                        <InfoField label="单据编号">{format_text(bill.billno)}</InfoField>
-                        <InfoField label="单据状态">
-                            <StatusBadge status={bill.billstatus} />
-                        </InfoField>
-                        <InfoField label="所属党组织">{format_text(bill.party_name)}</InfoField>
-                        <InfoField label="年份">{format_text(bill.year)}</InfoField>
-                        <InfoField label="党群绩效得分">{format_text(bill.party_score)}</InfoField>
-                        <InfoField label="党群绩效评价">{format_text(bill.party_evaluation)}</InfoField>
-                        <InfoField label="行政绩效评价">{format_text(bill.administrative_evaluation)}</InfoField>
-                        <InfoField label="创先争优评价">{format_text(bill.cxzy_evaluation)}</InfoField>
-                        <InfoField label="审核日期">{format_text(bill.auditdate)}</InfoField>
-                        <InfoField label="创建时间">{format_text(bill.createtime)}</InfoField>
-                        <InfoField label="修改时间">{format_text(bill.modifytime)}</InfoField>
-                    </div>
-                </DetailSection>
-                <DetailSection
-                    title="评价项点"
-                    className="min-h-0 flex-1"
-                    extra={
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="lg"
-                            disabled={!entries.length}
-                            onClick={() =>
-                                exportTableToExcel({
-                                    filename: `${bill.billno || '评价项点'}-单据体`,
-                                    columns: PARSE_ENTRY_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
-                                    rows: entries,
-                                })
-                            }
-                        >
-                            导出单据体数据
-                        </Button>
-                    }
-                >
-                    <DataTable
-                        key={bill.id}
-                        columns={annualEntryColumns}
-                        data={entries}
-                        emptyText="暂无分录项点"
-                        getRowId={(_row, index) => `${bill.id}-${index}`}
-                    />
-                </DetailSection>
-            </CardContent>
-        </Card>
-    )
-}
-
 export function AnnualView() {
     const [status, setStatus] = useState<FetchStatus>('idle')
     const [rows, setRows] = useState<ParseBillRow[]>([])
     const [error, setError] = useState('')
     const [selectedRowId, setSelectedRowId] = useState('')
-    const [detailRow, setDetailRow] = useState<ParseBillRow | null>(null)
-    const [addOpen, setAddOpen] = useState(false)
+    const [editingBill, setEditingBill] = useState<ParseBillRow | null>(null)
+    const [formOpen, setFormOpen] = useState(false)
     const [saving, setSaving] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<ParseBillRow | null>(null)
-    const closeDetail = useCallback(() => setDetailRow(null), [])
 
     async function run(force: boolean) {
         setStatus('loading')
@@ -541,11 +470,23 @@ export function AnnualView() {
     }, [])
 
     function openAddForm() {
-        closeDetail()
-        setAddOpen(true)
+        setEditingBill(null)
+        setFormOpen(true)
     }
 
-    async function handleAdd(form: AddFormValues) {
+    function openEditForm(bill: ParseBillRow) {
+        setSelectedRowId(bill.id)
+        setEditingBill(bill)
+        setFormOpen(true)
+    }
+
+    function closeForm() {
+        if (saving) return
+        setFormOpen(false)
+        setEditingBill(null)
+    }
+
+    async function handleSave(form: AddFormValues) {
         if (!form.billno.trim()) {
             toast.warning('必填项没填写', { description: '单据编号' })
             return
@@ -566,21 +507,26 @@ export function AnnualView() {
             toast.warning('数据格式不正确', { description: '项点分数必须是数字' })
             return
         }
+        const isEdit = !!editingBill
         setSaving(true)
         try {
+            if (editingBill) {
+                await delete_data(editingBill.billno)
+            }
             await add_data(to_add_row(form))
-            toast.success('新增成功')
-            setAddOpen(false)
+            toast.success(isEdit ? '修改成功' : '新增成功')
+            setFormOpen(false)
+            setEditingBill(null)
             await run(true)
         } catch (err) {
-            toast.error('新增失败', { description: get_err_message(err) })
+            toast.error(isEdit ? '修改失败' : '新增失败', { description: get_err_message(err) })
         } finally {
             setSaving(false)
         }
     }
 
     function requestDelete() {
-        const target = detailRow || rows.find((row) => row.id === selectedRowId)
+        const target = rows.find((row) => row.id === selectedRowId)
         if (!target) {
             toast.error('请先选择一行')
             return
@@ -595,7 +541,8 @@ export function AnnualView() {
             await delete_data(deleteTarget.billno)
             toast.success('删除成功')
             setDeleteTarget(null)
-            setDetailRow(null)
+            setFormOpen(false)
+            setEditingBill(null)
             setSelectedRowId('')
             await run(true)
         } catch (err) {
@@ -610,29 +557,6 @@ export function AnnualView() {
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5">
-            <DataToolbar
-                actions={[
-                    { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
-                    { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
-                    { key: 'edit', label: '修改', disabled: loading },
-                    { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
-                    { key: 'calc-score', label: '计算绩效得分', disabled: loading },
-                    { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
-                    { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
-                    { key: 'export', label: '导出', disabled: loading },
-                ]}
-                onAction={(key) => {
-                    if (key === 'refresh') void run(true)
-                    if (key === 'new') openAddForm()
-                    if (key === 'del') requestDelete()
-                    if (key !== 'export') return
-                    exportTableToExcel({
-                        filename: NAV_LABEL.annual,
-                        columns: PARSE_BILL_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
-                        rows,
-                    })
-                }}
-            />
             <div className="relative flex min-h-0 flex-1 flex-col">
                 <DataTable
                     columns={annualColumns}
@@ -640,19 +564,42 @@ export function AnnualView() {
                     emptyText={emptyText}
                     getRowId={(row) => row.id}
                     selectedRowId={selectedRowId}
-                    onRowSelect={(row) => {
-                        setSelectedRowId(row.id)
-                        setDetailRow(row)
-                    }}
+                    onRowSelect={(row) => openEditForm(row)}
+                    enableSearch
+                    toolbar={
+                        <DataToolbar
+                            actions={[
+                                { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
+                                { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
+                                { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
+                                { key: 'calc-score', label: '计算绩效得分', disabled: loading },
+                                { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
+                                { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
+                                { key: 'export', label: '导出', disabled: loading },
+                            ]}
+                            onAction={(key) => {
+                                if (key === 'refresh') void run(true)
+                                if (key === 'new') openAddForm()
+                                if (key === 'del') requestDelete()
+                                if (key !== 'export') return
+                                exportTableToExcel({
+                                    filename: NAV_LABEL.annual,
+                                    columns: PARSE_BILL_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+                                    rows,
+                                })
+                            }}
+                        />
+                    }
                 />
-                {detailRow ? <AnnualDetail bill={detailRow} onClose={closeDetail} /> : null}
             </div>
-            {addOpen ? (
-                <AnnualAddForm
+            {formOpen ? (
+                <AnnualBillForm
+                    key={editingBill?.id ?? 'new'}
                     saving={saving}
                     existingBillnos={rows.map((row) => row.billno)}
-                    onClose={() => !saving && setAddOpen(false)}
-                    onSubmit={(form) => void handleAdd(form)}
+                    initial={editingBill}
+                    onClose={closeForm}
+                    onSubmit={(form) => void handleSave(form)}
                 />
             ) : null}
             <AlertDialog

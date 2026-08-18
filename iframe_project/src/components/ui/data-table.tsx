@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table'
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { TablePager } from '@/components/table-pager'
 import { dataTableFeatures, type DataTableFeatures } from '@/components/data-table/data-table-features'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 type DataTableProps<TData extends RowData> = {
@@ -14,6 +16,8 @@ type DataTableProps<TData extends RowData> = {
     selectedRowId?: string
     onRowSelect?: (row: TData) => void
     selectTone?: 'primary' | 'muted'
+    enableSearch?: boolean
+    toolbar?: ReactNode
 }
 
 export function DataTable<TData extends RowData>({
@@ -24,6 +28,8 @@ export function DataTable<TData extends RowData>({
     selectedRowId,
     onRowSelect,
     selectTone = 'primary',
+    enableSearch = false,
+    toolbar,
 }: DataTableProps<TData>) {
     const table = useTable(
         {
@@ -32,6 +38,7 @@ export function DataTable<TData extends RowData>({
             columns,
             getRowId,
             enableMultiRowSelection: false,
+            globalFilterFn: 'includesString',
             initialState: {
                 pagination: {
                     pageIndex: 0,
@@ -43,6 +50,8 @@ export function DataTable<TData extends RowData>({
         (state) => ({
             pagination: state.pagination,
             rowSelection: state.rowSelection,
+            sorting: state.sorting,
+            globalFilter: state.globalFilter,
         }),
     )
 
@@ -50,6 +59,7 @@ export function DataTable<TData extends RowData>({
     const pageCount = Math.max(table.getPageCount(), 1)
     const colSpan = table.getVisibleLeafColumns().length || columns.length
     const rows = table.getRowModel().rows
+    const searchValue = typeof table.state.globalFilter === 'string' ? table.state.globalFilter : ''
 
     useEffect(() => {
         const currentKeys = Object.keys(table.state.rowSelection).filter((key) => table.state.rowSelection[key])
@@ -64,16 +74,53 @@ export function DataTable<TData extends RowData>({
 
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+            {toolbar || enableSearch ? (
+                <div className="flex items-center gap-2">
+                    {toolbar ? <div className="min-w-0 flex-1">{toolbar}</div> : null}
+                    {enableSearch ? (
+                        <Input
+                            value={searchValue}
+                            placeholder="搜索"
+                            className="ml-auto w-56 shrink-0"
+                            onChange={(event) => {
+                                table.setGlobalFilter(event.target.value)
+                                table.setPageIndex(0)
+                            }}
+                        />
+                    ) : null}
+                </div>
+            ) : null}
             <div className="min-h-0 flex-1 overflow-auto">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="text-muted-foreground">
-                                        {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                                    </TableHead>
-                                ))}
+                                {headerGroup.headers.map((header) => {
+                                    const canSort = header.column.getCanSort()
+                                    const sorted = header.column.getIsSorted()
+                                    return (
+                                        <TableHead key={header.id} className="text-muted-foreground">
+                                            {header.isPlaceholder ? null : canSort ? (
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex items-center gap-1 hover:text-foreground"
+                                                    onClick={header.column.getToggleSortingHandler()}
+                                                >
+                                                    <table.FlexRender header={header} />
+                                                    {sorted === 'asc' ? (
+                                                        <ArrowUpIcon className="size-3.5" />
+                                                    ) : sorted === 'desc' ? (
+                                                        <ArrowDownIcon className="size-3.5" />
+                                                    ) : (
+                                                        <ArrowUpDownIcon className="size-3.5 opacity-50" />
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <table.FlexRender header={header} />
+                                            )}
+                                        </TableHead>
+                                    )
+                                })}
                             </TableRow>
                         ))}
                     </TableHeader>
