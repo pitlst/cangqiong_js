@@ -527,14 +527,14 @@ export function QuarterlyView() {
     const [status, setStatus] = useState<FetchStatus>('idle')
     const [rows, setRows] = useState<ParseBillRow[]>([])
     const [error, setError] = useState('')
-    const [selectedRowId, setSelectedRowId] = useState('')
+    const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
     const [editingBill, setEditingBill] = useState<ParseBillRow | null>(null)
     const [formOpen, setFormOpen] = useState(false)
     const [saving, setSaving] = useState(false)
     const [calculating, setCalculating] = useState(false)
-    const [deleteTarget, setDeleteTarget] = useState<ParseBillRow | null>(null)
-    const [pushTarget, setPushTarget] = useState<ParseBillRow | null>(null)
-    const [pullTarget, setPullTarget] = useState<ParseBillRow | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<ParseBillRow[]>([])
+    const [pushTarget, setPushTarget] = useState<ParseBillRow[]>([])
+    const [pullTarget, setPullTarget] = useState<ParseBillRow[]>([])
     const [calcPeriodOpen, setCalcPeriodOpen] = useState(false)
     const [calcKind, setCalcKind] = useState<'eval' | 'cxzy'>('eval')
     const [calcYear, setCalcYear] = useState('')
@@ -547,6 +547,7 @@ export function QuarterlyView() {
             const data = force ? await fetch_data({ force: true }) : await fetch_data()
             const filtered_data = data.filter((row) => row.crrc_textfield === '季度评价结果')
             setRows(trans_data(filtered_data))
+            setSelectedRowIds([])
             setStatus('ready')
         } catch (err) {
             setError(get_err_message(err))
@@ -564,9 +565,18 @@ export function QuarterlyView() {
     }
 
     function openEditForm(bill: ParseBillRow) {
-        setSelectedRowId(bill.id)
         setEditingBill(bill)
         setFormOpen(true)
+    }
+
+    function selected_bills() {
+        const ids = new Set(selectedRowIds)
+        return rows.filter((row) => ids.has(row.id))
+    }
+
+    function bills_label(bills: ParseBillRow[]) {
+        if (bills.length === 1) return `单据「${bills[0].billno}」`
+        return `选中的 ${bills.length} 张单据`
     }
 
     function closeForm() {
@@ -619,24 +629,25 @@ export function QuarterlyView() {
     }
 
     function requestDelete() {
-        const target = rows.find((row) => row.id === selectedRowId)
-        if (!target) {
+        const targets = selected_bills()
+        if (!targets.length) {
             toast.error('请先选择一行')
             return
         }
-        setDeleteTarget(target)
+        setDeleteTarget(targets)
     }
 
     async function confirmDelete() {
-        if (!deleteTarget) return
+        if (!deleteTarget.length) return
         setSaving(true)
         try {
-            await delete_data(deleteTarget.billno)
+            for (const target of deleteTarget) {
+                await delete_data(target.billno)
+            }
             toast.success('删除成功')
-            setDeleteTarget(null)
+            setDeleteTarget([])
             setFormOpen(false)
             setEditingBill(null)
-            setSelectedRowId('')
             await run(true)
         } catch (err) {
             toast.error('删除失败', { description: get_err_message(err) })
@@ -646,21 +657,23 @@ export function QuarterlyView() {
     }
 
     function requestPush() {
-        const target = rows.find((row) => row.id === selectedRowId)
-        if (!target) {
+        const targets = selected_bills()
+        if (!targets.length) {
             toast.error('请先选择一行')
             return
         }
-        setPushTarget(target)
+        setPushTarget(targets)
     }
 
     async function confirmPush() {
-        if (!pushTarget) return
+        if (!pushTarget.length) return
         setSaving(true)
         try {
-            await push_data(pushTarget.billno)
+            for (const target of pushTarget) {
+                await push_data(target.billno)
+            }
             toast.success('提交成功')
-            setPushTarget(null)
+            setPushTarget([])
             setFormOpen(false)
             setEditingBill(null)
             await run(true)
@@ -672,21 +685,23 @@ export function QuarterlyView() {
     }
 
     function requestPull() {
-        const target = rows.find((row) => row.id === selectedRowId)
-        if (!target) {
+        const targets = selected_bills()
+        if (!targets.length) {
             toast.error('请先选择一行')
             return
         }
-        setPullTarget(target)
+        setPullTarget(targets)
     }
 
     async function confirmPull() {
-        if (!pullTarget) return
+        if (!pullTarget.length) return
         setSaving(true)
         try {
-            await pull_data(pullTarget.billno)
+            for (const target of pullTarget) {
+                await pull_data(target.billno)
+            }
             toast.success('撤销成功')
-            setPullTarget(null)
+            setPullTarget([])
             setFormOpen(false)
             setEditingBill(null)
             await run(true)
@@ -805,8 +820,8 @@ export function QuarterlyView() {
                     data={rows}
                     emptyText={emptyText}
                     getRowId={(row) => row.id}
-                    selectedRowId={selectedRowId}
-                    onRowSelect={(row) => setSelectedRowId(row.id)}
+                    selectedRowIds={selectedRowIds}
+                    onSelectedRowIdsChange={setSelectedRowIds}
                     onRowOpen={(row) => openEditForm(row)}
                     enableSelectColumn
                     enableSearch
@@ -852,15 +867,15 @@ export function QuarterlyView() {
                 />
             ) : null}
             <AlertDialog
-                open={!!deleteTarget}
+                open={deleteTarget.length > 0}
                 onOpenChange={(open) => {
-                    if (!open && !saving) setDeleteTarget(null)
+                    if (!open && !saving) setDeleteTarget([])
                 }}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>确定删除？</AlertDialogTitle>
-                        <AlertDialogDescription>将删除单据「{deleteTarget?.billno || '-'}」，此操作不可撤销。</AlertDialogDescription>
+                        <AlertDialogDescription>将删除{bills_label(deleteTarget)}，此操作不可撤销。</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
@@ -928,15 +943,15 @@ export function QuarterlyView() {
                 </DialogContent>
             </Dialog>
             <AlertDialog
-                open={!!pushTarget}
+                open={pushTarget.length > 0}
                 onOpenChange={(open) => {
-                    if (!open && !saving) setPushTarget(null)
+                    if (!open && !saving) setPushTarget([])
                 }}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>确定提交？</AlertDialogTitle>
-                        <AlertDialogDescription>将提交单据「{pushTarget?.billno || '-'}」。</AlertDialogDescription>
+                        <AlertDialogDescription>将提交{bills_label(pushTarget)}。</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
@@ -947,15 +962,15 @@ export function QuarterlyView() {
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog
-                open={!!pullTarget}
+                open={pullTarget.length > 0}
                 onOpenChange={(open) => {
-                    if (!open && !saving) setPullTarget(null)
+                    if (!open && !saving) setPullTarget([])
                 }}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>确定撤销？</AlertDialogTitle>
-                        <AlertDialogDescription>将撤销单据「{pullTarget?.billno || '-'}」。</AlertDialogDescription>
+                        <AlertDialogDescription>将撤销{bills_label(pullTarget)}。</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>

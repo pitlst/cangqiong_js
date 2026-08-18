@@ -9,10 +9,12 @@ import { as_number, as_string } from '@/lib/utils'
 
 const QUARTERLY_BILL_TYPE = 'JDPJ'
 const QUARTERLY_RESULT_TYPE = '季度评价结果'
+const ANNUAL_RESULT_TYPE = '年度评价结果'
 
 export const QUARTERLY_GRASSROOTS_TYPE = '季度基层党组织创先争优评价项点'
 export const QUARTERLY_PARTY_RULE_TYPE = '季度党群绩效评价规则'
 export const QUARTERLY_CXZY_RULE_TYPE = '季度创先争优评价规则'
+export const ANNUAL_CXZY_RULE_TYPE = '年度创先争优评价规则'
 
 export type EvalEntry = {
     item_name: string
@@ -176,6 +178,17 @@ function same_period(year_a: string, quarter_a: string, year_b: string, quarter_
     const key_a = quarter_key(quarter_a)
     const key_b = quarter_key(quarter_b)
     return year_a.trim() === year_b.trim() && !!key_a && key_a === key_b
+}
+
+function same_year(year_a: string, year_b: string) {
+    const left = year_a.trim()
+    const right = year_b.trim()
+    return !!left && left === right
+}
+
+function matches_cxzy_target(bill: EvalBill, year: string, quarter?: string) {
+    if (quarter) return same_period(bill.year, bill.quarter, year, quarter)
+    return same_year(bill.year, year)
 }
 
 function names_match(party_name: string, ...candidates: string[]) {
@@ -419,17 +432,17 @@ function match_cxzy_rule(rules: CxzyRule[], party_evaluation: string, administra
     return rules.find((item) => item.party_evaluation === party && item.administrative_evaluation === admin)
 }
 
-export async function calculate_quarterly_cxzy_eval(year: string, quarter: string): Promise<CalcQuarterlyEvalResult> {
+async function calculate_cxzy_eval(year: string, options: { quarter?: string; result_type: string; rule_type: string }): Promise<CalcQuarterlyEvalResult> {
     const [config_raw, org_raw] = await Promise.all([fetch_djconfig({ force: true }), fetch_org({ force: true })])
     const configs = config_raw.map(trans_config)
     const orgs = trans_org(org_raw)
-    const quarterly_raw = config_raw.filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE)
-    const existing = quarterly_raw.map(trans_quarterly)
-    const cxzy_rules = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_CXZY_RULE_TYPE)
+    const result_raw = config_raw.filter((row) => row.crrc_textfield === options.result_type)
+    const existing = result_raw.map(trans_quarterly)
+    const cxzy_rules = configs.filter((row) => row.submitted && row.data_type === options.rule_type)
 
-    const submitted = quarterly_raw.find((row) => {
+    const submitted = result_raw.find((row) => {
         const bill = trans_quarterly(row)
-        return same_period(bill.year, bill.quarter, year, quarter) && is_submitted(row)
+        return matches_cxzy_target(bill, year, options.quarter) && is_submitted(row)
     })
     if (submitted) {
         throw new SubmittedPeriodBillError(submitted.billno)
@@ -437,7 +450,7 @@ export async function calculate_quarterly_cxzy_eval(year: string, quarter: strin
 
     const bills: EvalBill[] = []
     for (const bill of existing) {
-        if (!is_draft(bill) || !same_period(bill.year, bill.quarter, year, quarter)) continue
+        if (!is_draft(bill) || !matches_cxzy_target(bill, year, options.quarter)) continue
         if (!bill.party_evaluation.trim() || !bill.administrative_evaluation.trim()) continue
         let matched: string | null = null
         for (const config of cxzy_rules) {
@@ -451,4 +464,19 @@ export async function calculate_quarterly_cxzy_eval(year: string, quarter: strin
         bills.push({ ...bill, cxzy_evaluation: matched })
     }
     return { bills, delete_billnos: bills.map((bill) => bill.billno) }
+}
+
+export async function calculate_quarterly_cxzy_eval(year: string, quarter: string): Promise<CalcQuarterlyEvalResult> {
+    return calculate_cxzy_eval(year, {
+        quarter,
+        result_type: QUARTERLY_RESULT_TYPE,
+        rule_type: QUARTERLY_CXZY_RULE_TYPE,
+    })
+}
+
+export async function calculate_annual_cxzy_eval(year: string): Promise<CalcQuarterlyEvalResult> {
+    return calculate_cxzy_eval(year, {
+        result_type: ANNUAL_RESULT_TYPE,
+        rule_type: ANNUAL_CXZY_RULE_TYPE,
+    })
 }
