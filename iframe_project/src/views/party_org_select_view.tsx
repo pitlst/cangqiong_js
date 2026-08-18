@@ -1,1 +1,1 @@
-export function party_org_select_view() { }
+export function PartyOrgSelectView() { }

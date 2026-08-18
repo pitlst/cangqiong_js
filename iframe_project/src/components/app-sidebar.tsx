@@ -17,14 +17,17 @@ type AppSidebarProps = {
 function NavButton({ id, active, onNavigate }: { id: NavId; active: NavId; onNavigate: (id: NavId) => void }) {
     const isActive = id === active
     return (
-        <button
+        <Button
             type="button"
+            variant="ghost"
             role="tab"
             aria-selected={isActive}
             onClick={() => onNavigate(id)}
             className={cn(
-                'relative flex min-h-9.5 w-full items-center rounded-md px-3.5 text-left text-sm font-medium transition-colors',
-                isActive ? 'bg-primary/12 text-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                'relative h-auto min-h-9.5 w-full justify-start rounded-md px-3.5 text-left text-sm font-medium',
+                isActive
+                    ? 'bg-primary/12 text-foreground hover:bg-primary/12'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
         >
             <span
@@ -34,7 +37,7 @@ function NavButton({ id, active, onNavigate }: { id: NavId; active: NavId; onNav
                 )}
             />
             {NAV_LABEL[id]}
-        </button>
+        </Button>
     )
 }
 

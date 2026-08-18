@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
 import { closeOverlay } from '@/lib/shell'
 import { NAV_LABEL, type NavId } from '@/lib/nav'
+import { QuarterlyView } from '@/views/quarterly_view'
+import { AnnualView } from '@/views/annual_view'
+import { DjconfigView } from '@/views/djconfig_view'
+import { DeductionView } from '@/views/deduction_view'
+import { ContributionDegreeView } from '@/views/contribution_degree_view'
+import { PartyOrgSelectView } from './views/party_org_select_view'
 
 export default function App() {
     const [active, setActive] = useState<NavId>('quarterly')
@@ -28,6 +34,12 @@ export default function App() {
                 <header className="mb-2.5 flex items-center">
                     <h1 className="text-lg font-semibold tracking-tight">{NAV_LABEL[active]}</h1>
                 </header>
+                {active === 'quarterly' ? <QuarterlyView /> : null}
+                {active === 'annual' ? <AnnualView /> : null}
+                {active === 'config' ? <DjconfigView /> : null}
+                {active === 'deduction' ? <DeductionView /> : null}
+                {active === 'contribution_degree' ? <ContributionDegreeView /> : null}
+                {active === 'org' ? <PartyOrgSelectView /> : null}
             </div>
         </div>
     )

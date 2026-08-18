@@ -13,9 +13,18 @@ type DataTableProps<TData extends RowData> = {
     getRowId?: (originalRow: TData, index: number) => string
     selectedRowId?: string
     onRowSelect?: (row: TData) => void
+    selectTone?: 'primary' | 'muted'
 }
 
-export function DataTable<TData extends RowData>({ columns, data, emptyText = '暂无数据', getRowId, selectedRowId, onRowSelect }: DataTableProps<TData>) {
+export function DataTable<TData extends RowData>({
+    columns,
+    data,
+    emptyText = '暂无数据',
+    getRowId,
+    selectedRowId,
+    onRowSelect,
+    selectTone = 'primary',
+}: DataTableProps<TData>) {
     const table = useTable(
         {
             features: dataTableFeatures,
@@ -75,10 +84,15 @@ export function DataTable<TData extends RowData>({ columns, data, emptyText = '�
                                     key={row.id}
                                     data-state={row.getIsSelected() ? 'selected' : undefined}
                                     className={cn(
-                                        'hover:bg-primary/8 data-[state=selected]:bg-primary/10 cursor-pointer',
-                                        row.getIsSelected() && 'bg-primary/10',
+                                        'cursor-pointer',
+                                        selectTone === 'muted'
+                                            ? 'hover:bg-muted/70 data-[state=selected]:bg-muted'
+                                            : 'hover:bg-primary/8 data-[state=selected]:bg-primary/10',
+                                        row.getIsSelected() && (selectTone === 'muted' ? 'bg-muted' : 'bg-primary/10'),
                                     )}
-                                    onClick={() => {
+                                    onClick={(event) => {
+                                        const target = event.target as HTMLElement
+                                        if (target.closest('input, textarea, select, button')) return
                                         table.setRowSelection({ [row.id]: true })
                                         onRowSelect?.(row.original)
                                     }}

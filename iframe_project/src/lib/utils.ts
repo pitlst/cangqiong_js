@@ -12,4 +12,14 @@ export function get_err_message(err: unknown) {
     return String(err || '未知错误')
 }
 
+export function as_string(value: unknown) {
+    if (value == null) return ''
+    return String(value)
+}
+
+export function as_number(value: unknown) {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : 0
+}
+
 export type FetchStatus = 'idle' | 'loading' | 'ready' | 'error'

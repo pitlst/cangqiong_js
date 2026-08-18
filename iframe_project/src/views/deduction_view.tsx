@@ -1,1 +1,5 @@
-export function deduction_view() { }
+
+
+export function DeductionView() {
+
+}

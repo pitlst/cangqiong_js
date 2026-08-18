@@ -1,1 +1,1 @@
-export function contribution_degree_view() { }
+export function ContributionDegreeView() { }

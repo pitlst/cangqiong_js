@@ -1,5 +1,6 @@
 export const CQ_OPENAPI = {
-    gateway: 'https://cangqiongtestzelc.crrcgc.cc:6888/ierp',
+    // 本地走 Vite `/ierp` 代理，避免浏览器直连远程网关触发 CORS
+    gateway: import.meta.env.DEV ? '/ierp' : 'https://cangqiongtestzelc.crrcgc.cc:6888/ierp',
     clientId: 'shengchanfuzhuxitong',
     clientSecret: 'Sunwenqi8855830.',
     username: '010200003204',

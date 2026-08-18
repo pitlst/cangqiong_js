@@ -1,36 +1,6 @@
 import { get_access_token } from '@/lib/cq_fetch'
-import { CQ_API_PATH, CACHE_TTL_MS, type CqPageResponse } from '@/lib/config'
-
-// 单据的行数据类型
-export type BillRow = {
-    id: string
-    billno: string
-    billstatus: string
-    billstatus_title: string
-    auditdate: string | null
-    modifytime: string
-    createtime: string
-    crrc_largetextfield: string
-    crrc_largetextfield_tag: string
-    crrc_textfield: string
-}
-
-// 完整响应类型
-export type CrrcBillPageResponse = CqPageResponse<BillRow>
-
-// 字段的中文对应
-export const BILL_COLUMNS = [
-    { key: 'id', label: 'id' },
-    { key: 'billNo', label: '单据编号' },
-    { key: 'billstatus', label: '单据状态' },
-    { key: 'billstatus_title', label: '单据状态_标题' },
-    { key: 'auditdate', label: '审核日期' },
-    { key: 'modifytime', label: '修改时间' },
-    { key: 'createtime', label: '创建时间' },
-    { key: 'crrc_largetextfield', label: '配置' },
-    { key: 'crrc_largetextfield_tag', label: '配置_详情' },
-    { key: 'crrc_textfield', label: '数据类型' },
-] as const
+import { CQ_API_PATH, CQ_OPENAPI, CACHE_TTL_MS } from '@/lib/config'
+import type { BillRow, CrrcBillPageResponse } from '@/lib/api/djconfig_type'
 
 let quarterlyTask: Promise<BillRow[]> | null = null
 let lastQuarterlyRows: BillRow[] | null = null
@@ -62,7 +32,7 @@ export function fetch_data(options?: { force?: boolean }): Promise<BillRow[]> {
                 pageSize,
                 pageNo,
             }
-            const res = await fetch(CQ_API_PATH.deduction, {
+            const res = await fetch(CQ_OPENAPI.gateway + CQ_API_PATH.djconfig_select, {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
