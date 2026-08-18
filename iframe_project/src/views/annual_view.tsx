@@ -31,6 +31,7 @@ import { fetch_data } from '@/lib/api/djconfig_select'
 import { add_data } from '@/lib/api/djconfig_add'
 import { delete_data } from '@/lib/api/djconfig_delete'
 import { push_data } from '@/lib/api/djconfig_push'
+import { pull_data } from '@/lib/api/djconfig_pull'
 import { toast } from 'sonner'
 
 type ParseBillEntry = {
@@ -454,6 +455,7 @@ export function AnnualView() {
     const [saving, setSaving] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<ParseBillRow | null>(null)
     const [pushTarget, setPushTarget] = useState<ParseBillRow | null>(null)
+    const [pullTarget, setPullTarget] = useState<ParseBillRow | null>(null)
 
     async function run(force: boolean) {
         setStatus('loading')
@@ -582,6 +584,32 @@ export function AnnualView() {
         }
     }
 
+    function requestPull() {
+        const target = rows.find((row) => row.id === selectedRowId)
+        if (!target) {
+            toast.error('请先选择一行')
+            return
+        }
+        setPullTarget(target)
+    }
+
+    async function confirmPull() {
+        if (!pullTarget) return
+        setSaving(true)
+        try {
+            await pull_data(pullTarget.billno)
+            toast.success('撤销成功')
+            setPullTarget(null)
+            setFormOpen(false)
+            setEditingBill(null)
+            await run(true)
+        } catch (err) {
+            toast.error('撤销失败', { description: get_err_message(err) })
+        } finally {
+            setSaving(false)
+        }
+    }
+
     const loading = status === 'loading' || saving
     const emptyText = status === 'loading' ? '正在加载年度评价结果…' : status === 'error' ? error || '加载失败' : '暂无年度评价结果'
 
@@ -605,6 +633,7 @@ export function AnnualView() {
                                 { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
                                 { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
                                 { key: 'push', label: saving ? '提交中…' : '提交', disabled: loading },
+                                { key: 'pull', label: saving ? '撤销中…' : '撤销', disabled: loading },
                                 { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
                                 { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
                                 { key: 'export', label: '导出', disabled: loading },
@@ -614,6 +643,7 @@ export function AnnualView() {
                                 if (key === 'new') openAddForm()
                                 if (key === 'del') requestDelete()
                                 if (key === 'push') requestPush()
+                                if (key === 'pull') requestPull()
                                 if (key !== 'export') return
                                 exportTableToExcel({
                                     filename: NAV_LABEL.annual,
@@ -669,6 +699,25 @@ export function AnnualView() {
                         <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
                         <AlertDialogAction disabled={saving} onClick={() => void confirmPush()}>
                             {saving ? '提交中…' : '提交'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog
+                open={!!pullTarget}
+                onOpenChange={(open) => {
+                    if (!open && !saving) setPullTarget(null)
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确定撤销？</AlertDialogTitle>
+                        <AlertDialogDescription>将撤销单据「{pullTarget?.billno || '-'}」。</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
+                        <AlertDialogAction disabled={saving} onClick={() => void confirmPull()}>
+                            {saving ? '撤销中…' : '撤销'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

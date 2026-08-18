@@ -12,6 +12,7 @@ const QUARTERLY_RESULT_TYPE = '季度评价结果'
 
 export const QUARTERLY_GRASSROOTS_TYPE = '季度基层党组织创先争优评价项点'
 export const QUARTERLY_PARTY_RULE_TYPE = '季度党群绩效评价规则'
+export const QUARTERLY_CXZY_RULE_TYPE = '季度创先争优评价规则'
 
 export type EvalEntry = {
     item_name: string
@@ -53,6 +54,22 @@ export class TiedScoreEvalError extends Error {
     }
 }
 
+export class SubmittedPeriodBillError extends Error {
+    readonly billno: string
+
+    constructor(billno: string) {
+        super(`单据「${billno}」已提交`)
+        this.name = 'SubmittedPeriodBillError'
+        this.billno = billno
+    }
+}
+
+type CxzyRule = {
+    party_evaluation: string
+    administrative_evaluation: string
+    cxzy_evaluation: string
+}
+
 type ConfigBill = {
     billno: string
     data_type: string
@@ -60,6 +77,7 @@ type ConfigBill = {
     org_ids: string[]
     items: { name: string; value: number }[]
     entry: EvalEntry[]
+    cxzy_rules: CxzyRule[]
 }
 
 const CONTRIB_ITEM_PAIRS = [
@@ -115,6 +133,18 @@ function parse_rule_items(raw: unknown): { name: string; value: number }[] {
     })
 }
 
+function parse_cxzy_rules(raw: unknown): CxzyRule[] {
+    if (!Array.isArray(raw)) return []
+    return raw.map((item) => {
+        const row = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
+        return {
+            party_evaluation: as_string(row.party_evaluation).trim(),
+            administrative_evaluation: as_string(row.administrative_evaluation).trim(),
+            cxzy_evaluation: as_string(row.cxzy_evaluation).trim(),
+        }
+    })
+}
+
 function is_submitted(row: DjConfigBillRow) {
     return row.billstatus !== 'A' && row.billstatus_title !== '暂存'
 }
@@ -128,6 +158,7 @@ function trans_config(row: DjConfigBillRow): ConfigBill {
         org_ids: parse_org_ids(tag.org_ids),
         items: parse_rule_items(tag.items),
         entry: parse_config_entry(tag.entry),
+        cxzy_rules: parse_cxzy_rules(tag.cxzy_rules),
     }
 }
 
@@ -380,4 +411,44 @@ export async function calculate_quarterly_party_eval(year: string, quarter: stri
         throw new Error('生成的单据编号存在重复')
     }
     return { bills: assigned, delete_billnos: [...new Set(delete_billnos)] }
+}
+
+function match_cxzy_rule(rules: CxzyRule[], party_evaluation: string, administrative_evaluation: string) {
+    const party = party_evaluation.trim()
+    const admin = administrative_evaluation.trim()
+    return rules.find((item) => item.party_evaluation === party && item.administrative_evaluation === admin)
+}
+
+export async function calculate_quarterly_cxzy_eval(year: string, quarter: string): Promise<CalcQuarterlyEvalResult> {
+    const [config_raw, org_raw] = await Promise.all([fetch_djconfig({ force: true }), fetch_org({ force: true })])
+    const configs = config_raw.map(trans_config)
+    const orgs = trans_org(org_raw)
+    const quarterly_raw = config_raw.filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE)
+    const existing = quarterly_raw.map(trans_quarterly)
+    const cxzy_rules = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_CXZY_RULE_TYPE)
+
+    const submitted = quarterly_raw.find((row) => {
+        const bill = trans_quarterly(row)
+        return same_period(bill.year, bill.quarter, year, quarter) && is_submitted(row)
+    })
+    if (submitted) {
+        throw new SubmittedPeriodBillError(submitted.billno)
+    }
+
+    const bills: EvalBill[] = []
+    for (const bill of existing) {
+        if (!is_draft(bill) || !same_period(bill.year, bill.quarter, year, quarter)) continue
+        if (!bill.party_evaluation.trim() || !bill.administrative_evaluation.trim()) continue
+        let matched: string | null = null
+        for (const config of cxzy_rules) {
+            if (!covers_party(config.org_ids, bill.party_name, orgs)) continue
+            const rule = match_cxzy_rule(config.cxzy_rules, bill.party_evaluation, bill.administrative_evaluation)
+            if (!rule) continue
+            matched = rule.cxzy_evaluation
+            break
+        }
+        if (matched == null) continue
+        bills.push({ ...bill, cxzy_evaluation: matched })
+    }
+    return { bills, delete_billnos: bills.map((bill) => bill.billno) }
 }

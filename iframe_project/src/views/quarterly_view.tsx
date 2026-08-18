@@ -31,7 +31,8 @@ import { fetch_data } from '@/lib/api/djconfig_select'
 import { add_data } from '@/lib/api/djconfig_add'
 import { delete_data } from '@/lib/api/djconfig_delete'
 import { push_data } from '@/lib/api/djconfig_push'
-import { calculate_quarterly_party_eval, DuplicateOrgConfigError, TiedScoreEvalError, quarter_key, type EvalBill } from '@/lib/calc_quarterly_eval'
+import { pull_data } from '@/lib/api/djconfig_pull'
+import { calculate_quarterly_cxzy_eval, calculate_quarterly_party_eval, DuplicateOrgConfigError, SubmittedPeriodBillError, TiedScoreEvalError, quarter_key, type EvalBill } from '@/lib/calc_quarterly_eval'
 import { toast } from 'sonner'
 
 // 解析后的单据分录
@@ -533,7 +534,9 @@ export function QuarterlyView() {
     const [calculating, setCalculating] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<ParseBillRow | null>(null)
     const [pushTarget, setPushTarget] = useState<ParseBillRow | null>(null)
+    const [pullTarget, setPullTarget] = useState<ParseBillRow | null>(null)
     const [calcPeriodOpen, setCalcPeriodOpen] = useState(false)
+    const [calcKind, setCalcKind] = useState<'eval' | 'cxzy'>('eval')
     const [calcYear, setCalcYear] = useState('')
     const [calcQuarter, setCalcQuarter] = useState('')
 
@@ -668,6 +671,32 @@ export function QuarterlyView() {
         }
     }
 
+    function requestPull() {
+        const target = rows.find((row) => row.id === selectedRowId)
+        if (!target) {
+            toast.error('请先选择一行')
+            return
+        }
+        setPullTarget(target)
+    }
+
+    async function confirmPull() {
+        if (!pullTarget) return
+        setSaving(true)
+        try {
+            await pull_data(pullTarget.billno)
+            toast.success('撤销成功')
+            setPullTarget(null)
+            setFormOpen(false)
+            setEditingBill(null)
+            await run(true)
+        } catch (err) {
+            toast.error('撤销失败', { description: get_err_message(err) })
+        } finally {
+            setSaving(false)
+        }
+    }
+
     function requestCalcEval() {
         const drafts = rows.filter((row) => row.billstatus_title === '暂存')
         const periods = unique_periods(drafts)
@@ -676,6 +705,16 @@ export function QuarterlyView() {
         setCalcQuarter(period ? to_quarter_option(period.quarter) : current_quarter())
         setFormOpen(false)
         setEditingBill(null)
+        setCalcKind('eval')
+        setCalcPeriodOpen(true)
+    }
+
+    function requestCalcCxzy() {
+        setCalcYear(String(new Date().getFullYear()))
+        setCalcQuarter(current_quarter())
+        setFormOpen(false)
+        setEditingBill(null)
+        setCalcKind('cxzy')
         setCalcPeriodOpen(true)
     }
 
@@ -720,6 +759,41 @@ export function QuarterlyView() {
         }
     }
 
+    async function confirmCalcCxzy() {
+        if (!calcYear.trim()) {
+            toast.warning('请选择年份')
+            return
+        }
+        if (!calcQuarter.trim()) {
+            toast.warning('请选择季度')
+            return
+        }
+        const year = calcYear.trim()
+        const quarter = calcQuarter.trim()
+        setCalcPeriodOpen(false)
+        setCalculating(true)
+        const toastId = toast.loading(`正在计算${year}${quarter}创先争优结果`)
+        try {
+            const { bills, delete_billnos } = await calculate_quarterly_cxzy_eval(year, quarter)
+            for (const billno of delete_billnos) {
+                await delete_data(billno)
+            }
+            if (bills.length) {
+                await add_data(bills.map(bill_to_add_row))
+            }
+            toast.success('计算创先争优结果完成', { id: toastId })
+            await run(true)
+        } catch (err) {
+            if (err instanceof SubmittedPeriodBillError) {
+                toast.error(err.message, { id: toastId })
+                return
+            }
+            toast.error('计算创先争优结果失败', { id: toastId, description: get_err_message(err) })
+        } finally {
+            setCalculating(false)
+        }
+    }
+
     const loading = status === 'loading' || saving || calculating
     const emptyText = status === 'loading' ? '正在加载季度评价结果…' : status === 'error' ? error || '加载失败' : '暂无季度评价结果'
 
@@ -743,8 +817,9 @@ export function QuarterlyView() {
                                 { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
                                 { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
                                 { key: 'push', label: saving ? '提交中…' : '提交', disabled: loading },
-                                { key: 'calc-eval', label: calculating ? '计算中…' : '计算绩效评价结果', disabled: loading },
-                                { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
+                                { key: 'pull', label: saving ? '撤销中…' : '撤销', disabled: loading },
+                                { key: 'calc-eval', label: calculating && calcKind === 'eval' ? '计算中…' : '计算绩效评价结果', disabled: loading },
+                                { key: 'calc-excellence', label: calculating && calcKind === 'cxzy' ? '计算中…' : '计算创先争优结果', disabled: loading },
                                 { key: 'export', label: '导出', disabled: loading },
                             ]}
                             onAction={(key) => {
@@ -752,7 +827,9 @@ export function QuarterlyView() {
                                 if (key === 'new') openAddForm()
                                 if (key === 'del') requestDelete()
                                 if (key === 'push') requestPush()
+                                if (key === 'pull') requestPull()
                                 if (key === 'calc-eval') requestCalcEval()
+                                if (key === 'calc-excellence') requestCalcCxzy()
                                 if (key !== 'export') return
                                 exportTableToExcel({
                                     filename: NAV_LABEL.quarterly,
@@ -801,7 +878,7 @@ export function QuarterlyView() {
             >
                 <DialogContent className="sm:max-w-md" showCloseButton={!calculating}>
                     <DialogHeader>
-                        <DialogTitle>计算绩效评价结果</DialogTitle>
+                        <DialogTitle>{calcKind === 'cxzy' ? '计算创先争优结果' : '计算绩效评价结果'}</DialogTitle>
                     </DialogHeader>
                     <p className="text-sm text-muted-foreground">请确认要计算的年份和季度。</p>
                     <FieldGroup className="grid grid-cols-2 gap-3">
@@ -844,7 +921,7 @@ export function QuarterlyView() {
                         <Button type="button" variant="outline" disabled={calculating} onClick={() => setCalcPeriodOpen(false)}>
                             取消
                         </Button>
-                        <Button type="button" disabled={calculating} onClick={() => void confirmCalcEval()}>
+                        <Button type="button" disabled={calculating} onClick={() => void (calcKind === 'cxzy' ? confirmCalcCxzy() : confirmCalcEval())}>
                             {calculating ? '计算中…' : '开始计算'}
                         </Button>
                     </DialogFooter>
@@ -865,6 +942,25 @@ export function QuarterlyView() {
                         <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
                         <AlertDialogAction disabled={saving} onClick={() => void confirmPush()}>
                             {saving ? '提交中…' : '提交'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog
+                open={!!pullTarget}
+                onOpenChange={(open) => {
+                    if (!open && !saving) setPullTarget(null)
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确定撤销？</AlertDialogTitle>
+                        <AlertDialogDescription>将撤销单据「{pullTarget?.billno || '-'}」。</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={saving}>取消</AlertDialogCancel>
+                        <AlertDialogAction disabled={saving} onClick={() => void confirmPull()}>
+                            {saving ? '撤销中…' : '撤销'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

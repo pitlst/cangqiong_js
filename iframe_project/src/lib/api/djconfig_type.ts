@@ -109,6 +109,10 @@ export type BillPushResponse = {
     } | null
 }
 
+export type BillPullRow = BillPushRow
+export type BillPullRequest = BillPushRequest
+export type BillPullResponse = BillPushResponse
+
 export type CrrcBillPageResponse = CqPageResponse<BillRow>
 
 export const BILL_COLUMNS = [

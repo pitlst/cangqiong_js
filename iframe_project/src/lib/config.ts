@@ -18,6 +18,7 @@ export const CQ_API_PATH = {
     djconfig_delete: '/kapi/v2/crrc/crrc_dj/crrc_dj_config_new/djconfig_delete',
     djconfig_select: '/kapi/v2/crrc/crrc_dj/crrc_dj_config_new/djconfig_select',
     djconfig_push: '/kapi/v2/crrc/crrc_dj/crrc_dj_config_new/djconfig_push',
+    djconfig_pull: '/kapi/v2/crrc/crrc_dj/crrc_dj_config_new/djconfig_pull',
 }
 
 // 通用：苍穹分页响应壳
