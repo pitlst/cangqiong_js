@@ -12,7 +12,7 @@ export const CQ_OPENAPI = {
 
 export const CQ_API_PATH = {
     deduction: '/kapi/v2/crrc/crrc_dj/crrc_deduction_log/point_deduction_ledger',
-    partyQuarterly: '/kapi/v2/crrc/crrc_dj/crrc_dj_cb_count/quarterly_performance',
+    quarterly_performance: '/kapi/v2/crrc/crrc_dj/crrc_dj_cb_count/quarterly_performance',
     org: '/kapi/v2/crrc/crrc_dj/crrc_dj_org_tree_ext/party_organization_inquiry',
     djconfig_add: '/kapi/v2/crrc/crrc_dj/crrc_dj_config_new/djconfig_add',
     djconfig_delete: '/kapi/v2/crrc/crrc_dj/crrc_dj_config_new/djconfig_delete',
@@ -44,3 +44,4 @@ export const CONFIG_TYPE_NAME = [
 ]
 
 export const CACHE_TTL_MS = 10 * 60 * 1000 // 10分钟
+

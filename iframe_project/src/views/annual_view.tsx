@@ -3,8 +3,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import { format } from 'date-fns'
 
 import { DetailSection } from '@/components/bill-detail'
-import { StatusBadge } from '@/components/data-table/deduction-columns'
-import { type DataTableFeatures } from '@/components/data-table/data-table-features'
+import { type DataTableFeatures } from '@/components/data-table-features'
 import { DataToolbar } from '@/components/data-toolbar'
 import {
     AlertDialog,
@@ -235,10 +234,10 @@ function bill_to_form(bill: ParseBillRow): AddFormValues {
         cxzy_evaluation: bill.cxzy_evaluation,
         entry: bill.entry.length
             ? bill.entry.map((item) => ({
-                  _rowId: `entry-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                  item_name: item.item_name,
-                  item_score: String(item.item_score),
-              }))
+                _rowId: `entry-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                item_name: item.item_name,
+                item_score: String(item.item_score),
+            }))
             : [new_entry_row()],
     }
 }
@@ -260,11 +259,11 @@ function AnnualBillForm({
         initial
             ? bill_to_form(initial)
             : {
-                  ...EMPTY_ADD_FORM,
-                  billno: next_annual_billno(existingBillnos),
-                  year: String(new Date().getFullYear()),
-                  entry: [new_entry_row()],
-              },
+                ...EMPTY_ADD_FORM,
+                billno: next_annual_billno(existingBillnos),
+                year: String(new Date().getFullYear()),
+                entry: [new_entry_row()],
+            },
     )
     const [selectedEntryId, setSelectedEntryId] = useState('')
     const addEntryHelper = useMemo(() => createColumnHelper<DataTableFeatures, AddEntryRow>(), [])
@@ -557,6 +556,28 @@ export function AnnualView() {
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5">
+            <DataToolbar
+                actions={[
+                    { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
+                    { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
+                    { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
+                    { key: 'calc-score', label: '计算绩效得分', disabled: loading },
+                    { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
+                    { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
+                    { key: 'export', label: '导出', disabled: loading },
+                ]}
+                onAction={(key) => {
+                    if (key === 'refresh') void run(true)
+                    if (key === 'new') openAddForm()
+                    if (key === 'del') requestDelete()
+                    if (key !== 'export') return
+                    exportTableToExcel({
+                        filename: NAV_LABEL.annual,
+                        columns: PARSE_BILL_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+                        rows,
+                    })
+                }}
+            />
             <div className="relative flex min-h-0 flex-1 flex-col">
                 <DataTable
                     columns={annualColumns}
@@ -566,30 +587,6 @@ export function AnnualView() {
                     selectedRowId={selectedRowId}
                     onRowSelect={(row) => openEditForm(row)}
                     enableSearch
-                    toolbar={
-                        <DataToolbar
-                            actions={[
-                                { key: 'refresh', label: status === 'loading' ? '加载中…' : '刷新', variant: 'default', disabled: loading },
-                                { key: 'new', label: '新增', variant: 'default' as const, disabled: loading },
-                                { key: 'del', label: saving ? '删除中…' : '删除', disabled: loading },
-                                { key: 'calc-score', label: '计算绩效得分', disabled: loading },
-                                { key: 'calc-eval', label: '计算绩效评价结果', disabled: loading },
-                                { key: 'calc-excellence', label: '计算创先争优结果', disabled: loading },
-                                { key: 'export', label: '导出', disabled: loading },
-                            ]}
-                            onAction={(key) => {
-                                if (key === 'refresh') void run(true)
-                                if (key === 'new') openAddForm()
-                                if (key === 'del') requestDelete()
-                                if (key !== 'export') return
-                                exportTableToExcel({
-                                    filename: NAV_LABEL.annual,
-                                    columns: PARSE_BILL_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
-                                    rows,
-                                })
-                            }}
-                        />
-                    }
                 />
             </div>
             {formOpen ? (

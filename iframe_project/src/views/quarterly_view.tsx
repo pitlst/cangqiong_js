@@ -3,7 +3,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import { format } from 'date-fns'
 
 import { DetailSection } from '@/components/bill-detail'
-import { type DataTableFeatures } from '@/components/data-table/data-table-features'
+import { type DataTableFeatures } from '@/components/data-table-features'
 import { DataToolbar } from '@/components/data-toolbar'
 import {
     AlertDialog,

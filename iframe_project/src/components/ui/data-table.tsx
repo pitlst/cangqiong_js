@@ -4,7 +4,7 @@ import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { TablePager } from '@/components/table-pager'
-import { dataTableFeatures, type DataTableFeatures } from '@/components/data-table/data-table-features'
+import { dataTableFeatures, type DataTableFeatures } from '@/components/data-table-features'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
