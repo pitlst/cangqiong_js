@@ -1,4 +1,4 @@
-import { get_access_token } from '@/lib/cq_fetch'
+import { cq_fetch } from '@/lib/cq_fetch'
 import { CACHE_TTL_MS, CQ_API_PATH, CQ_OPENAPI, type CqPageResponse } from '@/lib/config'
 
 /** 扣分台账分录（entryentity） */
@@ -173,7 +173,6 @@ export function fetch_data(options?: { force?: boolean }): Promise<BillRow[]> {
         return Promise.resolve(lastDeductionRows)
     }
     const task = (async () => {
-        const token = await get_access_token()
         const allRows: BillRow[] = []
         let pageNo = 1
         const pageSize = CQ_OPENAPI.pageSize
@@ -183,13 +182,8 @@ export function fetch_data(options?: { force?: boolean }): Promise<BillRow[]> {
                 pageSize,
                 pageNo,
             }
-            const res = await fetch(CQ_OPENAPI.gateway + CQ_API_PATH.deduction, {
+            const res = await cq_fetch(CQ_API_PATH.deduction, {
                 method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                    access_token: token,
-                },
                 body: JSON.stringify(body),
             })
             const json = (await res.json()) as CrrcBillPageResponse

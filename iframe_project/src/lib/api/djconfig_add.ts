@@ -1,5 +1,5 @@
-import { get_access_token } from '@/lib/cq_fetch'
-import { CQ_API_PATH, CQ_OPENAPI } from '@/lib/config'
+import { cq_fetch } from '@/lib/cq_fetch'
+import { CQ_API_PATH } from '@/lib/config'
 import type { BillAddError, BillAddRequest, BillAddResponse, BillAddResult, BillAddRow } from '@/lib/api/djconfig_type'
 
 function format_row_errors(errors: BillAddError[]) {
@@ -24,15 +24,9 @@ function format_failed_items(items: BillAddResult[]) {
  */
 export async function add_data(rows: BillAddRow | BillAddRow[]): Promise<BillAddResult[]> {
     const data = Array.isArray(rows) ? rows : [rows]
-    const token = await get_access_token()
     const body: BillAddRequest = { data }
-    const res = await fetch(CQ_OPENAPI.gateway + CQ_API_PATH.djconfig_add, {
+    const res = await cq_fetch(CQ_API_PATH.djconfig_add, {
         method: 'POST',
-        mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json',
-            access_token: token,
-        },
         body: JSON.stringify(body),
     })
     const json = (await res.json()) as BillAddResponse

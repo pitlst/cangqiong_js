@@ -1,5 +1,5 @@
-import { get_access_token } from '@/lib/cq_fetch'
-import { CQ_API_PATH, CQ_OPENAPI } from '@/lib/config'
+import { cq_fetch } from '@/lib/cq_fetch'
+import { CQ_API_PATH } from '@/lib/config'
 import type { BillDeleteRequest, BillDeleteResponse, BillDeleteResult } from '@/lib/api/djconfig_type'
 
 /**
@@ -7,15 +7,9 @@ import type { BillDeleteRequest, BillDeleteResponse, BillDeleteResult } from '@/
  * 找不到单据时接口返回 status=false、data=null。
  */
 export async function delete_data(billno: string): Promise<BillDeleteResult[]> {
-    const token = await get_access_token()
     const body: BillDeleteRequest = { data: { billno } }
-    const res = await fetch(CQ_OPENAPI.gateway + CQ_API_PATH.djconfig_delete, {
+    const res = await cq_fetch(CQ_API_PATH.djconfig_delete, {
         method: 'POST',
-        mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json',
-            access_token: token,
-        },
         body: JSON.stringify(body),
     })
     const json = (await res.json()) as BillDeleteResponse

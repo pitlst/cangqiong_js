@@ -1,4 +1,4 @@
-import { get_access_token } from '@/lib/cq_fetch'
+import { cq_fetch } from '@/lib/cq_fetch'
 import { CACHE_TTL_MS, CQ_API_PATH, CQ_OPENAPI, type CqPageResponse } from '@/lib/config'
 
 /** 党组织基础资料行（party_organization_inquiry） */
@@ -301,7 +301,6 @@ export function fetch_data(options?: { force?: boolean }): Promise<OrgRow[]> {
         return Promise.resolve(lastOrgRows)
     }
     const task = (async () => {
-        const token = await get_access_token()
         const allRows: OrgRow[] = []
         let pageNo = 1
         const pageSize = CQ_OPENAPI.pageSize
@@ -311,13 +310,8 @@ export function fetch_data(options?: { force?: boolean }): Promise<OrgRow[]> {
                 pageSize,
                 pageNo,
             }
-            const res = await fetch(CQ_OPENAPI.gateway + CQ_API_PATH.org, {
+            const res = await cq_fetch(CQ_API_PATH.org, {
                 method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                    access_token: token,
-                },
                 body: JSON.stringify(body),
             })
             const json = (await res.json()) as CrrcOrgPageResponse

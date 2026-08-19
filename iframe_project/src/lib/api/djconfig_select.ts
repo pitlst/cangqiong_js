@@ -1,5 +1,5 @@
-import { get_access_token } from '@/lib/cq_fetch'
-import { CQ_API_PATH, CQ_OPENAPI, CACHE_TTL_MS } from '@/lib/config'
+import { cq_fetch } from '@/lib/cq_fetch'
+import { CQ_API_PATH, CACHE_TTL_MS } from '@/lib/config'
 import type { BillRow, CrrcBillPageResponse } from '@/lib/api/djconfig_type'
 
 let quarterlyTask: Promise<BillRow[]> | null = null
@@ -22,7 +22,6 @@ export function fetch_data(options?: { force?: boolean }): Promise<BillRow[]> {
     }
     // 3. 发起新请求
     const task = (async () => {
-        const token = await get_access_token()
         const allRows: BillRow[] = []
         let pageNo = 1
         const pageSize = 100 // 可适当调大，减少请求次数
@@ -32,13 +31,8 @@ export function fetch_data(options?: { force?: boolean }): Promise<BillRow[]> {
                 pageSize,
                 pageNo,
             }
-            const res = await fetch(CQ_OPENAPI.gateway + CQ_API_PATH.djconfig_select, {
+            const res = await cq_fetch(CQ_API_PATH.djconfig_select, {
                 method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                    access_token: token,
-                },
                 body: JSON.stringify(body),
             })
             const json = (await res.json()) as CrrcBillPageResponse

@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
+import { gzipAsync } from '@gfx/zopfli'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
@@ -9,10 +10,13 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const CQ_PROXY_TARGET = 'https://cangqiongtestzelc.crrcgc.cc:6888'
+const USE_ZOPFLI = process.env.VITE_PACK_COMPRESS !== 'gzip'
+const ZOPFLI_ITERATIONS = Number(process.env.VITE_ZOPFLI_ITERATIONS || 15)
 
 /** 苍穹 MySQL utf8/utf8mb3 存不下 4 字节字符；写成 JS `\ud83d\udcbf`，入库是 ASCII，运行时还原 */
 const NON_BMP = /[\u{10000}-\u{10FFFF}]/gu
-const PACK_WIDTH = 56
+/** 每段 base64 最长 71：`PACK+="...";` 整行正好 80 字符（苍穹编辑器折行上限） */
+const PACK_WIDTH = 71
 
 function toJsUnicodeEscape(ch: string): string {
     const codePoint = ch.codePointAt(0)
@@ -41,42 +45,24 @@ function emitPack(b64: string, width: number): string {
     return lines.join('\n')
 }
 
-function toCangqiongPlugin(html: string): string {
-    const b64 = gzipSync(Buffer.from(html, 'utf8'), { level: 9 }).toString('base64')
+async function compressHtml(html: string): Promise<Buffer> {
+    const input = Buffer.from(html, 'utf8')
+    if (!USE_ZOPFLI) {
+        return gzipSync(input, { level: 9 })
+    }
+    return Buffer.from(await gzipAsync(input, { numiterations: ZOPFLI_ITERATIONS }))
+}
+
+function toCangqiongPlugin(compressed: Buffer): string {
+    const b64 = compressed.toString('base64')
     if (/[^A-Za-z0-9+/=]/.test(b64)) {
         throw new Error('base64 含非法字符，无法放入苍穹双引号字符串')
     }
     return [
         '(function () {',
         emitPack(b64, PACK_WIDTH),
-        '    function utf8FromBytes(bytes) {',
-        '        var out = "";',
-        '        var i = 0;',
-        '        while (i < bytes.length) {',
-        '            var c = bytes[i++];',
-        '            if (c < 128) {',
-        '                out += String.fromCharCode(c);',
-        '            } else if (c < 224) {',
-        '                var c2 = bytes[i++];',
-        '                out += String.fromCharCode(((c & 31) << 6) | (c2 & 63));',
-        '            } else if (c < 240) {',
-        '                var c2 = bytes[i++];',
-        '                var c3 = bytes[i++];',
-        '                out += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));',
-        '            } else {',
-        '                var c2 = bytes[i++];',
-        '                var c3 = bytes[i++];',
-        '                var c4 = bytes[i++];',
-        '                var u = ((c & 7) << 18) | ((c2 & 63) << 12) | ((c3 & 63) << 6) | (c4 & 63);',
-        '                u -= 65536;',
-        '                out += String.fromCharCode(55296 + (u >> 10), 56320 + (u & 1023));',
-        '            }',
-        '        }',
-        '        return out;',
-        '    }',
         '    function dec(bytes) {',
-        '        if (typeof TextDecoder !== "undefined") return new TextDecoder("utf-8").decode(bytes);',
-        '        return utf8FromBytes(bytes);',
+        '        return new TextDecoder("utf-8").decode(bytes);',
         '    }',
         '    function b64ToU8(b64) {',
         '        var bin = atob(b64);',
@@ -141,7 +127,7 @@ function cangqiongSafeOutputPlugin(): Plugin {
                 }
             }
         },
-        closeBundle() {
+        closeBundle: async () => {
             const htmlFile = path.resolve(__dirname, 'dist/index.html')
             const jsFile = path.resolve(__dirname, 'dist/index.js')
             if (!existsSync(htmlFile)) {
@@ -152,7 +138,8 @@ function cangqiongSafeOutputPlugin(): Plugin {
                 throw new Error('dist/index.html 仍含 4 字节 UTF-8 字符，无法写入苍穹 utf8 字段')
             }
             writeFileSync(htmlFile, html)
-            const plugin = toCangqiongPlugin(html)
+            const compressed = await compressHtml(html)
+            const plugin = toCangqiongPlugin(compressed)
             if (plugin.includes('`') || plugin.includes('=>')) {
                 throw new Error('苍穹插件含模板字符串或箭头函数，Babel toEs5 会拆坏')
             }
@@ -206,6 +193,15 @@ export default defineConfig({
         target: 'es2015',
         cssCodeSplit: false,
         assetsInlineLimit: 10485760,
-        minify: true,
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                passes: 2,
+                drop_console: true,
+            },
+            format: {
+                comments: false,
+            },
+        },
     },
 })

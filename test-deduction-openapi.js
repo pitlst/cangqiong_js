@@ -4,65 +4,33 @@
  */
 
 const GATEWAY = 'https://cangqiongtestzelc.crrcgc.cc:6888/ierp'
-const CLIENT_ID = 'shengchanfuzhuxitong'
-const CLIENT_SECRET = 'Sunwenqi8855830.'
-const USERNAME = '010200003204'
-const ACCOUNT_ID = '956599844649042944'
-
+const OPEN_API_SIGN = 'TzBPaFZudWc2YzZkbjJvRXBXblF2d18ySlNGYndLV2VOWFpiMG1FR2laTT06OTU2NTk5ODQ0NjQ5MDQyOTQ0'
 const DEDUCTION_API = `${GATEWAY}/kapi/v2/crrc/crrc_dj/crrc_deduction_log/point_deduction_ledger`
 
-function pad(n) {
-    return String(n).padStart(2, '0')
-}
-
-function formatTimestamp(date) {
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
-}
-
-function randomNonce() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
-    return `n${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
-async function getToken() {
-    const body = {
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        username: USERNAME,
-        accountId: ACCOUNT_ID,
-        language: 'zh_CN',
-        nonce: randomNonce(),
-        timestamp: formatTimestamp(new Date()),
+function buildUrl(path, query = {}) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+        if (value != null && value !== '') params.set(key, String(value))
     }
-
-    const res = await fetch(`${GATEWAY}/kapi/oauth2/getToken`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    })
-
-    const json = await res.json()
-    if (!json.status || !json.data?.access_token) {
-        throw new Error(json.message || json.errorcode || JSON.stringify(json))
-    }
-    return json.data.access_token
+    params.set('openApiSign', OPEN_API_SIGN)
+    return `${path}?${params.toString()}`
 }
 
-async function fetchDeductionLedger(accessToken, pageNo = 1, pageSize = 10) {
+async function fetchDeductionLedger(pageNo = 1, pageSize = 10) {
     const body = {
         data: {},
         pageSize,
         pageNo,
     }
+    const url = buildUrl(DEDUCTION_API, { pageSize, pageNo })
 
-    console.log('POST', DEDUCTION_API)
+    console.log('POST', url)
     console.log('Body:', JSON.stringify(body))
 
-    const res = await fetch(DEDUCTION_API, {
+    const res = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            access_token: accessToken,
         },
         body: JSON.stringify(body),
     })
@@ -87,12 +55,8 @@ async function fetchDeductionLedger(accessToken, pageNo = 1, pageSize = 10) {
 }
 
 async function main() {
-    console.log('1. 获取 access_token …')
-    const token = await getToken()
-    console.log('   token 已获取\n')
-
-    console.log('2. 查询扣分项台账 …')
-    await fetchDeductionLedger(token, 1, 10)
+    console.log('查询扣分项台账（基本认证 openApiSign）…')
+    await fetchDeductionLedger(1, 10)
 }
 
 main().catch((err) => {
