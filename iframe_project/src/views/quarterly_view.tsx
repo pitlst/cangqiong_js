@@ -113,10 +113,6 @@ function make_quarterly_columns(onCommitAdmin: (bill: ParseBillRow, next: string
         columnHelper.accessor('cxzy_evaluation', {
             header: '创先争优评价',
         }),
-        columnHelper.accessor('auditdate', {
-            header: '审核日期',
-            cell: ({ getValue }) => getValue() || '-',
-        }),
         columnHelper.accessor('createtime', {
             header: '创建时间',
         }),
@@ -136,7 +132,6 @@ const PARSE_BILL_COLUMNS = [
     { key: 'party_evaluation', label: '党群绩效评价' },
     { key: 'administrative_evaluation', label: '行政绩效评价' },
     { key: 'cxzy_evaluation', label: '创先争优评价' },
-    { key: 'auditdate', label: '审核日期' },
     { key: 'createtime', label: '创建时间' },
     { key: 'modifytime', label: '修改时间' },
 ] as const

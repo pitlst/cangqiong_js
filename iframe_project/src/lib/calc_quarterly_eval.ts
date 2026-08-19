@@ -74,6 +74,8 @@ type ConfigBill = {
     billno: string
     data_type: string
     submitted: boolean
+    year: string
+    quarter: string
     org_ids: string[]
     items: { name: string; value: number }[]
     entry: EvalEntry[]
@@ -155,6 +157,8 @@ function trans_config(row: DjConfigBillRow): ConfigBill {
         billno: row.billno,
         data_type: row.crrc_textfield,
         submitted: is_submitted(row),
+        year: as_string(tag.year),
+        quarter: as_string(tag.quarter),
         org_ids: parse_org_ids(tag.org_ids),
         items: parse_rule_items(tag.items),
         entry: parse_config_entry(tag.entry),
@@ -187,6 +191,11 @@ function same_year(year_a: string, year_b: string) {
 function matches_cxzy_target(bill: EvalBill, year: string, quarter?: string) {
     if (quarter) return same_period(bill.year, bill.quarter, year, quarter)
     return same_year(bill.year, year)
+}
+
+function matches_config_period(config: ConfigBill, year: string, quarter?: string) {
+    if (quarter) return same_period(config.year, config.quarter, year, quarter)
+    return same_year(config.year, year)
 }
 
 function names_match(party_name: string, ...candidates: string[]) {
@@ -410,7 +419,9 @@ export async function calculate_quarterly_party_score(year: string, quarter: str
     const contributions = trans_contribution(contribution_raw)
     const orgs = trans_org(org_raw)
     const existing = config_raw.filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE).map(trans_quarterly)
-    const grassroots = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_GRASSROOTS_TYPE)
+    const grassroots = configs.filter(
+        (row) => row.submitted && row.data_type === QUARTERLY_GRASSROOTS_TYPE && matches_config_period(row, year, quarter),
+    )
 
     const duplicate_orgs = collect_duplicate_org_names(grassroots, orgs)
     if (duplicate_orgs.length) {
@@ -457,7 +468,9 @@ export async function calculate_quarterly_party_eval(year: string, quarter: stri
     const configs = config_raw.map(trans_config)
     const orgs = trans_org(org_raw)
     const existing = config_raw.filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE).map(trans_quarterly)
-    const party_rules = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_PARTY_RULE_TYPE)
+    const party_rules = configs.filter(
+        (row) => row.submitted && row.data_type === QUARTERLY_PARTY_RULE_TYPE && matches_config_period(row, year, quarter),
+    )
 
     const duplicate_orgs = collect_duplicate_org_names(party_rules, orgs)
     if (duplicate_orgs.length) {
@@ -525,7 +538,9 @@ async function calculate_cxzy_eval(year: string, options: { quarter?: string; re
     const orgs = trans_org(org_raw)
     const result_raw = config_raw.filter((row) => row.crrc_textfield === options.result_type)
     const existing = result_raw.map(trans_quarterly)
-    const cxzy_rules = configs.filter((row) => row.submitted && row.data_type === options.rule_type)
+    const cxzy_rules = configs.filter(
+        (row) => row.submitted && row.data_type === options.rule_type && matches_config_period(row, year, options.quarter),
+    )
 
     const submitted = result_raw.find((row) => {
         const bill = trans_quarterly(row)
@@ -573,7 +588,7 @@ export async function calculate_annual_party_eval(year: string): Promise<CalcQua
     const configs = config_raw.map(trans_config)
     const orgs = trans_org(org_raw)
     const existing = config_raw.filter((row) => row.crrc_textfield === ANNUAL_RESULT_TYPE).map(trans_quarterly)
-    const party_rules = configs.filter((row) => row.submitted && row.data_type === ANNUAL_PARTY_RULE_TYPE)
+    const party_rules = configs.filter((row) => row.submitted && row.data_type === ANNUAL_PARTY_RULE_TYPE && matches_config_period(row, year))
 
     const duplicate_orgs = collect_duplicate_org_names(party_rules, orgs)
     if (duplicate_orgs.length) {
@@ -684,7 +699,7 @@ export async function calculate_annual_party_score(year: string): Promise<CalcQu
     const quarterly = config_raw
         .filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE)
         .map((row) => ({ raw: row, bill: trans_quarterly(row) }))
-    const grassroots = configs.filter((row) => row.submitted && row.data_type === ANNUAL_GRASSROOTS_TYPE)
+    const grassroots = configs.filter((row) => row.submitted && row.data_type === ANNUAL_GRASSROOTS_TYPE && matches_config_period(row, year))
 
     const duplicate_orgs = collect_duplicate_org_names(grassroots, orgs)
     if (duplicate_orgs.length) {

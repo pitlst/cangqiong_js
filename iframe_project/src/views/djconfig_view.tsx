@@ -49,6 +49,7 @@ import { as_number, as_string, get_err_message, type FetchStatus } from '@/lib/u
 
 const CONFIG_TYPE_SET = new Set<string>(CONFIG_TYPE_NAME)
 const CONFIG_BILL_TYPE = 'PZGL'
+const DEFAULT_CONFIG_TYPE = '季度党群绩效评价规则'
 const PARTY_PERF_TYPES = new Set(['季度党群绩效评价规则', '年度党群绩效评价规则'])
 const CXZY_TYPES = new Set(['季度创先争优评价规则', '年度创先争优评价规则'])
 const GRASSROOTS_TYPES = new Set(['季度基层党组织创先争优评价项点', '年度基层党组织创先争优评价项点'])
@@ -67,6 +68,14 @@ function is_grassroots_type(type: string) {
 
 function party_eval_label(type: string) {
     return type.startsWith('年度') ? '年度党群评价' : '季度党群评价'
+}
+
+function is_quarterly_config_type(type: string) {
+    return type.startsWith('季度')
+}
+
+function is_annual_config_type(type: string) {
+    return type.startsWith('年度')
 }
 
 type ParseBillRow = {
@@ -106,10 +115,19 @@ type FormValues = {
     billno: string
     data_type: string
     config_name: string
+    year: string
+    quarter: string
     org_ids: string[]
     items: RuleItemRow[]
     cxzy_items: CxzyRuleRow[]
     entry_items: EntryItemRow[]
+}
+
+const QUARTERS = ['第一季度', '第二季度', '第三季度', '第四季度'] as const
+const YEARS = Array.from({ length: 2100 - 1970 + 1 }, (_, index) => String(1970 + index))
+
+function current_quarter(now = new Date()): (typeof QUARTERS)[number] {
+    return QUARTERS[Math.floor(now.getMonth() / 3)]
 }
 
 const columnHelper = createColumnHelper<DataTableFeatures, ParseBillRow>()
@@ -145,10 +163,6 @@ const configColumns = columnHelper.columns([
     columnHelper.accessor('modifytime', {
         header: '修改时间',
     }),
-    columnHelper.accessor('auditdate', {
-        header: '审核时间',
-        cell: ({ getValue }) => getValue() || '-',
-    }),
 ])
 
 const PARSE_BILL_COLUMNS = [
@@ -158,7 +172,6 @@ const PARSE_BILL_COLUMNS = [
     { key: 'config_name', label: '配置名称' },
     { key: 'createtime', label: '创建时间' },
     { key: 'modifytime', label: '修改时间' },
-    { key: 'auditdate', label: '审核时间' },
 ] as const
 
 const EXPORT_TAG_SKIP_KEYS = new Set(['config_name'])
@@ -198,7 +211,7 @@ function new_rule_row(name = '', value = ''): RuleItemRow {
 }
 
 function default_party_rule_items(): RuleItemRow[] {
-    return [new_rule_row('A', '0.4'), new_rule_row('B', '0.4'), new_rule_row('C', '0.2'), new_rule_row('不评价', '0.0')]
+    return [new_rule_row('A', '1'), new_rule_row('B', '1'), new_rule_row('C', '1'), new_rule_row('不评价', '1')]
 }
 
 function format_rule_value(value: number) {
@@ -213,10 +226,7 @@ function parse_rule_items(raw: unknown): RuleItemRow[] {
         const name = as_string(row.name || row.label)
         let numeric: number | null = null
         if (row.value != null && row.value !== '') numeric = as_number(row.value)
-        else if (row.percent != null && row.percent !== '') {
-            const percent = as_number(row.percent)
-            numeric = percent > 1 ? percent / 100 : percent
-        }
+        else if (row.percent != null && row.percent !== '') numeric = as_number(row.percent)
         return new_rule_row(name, numeric == null ? '' : format_rule_value(numeric))
     })
 }
@@ -228,17 +238,8 @@ function rule_items_sum(items: RuleItemRow[]) {
     }, 0)
 }
 
-function is_hundred_percent(sum: number) {
-    return Math.abs(sum - 1) < 1e-6 || Math.abs(sum - 100) < 1e-6
-}
-
 function to_saved_rule_items(items: RuleItemRow[]) {
-    const parsed = items.map((item) => ({ name: item.name.trim(), value: Number(item.value) }))
-    const sum = parsed.reduce((total, item) => total + item.value, 0)
-    if (Math.abs(sum - 100) < 1e-6) {
-        return parsed.map((item) => ({ name: item.name, value: item.value / 100 }))
-    }
-    return parsed
+    return items.map((item) => ({ name: item.name.trim(), value: Number(item.value) }))
 }
 
 function new_cxzy_row(party_evaluation = '', administrative_evaluation = '', cxzy_evaluation = ''): CxzyRuleRow {
@@ -353,21 +354,12 @@ function find_submitted_type_org_conflict(target: ParseBillRow, rows: ParseBillR
     return other ?? null
 }
 
-function party_rule_ratios(tag: Record<string, unknown>) {
-    const values = parse_rule_items(tag.items)
-        .map((item) => Number(item.value))
-        .filter((value) => Number.isFinite(value))
-    const sum = values.reduce((total, value) => total + value, 0)
-    if (Math.abs(sum - 100) < 1e-6) return values.map((value) => value / 100)
-    return values
-}
-
-function org_percent_divides(orgCount: number, ratios: number[]) {
-    if (!ratios.length) return false
-    return ratios.every((ratio) => {
-        const assigned = orgCount * ratio
-        return Number.isFinite(assigned) && Math.abs(assigned - Math.round(assigned)) < 1e-6
-    })
+function rule_items_match_org_count(items: { value: string }[] | { value: number }[], orgCount: number) {
+    const sum = items.reduce((total, item) => {
+        const value = Number(item.value)
+        return total + (Number.isFinite(value) ? value : 0)
+    }, 0)
+    return Math.abs(sum - orgCount) < 1e-6
 }
 
 function next_config_billno(existing: string[], now = new Date()): string {
@@ -386,6 +378,16 @@ function to_add_row(form: FormValues, tag: Record<string, unknown>): BillAddRow 
         ...tag,
         config_name: form.config_name.trim(),
         org_ids: form.org_ids,
+    }
+    if (is_annual_config_type(form.data_type) || is_quarterly_config_type(form.data_type)) {
+        next.year = form.year.trim()
+    } else {
+        delete next.year
+    }
+    if (is_quarterly_config_type(form.data_type)) {
+        next.quarter = form.quarter.trim()
+    } else {
+        delete next.quarter
     }
     delete next.items
     delete next.cxzy_rules
@@ -415,6 +417,8 @@ function bill_to_form(bill: ParseBillRow): FormValues {
         billno: bill.billno,
         data_type: bill.data_type,
         config_name: bill.config_name,
+        year: as_string(bill.tag.year),
+        quarter: as_string(bill.tag.quarter),
         org_ids: bill.org_ids,
         items: is_party_perf_type(bill.data_type) && items.length === 0 ? default_party_rule_items() : items,
         cxzy_items: is_cxzy_type(bill.data_type) && cxzy_items.length === 0 ? default_cxzy_rule_items() : cxzy_items,
@@ -434,6 +438,12 @@ function expanded_for_selection(roots: OrgTreeNode[], selectedIds: string[]) {
         ids.add(ORG_ALL_ID)
     }
     return ids
+}
+
+function selected_org_names(roots: OrgTreeNode[], ids: string[]) {
+    if (!ids.length) return []
+    const nodeMap = new Map(flatten_tree(roots).map((node) => [node.id, node]))
+    return ids.map((id) => nodeMap.get(id)?.name || id)
 }
 
 function ConfigPanelToolbar({
@@ -457,6 +467,32 @@ function ConfigPanelToolbar({
                 <Button type="button" variant="outline" size="lg" disabled={!selectedId} onClick={onRemove}>
                     删行
                 </Button>
+            </div>
+        </div>
+    )
+}
+
+function SelectedOrgList({ names }: { names: string[] }) {
+    return (
+        <div className="flex h-full min-h-0 flex-col">
+            <div className="flex shrink-0 items-center justify-between gap-2 px-2 pt-2">
+                <CardTitle className="min-w-0 truncate">已选党组织</CardTitle>
+                <span className="text-muted-foreground shrink-0 text-sm">{names.length} 个</span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto px-2 pb-2 pt-2">
+                {names.length === 0 ? (
+                    <div className="text-muted-foreground flex h-full items-center justify-center rounded-md border border-dashed text-sm">
+                        暂未选择党组织
+                    </div>
+                ) : (
+                    <div className="divide-y rounded-sm border">
+                        {names.map((name, index) => (
+                            <div key={`${name}-${index}`} className="px-2 py-1.5 text-sm leading-5">
+                                {name}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -491,7 +527,7 @@ function PartyPerfRuleTable({
                         <TableRow className="hover:bg-transparent">
                             <TableHead className="w-14">序号</TableHead>
                             <TableHead>名称</TableHead>
-                            <TableHead className="w-28 text-right">值</TableHead>
+                            <TableHead className="w-28 text-right">个数</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -536,7 +572,7 @@ function PartyPerfRuleTable({
                     <TableFooter>
                         <TableRow>
                             <TableCell colSpan={2}>合计</TableCell>
-                            <TableCell className="text-right">{`${format_rule_value(percent)}%`}</TableCell>
+                            <TableCell className="text-right">{format_rule_value(percent)}</TableCell>
                         </TableRow>
                     </TableFooter>
                 </Table>
@@ -721,10 +757,12 @@ function ConfigBillForm({
             ? bill_to_form(initial)
             : {
                   billno: next_config_billno(existingBillnos),
-                  data_type: '',
+                  data_type: DEFAULT_CONFIG_TYPE,
                   config_name: '',
+              year: String(new Date().getFullYear()),
+              quarter: current_quarter(),
                   org_ids: [],
-                  items: [],
+                  items: default_party_rule_items(),
                   cxzy_items: [],
                   entry_items: [],
               },
@@ -735,6 +773,7 @@ function ConfigBillForm({
     const [orgQuery, setOrgQuery] = useState('')
     const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set([ORG_ALL_ID]))
     const orgTree = useMemo(() => filter_tree(orgRoots, orgQuery), [orgRoots, orgQuery])
+    const selectedOrgNames = useMemo(() => selected_org_names(orgRoots, form.org_ids), [orgRoots, form.org_ids])
 
     useEffect(() => {
         let cancelled = false
@@ -813,6 +852,11 @@ function ConfigBillForm({
                                 setForm((prev) => ({
                                     ...prev,
                                     data_type,
+                                    year:
+                                        is_annual_config_type(data_type) || is_quarterly_config_type(data_type)
+                                            ? prev.year || String(new Date().getFullYear())
+                                            : '',
+                                    quarter: is_quarterly_config_type(data_type) ? prev.quarter || current_quarter() : '',
                                     items:
                                         is_party_perf_type(data_type) && prev.items.length === 0 ? default_party_rule_items() : prev.items,
                                     cxzy_items:
@@ -848,7 +892,7 @@ function ConfigBillForm({
                     </Field>
                 </FieldGroup>
                 <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-                    <ResizablePanel defaultSize="18rem" minSize="12rem" maxSize="50%" className="min-h-0">
+                    <ResizablePanel defaultSize="24rem" minSize="16rem" maxSize="58%" className="min-h-0">
                         <Card className="flex h-full min-h-0 flex-col gap-0 overflow-hidden py-0">
                             <div className="shrink-0 space-y-2 px-2 pt-2">
                                 <CardTitle>应用的党组织</CardTitle>
@@ -880,92 +924,153 @@ function ConfigBillForm({
                     <ResizablePanel minSize="20rem" className="min-h-0 min-w-0">
                         <Card className="flex h-full min-h-0 flex-col overflow-hidden py-0">
                             <CardContent className="min-h-0 flex-1 px-0">
-                                {is_party_perf_type(form.data_type) ? (
-                                    <PartyPerfRuleTable
-                                        title={form.data_type}
-                                        items={form.items}
-                                        selectedId={selectedItemId}
-                                        onSelect={setSelectedItemId}
-                                        onChange={(id, patch) =>
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                items: prev.items.map((item) => (item._rowId === id ? { ...item, ...patch } : item)),
-                                            }))
-                                        }
-                                        onAdd={() => {
-                                            const row = new_rule_row()
-                                            setForm((prev) => ({ ...prev, items: [...prev.items, row] }))
-                                            setSelectedItemId(row._rowId)
-                                        }}
-                                        onRemove={() => {
-                                            if (!selectedItemId) {
-                                                toast.error('请先选择一行')
-                                                return
-                                            }
-                                            setForm((prev) => ({ ...prev, items: prev.items.filter((item) => item._rowId !== selectedItemId) }))
-                                            setSelectedItemId('')
-                                        }}
-                                    />
-                                ) : is_cxzy_type(form.data_type) ? (
-                                    <CxzyRuleTable
-                                        title={form.data_type}
-                                        partyEvalLabel={party_eval_label(form.data_type)}
-                                        items={form.cxzy_items}
-                                        selectedId={selectedItemId}
-                                        onSelect={setSelectedItemId}
-                                        onChange={(id, patch) =>
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                cxzy_items: prev.cxzy_items.map((item) => (item._rowId === id ? { ...item, ...patch } : item)),
-                                            }))
-                                        }
-                                        onAdd={() => {
-                                            const row = new_cxzy_row()
-                                            setForm((prev) => ({ ...prev, cxzy_items: [...prev.cxzy_items, row] }))
-                                            setSelectedItemId(row._rowId)
-                                        }}
-                                        onRemove={() => {
-                                            if (!selectedItemId) {
-                                                toast.error('请先选择一行')
-                                                return
-                                            }
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                cxzy_items: prev.cxzy_items.filter((item) => item._rowId !== selectedItemId),
-                                            }))
-                                            setSelectedItemId('')
-                                        }}
-                                    />
-                                ) : is_grassroots_type(form.data_type) ? (
-                                    <GrassrootsEntryTable
-                                        title={form.data_type}
-                                        items={form.entry_items}
-                                        selectedId={selectedItemId}
-                                        onSelect={setSelectedItemId}
-                                        onChange={(id, patch) =>
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                entry_items: prev.entry_items.map((item) => (item._rowId === id ? { ...item, ...patch } : item)),
-                                            }))
-                                        }
-                                        onAdd={() => {
-                                            const row = new_entry_row()
-                                            setForm((prev) => ({ ...prev, entry_items: [...prev.entry_items, row] }))
-                                            setSelectedItemId(row._rowId)
-                                        }}
-                                        onRemove={() => {
-                                            if (!selectedItemId) {
-                                                toast.error('请先选择一行')
-                                                return
-                                            }
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                entry_items: prev.entry_items.filter((item) => item._rowId !== selectedItemId),
-                                            }))
-                                            setSelectedItemId('')
-                                        }}
-                                    />
-                                ) : null}
+                                <ResizablePanelGroup orientation="vertical" className="min-h-0 h-full">
+                                    <ResizablePanel defaultSize="65%" minSize="35%" className="min-h-0">
+                                        <div className="flex h-full min-h-0 flex-col">
+                                            {is_annual_config_type(form.data_type) || is_quarterly_config_type(form.data_type) ? (
+                                                <FieldGroup className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-2 px-2 pt-2">
+                                                    <Field className="min-w-0 gap-1">
+                                                        <FieldLabel>
+                                                            年份<span className="text-destructive">*</span>
+                                                        </FieldLabel>
+                                                        <Select
+                                                            value={form.year}
+                                                            onValueChange={(value) => setForm((prev) => ({ ...prev, year: value ?? '' }))}
+                                                        >
+                                                            <SelectTrigger className="h-7 w-full min-w-0" aria-required>
+                                                                <SelectValue placeholder="请选择年份" />
+                                                            </SelectTrigger>
+                                                            <SelectContent align="start" alignItemWithTrigger={false}>
+                                                                {YEARS.map((item) => (
+                                                                    <SelectItem key={item} value={item}>
+                                                                        {item}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </Field>
+                                                    {is_quarterly_config_type(form.data_type) ? (
+                                                        <Field className="min-w-0 gap-1">
+                                                            <FieldLabel>
+                                                                季度<span className="text-destructive">*</span>
+                                                            </FieldLabel>
+                                                            <Select
+                                                                value={form.quarter}
+                                                                onValueChange={(value) => setForm((prev) => ({ ...prev, quarter: value ?? '' }))}
+                                                            >
+                                                                <SelectTrigger className="h-7 w-full min-w-0" aria-required>
+                                                                    <SelectValue placeholder="请选择季度" />
+                                                                </SelectTrigger>
+                                                                <SelectContent align="start" alignItemWithTrigger={false}>
+                                                                    {QUARTERS.map((item) => (
+                                                                        <SelectItem key={item} value={item}>
+                                                                            {item}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </Field>
+                                                    ) : null}
+                                                </FieldGroup>
+                                            ) : null}
+                                            <div className="min-h-0 flex-1">
+                                                {is_party_perf_type(form.data_type) ? (
+                                                    <PartyPerfRuleTable
+                                                        title={form.data_type}
+                                                        items={form.items}
+                                                        selectedId={selectedItemId}
+                                                        onSelect={setSelectedItemId}
+                                                        onChange={(id, patch) =>
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                items: prev.items.map((item) => (item._rowId === id ? { ...item, ...patch } : item)),
+                                                            }))
+                                                        }
+                                                        onAdd={() => {
+                                                            const row = new_rule_row('', '1')
+                                                            setForm((prev) => ({ ...prev, items: [...prev.items, row] }))
+                                                            setSelectedItemId(row._rowId)
+                                                        }}
+                                                        onRemove={() => {
+                                                            if (!selectedItemId) {
+                                                                toast.error('请先选择一行')
+                                                                return
+                                                            }
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                items: prev.items.filter((item) => item._rowId !== selectedItemId),
+                                                            }))
+                                                            setSelectedItemId('')
+                                                        }}
+                                                    />
+                                                ) : is_cxzy_type(form.data_type) ? (
+                                                    <CxzyRuleTable
+                                                        title={form.data_type}
+                                                        partyEvalLabel={party_eval_label(form.data_type)}
+                                                        items={form.cxzy_items}
+                                                        selectedId={selectedItemId}
+                                                        onSelect={setSelectedItemId}
+                                                        onChange={(id, patch) =>
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                cxzy_items: prev.cxzy_items.map((item) => (item._rowId === id ? { ...item, ...patch } : item)),
+                                                            }))
+                                                        }
+                                                        onAdd={() => {
+                                                            const row = new_cxzy_row()
+                                                            setForm((prev) => ({ ...prev, cxzy_items: [...prev.cxzy_items, row] }))
+                                                            setSelectedItemId(row._rowId)
+                                                        }}
+                                                        onRemove={() => {
+                                                            if (!selectedItemId) {
+                                                                toast.error('请先选择一行')
+                                                                return
+                                                            }
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                cxzy_items: prev.cxzy_items.filter((item) => item._rowId !== selectedItemId),
+                                                            }))
+                                                            setSelectedItemId('')
+                                                        }}
+                                                    />
+                                                ) : is_grassroots_type(form.data_type) ? (
+                                                    <GrassrootsEntryTable
+                                                        title={form.data_type}
+                                                        items={form.entry_items}
+                                                        selectedId={selectedItemId}
+                                                        onSelect={setSelectedItemId}
+                                                        onChange={(id, patch) =>
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                entry_items: prev.entry_items.map((item) => (item._rowId === id ? { ...item, ...patch } : item)),
+                                                            }))
+                                                        }
+                                                        onAdd={() => {
+                                                            const row = new_entry_row()
+                                                            setForm((prev) => ({ ...prev, entry_items: [...prev.entry_items, row] }))
+                                                            setSelectedItemId(row._rowId)
+                                                        }}
+                                                        onRemove={() => {
+                                                            if (!selectedItemId) {
+                                                                toast.error('请先选择一行')
+                                                                return
+                                                            }
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                entry_items: prev.entry_items.filter((item) => item._rowId !== selectedItemId),
+                                                            }))
+                                                            setSelectedItemId('')
+                                                        }}
+                                                    />
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </ResizablePanel>
+                                    <ResizableHandle withHandle className="my-1" />
+                                    <ResizablePanel defaultSize="35%" minSize="15%" className="min-h-0">
+                                        <SelectedOrgList names={selectedOrgNames} />
+                                    </ResizablePanel>
+                                </ResizablePanelGroup>
                             </CardContent>
                         </Card>
                     </ResizablePanel>
@@ -1057,6 +1162,16 @@ export function DjconfigView() {
             toast.warning('必填项没填写', { description: '配置名称' })
             return
         }
+        if (is_annual_config_type(form.data_type) || is_quarterly_config_type(form.data_type)) {
+            if (!form.year.trim()) {
+                toast.warning('必填项没填写', { description: '年份' })
+                return
+            }
+        }
+        if (is_quarterly_config_type(form.data_type) && !form.quarter.trim()) {
+            toast.warning('必填项没填写', { description: '季度' })
+            return
+        }
         if (is_party_perf_type(form.data_type)) {
             if (!form.items.length) {
                 toast.warning('必填项没填写', { description: '评价名称' })
@@ -1070,8 +1185,16 @@ export function DjconfigView() {
                 toast.warning('数据格式不正确', { description: '值必须是数字' })
                 return
             }
-            if (!is_hundred_percent(rule_items_sum(form.items))) {
-                toast.warning('数据格式不正确', { description: '所有值加起来必须为100%' })
+            if (form.items.some((item) => !Number.isInteger(Number(item.value)) || Number(item.value) < 0)) {
+                toast.warning('数据格式不正确', { description: '个数必须是大于等于0的整数' })
+                return
+            }
+            if (!form.org_ids.length) {
+                toast.warning('必填项没填写', { description: '应用的党组织' })
+                return
+            }
+            if (!rule_items_match_org_count(form.items, form.org_ids.length)) {
+                toast.warning('数据格式不正确', { description: '各个选项的个数之和必须等于选中党组织个数' })
                 return
             }
         }
@@ -1158,8 +1281,8 @@ export function DjconfigView() {
                 })
                 return
             }
-            if (is_party_perf_type(target.data_type) && !org_percent_divides(target.org_ids.length, party_rule_ratios(target.tag))) {
-                toast.warning('数据格式不正确', { description: '党组织数量和百分比不能整除' })
+            if (is_party_perf_type(target.data_type) && !rule_items_match_org_count(parse_rule_items(target.tag.items), target.org_ids.length)) {
+                toast.warning('数据格式不正确', { description: '各个选项的个数之和必须等于选中党组织个数' })
                 return
             }
         }
