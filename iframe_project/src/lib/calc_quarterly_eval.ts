@@ -213,6 +213,22 @@ function covers_party(org_ids: string[], party_name: string, orgs: ParseOrgRow[]
     return org_name_set(org_ids, orgs).has(party)
 }
 
+function orgs_from_configs(configs: ConfigBill[], orgs: ParseOrgRow[]) {
+    const by_id = new Map(orgs.map((org) => [org.id, org]))
+    const seen = new Set<string>()
+    const result: ParseOrgRow[] = []
+    for (const config of configs) {
+        for (const org_id of config.org_ids) {
+            if (seen.has(org_id)) continue
+            seen.add(org_id)
+            const org = by_id.get(org_id)
+            if (!org?.name.trim()) continue
+            result.push(org)
+        }
+    }
+    return result
+}
+
 function ratio_of(value: number, sum: number) {
     if (Math.abs(sum - 100) < 1e-6) return value / 100
     return value
@@ -236,10 +252,14 @@ function contribution_entries(entry: ContributionEntry): EvalEntry[] {
     for (const pair of CONTRIB_ITEM_PAIRS) {
         const item_name = as_string(entry[pair.item]).trim()
         if (!item_name) continue
-        rows.push({ item_name, item_score: as_number(entry[pair.score]) })
+        const item_score = as_number(entry[pair.score])
+        if (item_score === 0) continue
+        rows.push({ item_name, item_score })
     }
     for (const item of CONTRIB_SCORE_ONLY) {
-        rows.push({ item_name: item.name, item_score: as_number(entry[item.score]) })
+        const item_score = as_number(entry[item.score])
+        if (item_score === 0) continue
+        rows.push({ item_name: item.name, item_score })
     }
     return rows
 }
@@ -283,10 +303,6 @@ function trans_quarterly(row: DjConfigBillRow): EvalBill {
 
 function is_draft(bill: EvalBill) {
     return bill.billstatus_title === '暂存'
-}
-
-function is_reusable_existing(bill: EvalBill, year: string, quarter: string) {
-    return same_period(bill.year, bill.quarter, year, quarter) || is_draft(bill)
 }
 
 function bill_matches_org(bill: EvalBill, org: ParseOrgRow) {
@@ -336,7 +352,17 @@ function collect_duplicate_org_names(configs: ConfigBill[], orgs: ParseOrgRow[])
     return names
 }
 
-function build_scored_bill(party_name: string, year: string, quarter: string, billno: string, grassroots: ConfigBill[], deductions: ReturnType<typeof trans_deduction>, contributions: ReturnType<typeof trans_contribution>, orgs: ParseOrgRow[]): EvalBill {
+function build_scored_bill(
+    party_name: string,
+    year: string,
+    quarter: string,
+    billno: string,
+    grassroots: ConfigBill[],
+    deductions: ReturnType<typeof trans_deduction>,
+    contributions: ReturnType<typeof trans_contribution>,
+    orgs: ParseOrgRow[],
+    preserved: Pick<EvalBill, 'party_evaluation' | 'administrative_evaluation' | 'cxzy_evaluation'>,
+): EvalBill {
     const entry: EvalEntry[] = []
     for (const config of grassroots) {
         if (!covers_party(config.org_ids, party_name, orgs)) continue
@@ -365,14 +391,14 @@ function build_scored_bill(party_name: string, year: string, quarter: string, bi
         year,
         quarter,
         party_score: entry.reduce((sum, item) => sum + item.item_score, 0),
-        party_evaluation: '',
-        administrative_evaluation: '',
-        cxzy_evaluation: '',
+        party_evaluation: preserved.party_evaluation,
+        administrative_evaluation: preserved.administrative_evaluation,
+        cxzy_evaluation: preserved.cxzy_evaluation,
         entry,
     }
 }
 
-export async function calculate_quarterly_party_eval(year: string, quarter: string): Promise<CalcQuarterlyEvalResult> {
+export async function calculate_quarterly_party_score(year: string, quarter: string): Promise<CalcQuarterlyEvalResult> {
     const [config_raw, deduction_raw, contribution_raw, org_raw] = await Promise.all([
         fetch_djconfig({ force: true }),
         fetch_deduction({ force: true }),
@@ -384,39 +410,71 @@ export async function calculate_quarterly_party_eval(year: string, quarter: stri
     const contributions = trans_contribution(contribution_raw)
     const orgs = trans_org(org_raw)
     const existing = config_raw.filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE).map(trans_quarterly)
-
     const grassroots = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_GRASSROOTS_TYPE)
-    const party_rules = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_PARTY_RULE_TYPE)
+
+    const duplicate_orgs = collect_duplicate_org_names(grassroots, orgs)
+    if (duplicate_orgs.length) {
+        throw new DuplicateOrgConfigError(duplicate_orgs)
+    }
 
     const consumed = new Set<string>()
     const delete_billnos: string[] = []
     const drafts: EvalBill[] = []
     const used_billnos = new Set(config_raw.map((row) => row.billno).filter(Boolean))
 
-    for (const org of orgs) {
+    for (const org of orgs_from_configs(grassroots, orgs)) {
         const party_name = org.name.trim()
-        if (!party_name) continue
-        const matches = existing.filter((bill) => !consumed.has(bill.billno) && bill_matches_org(bill, org) && is_reusable_existing(bill, year, quarter))
+        const matches = existing.filter((bill) => !consumed.has(bill.billno) && bill_matches_org(bill, org) && same_period(bill.year, bill.quarter, year, quarter))
+        let billno = ''
+        const preserved = {
+            party_evaluation: '',
+            administrative_evaluation: '',
+            cxzy_evaluation: '',
+        }
         for (const bill of matches) {
             consumed.add(bill.billno)
             delete_billnos.push(bill.billno)
+            if (!billno) billno = bill.billno
+            if (bill.party_evaluation || bill.administrative_evaluation || bill.cxzy_evaluation) {
+                preserved.party_evaluation = bill.party_evaluation
+                preserved.administrative_evaluation = bill.administrative_evaluation
+                preserved.cxzy_evaluation = bill.cxzy_evaluation
+            }
         }
-        drafts.push(build_scored_bill(party_name, year, quarter, alloc_quarterly_billno(used_billnos), grassroots, deductions, contributions, orgs))
+        if (!billno) billno = alloc_quarterly_billno(used_billnos)
+        drafts.push(build_scored_bill(party_name, year, quarter, billno, grassroots, deductions, contributions, orgs, preserved))
     }
+
+    const unique_billnos = new Set(drafts.map((bill) => bill.billno))
+    if (unique_billnos.size !== drafts.length) {
+        throw new Error('生成的单据编号存在重复')
+    }
+    return { bills: drafts, delete_billnos: [...new Set(delete_billnos)] }
+}
+
+export async function calculate_quarterly_party_eval(year: string, quarter: string): Promise<CalcQuarterlyEvalResult> {
+    const [config_raw, org_raw] = await Promise.all([fetch_djconfig({ force: true }), fetch_org({ force: true })])
+    const configs = config_raw.map(trans_config)
+    const orgs = trans_org(org_raw)
+    const existing = config_raw.filter((row) => row.crrc_textfield === QUARTERLY_RESULT_TYPE).map(trans_quarterly)
+    const party_rules = configs.filter((row) => row.submitted && row.data_type === QUARTERLY_PARTY_RULE_TYPE)
 
     const duplicate_orgs = collect_duplicate_org_names(party_rules, orgs)
     if (duplicate_orgs.length) {
         throw new DuplicateOrgConfigError(duplicate_orgs)
     }
 
-    const assigned = assign_party_evaluations(drafts, party_rules, orgs)
-    const unique_billnos = new Set(assigned.bills.map((bill) => bill.billno))
-    if (unique_billnos.size !== assigned.bills.length) {
+    const targets = existing.filter((bill) => same_period(bill.year, bill.quarter, year, quarter))
+    const assigned = assign_party_evaluations(targets, party_rules, orgs)
+    const skip = new Set(assigned.tied_billnos)
+    const bills = assigned.bills.filter((bill) => !skip.has(bill.billno))
+    const unique_billnos = new Set(bills.map((bill) => bill.billno))
+    if (unique_billnos.size !== bills.length) {
         throw new Error('生成的单据编号存在重复')
     }
     return {
-        bills: assigned.bills,
-        delete_billnos: [...new Set(delete_billnos)],
+        bills,
+        delete_billnos: bills.map((bill) => bill.billno),
         tied_reason: assigned.tied_reason,
     }
 }
@@ -446,12 +504,13 @@ function assign_party_evaluations(bills: EvalBill[], party_rules: ConfigBill[], 
         all_ties.push(...find_tied_score_across_evals(group))
     }
     const tied_reason = all_ties.length ? tied_score_reason(all_ties) : undefined
+    const tied_billnos = [...new Set(all_ties.flatMap((tie) => tie.bills.map((bill) => bill.billno)))]
     for (const tie of all_ties) {
         for (const bill of tie.bills) {
             bill.party_evaluation = ''
         }
     }
-    return { bills: assigned, tied_reason }
+    return { bills: assigned, tied_reason, tied_billnos }
 }
 
 function match_cxzy_rule(rules: CxzyRule[], party_evaluation: string, administrative_evaluation: string) {
@@ -637,9 +696,8 @@ export async function calculate_annual_party_score(year: string): Promise<CalcQu
     const drafts: EvalBill[] = []
     const used_billnos = new Set(config_raw.map((row) => row.billno).filter(Boolean))
 
-    for (const org of orgs) {
+    for (const org of orgs_from_configs(grassroots, orgs)) {
         const party_name = org.name.trim()
-        if (!party_name) continue
         const matches = existing.filter((bill) => !consumed.has(bill.billno) && bill_matches_org(bill, org) && same_year(bill.year, year))
         let billno = ''
         const preserved = {

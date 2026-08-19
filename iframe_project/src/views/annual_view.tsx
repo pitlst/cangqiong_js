@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
 import { format } from 'date-fns'
 
+import { AdminEvalCell } from '@/components/admin-eval-cell'
 import { DetailSection } from '@/components/bill-detail'
 import { type DataTableFeatures } from '@/components/data-table-features'
 import { DataToolbar } from '@/components/data-toolbar'
@@ -57,55 +58,68 @@ type ParseBillRow = {
     cxzy_evaluation: string
 }
 
+function is_draft_bill(bill: ParseBillRow) {
+    return bill.billstatus_title === '暂存'
+}
+
 const columnHelper = createColumnHelper<DataTableFeatures, ParseBillRow>()
-const annualColumns = columnHelper.columns([
-    columnHelper.accessor('billno', {
-        header: '单据编号',
-    }),
-    columnHelper.accessor('billstatus_title', {
-        header: '单据状态',
-        cell: ({ getValue }) => {
-            const status = getValue()
-            if (status === '暂存') {
-                return (
-                    <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5">
-                        {status}
-                    </Badge>
-                )
-            }
-            return <Badge variant="default">{status}</Badge>
-        },
-    }),
-    columnHelper.accessor('party_name', {
-        header: '所属党组织',
-    }),
-    columnHelper.accessor('year', {
-        header: '年份',
-    }),
-    columnHelper.accessor('party_score', {
-        header: () => <div className="text-right">党群绩效得分</div>,
-        cell: ({ getValue }) => <div className="text-right">{getValue()}</div>,
-    }),
-    columnHelper.accessor('party_evaluation', {
-        header: '党群绩效评价',
-    }),
-    columnHelper.accessor('administrative_evaluation', {
-        header: '行政绩效评价',
-    }),
-    columnHelper.accessor('cxzy_evaluation', {
-        header: '创先争优评价',
-    }),
-    columnHelper.accessor('auditdate', {
-        header: '审核日期',
-        cell: ({ getValue }) => getValue() || '-',
-    }),
-    columnHelper.accessor('createtime', {
-        header: '创建时间',
-    }),
-    columnHelper.accessor('modifytime', {
-        header: '修改时间',
-    }),
-])
+
+function make_annual_columns(onCommitAdmin: (bill: ParseBillRow, next: string) => Promise<void>) {
+    return columnHelper.columns([
+        columnHelper.accessor('billno', {
+            header: '单据编号',
+        }),
+        columnHelper.accessor('billstatus_title', {
+            header: '单据状态',
+            cell: ({ getValue }) => {
+                const status = getValue()
+                if (status === '暂存') {
+                    return (
+                        <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5">
+                            {status}
+                        </Badge>
+                    )
+                }
+                return <Badge variant="default">{status}</Badge>
+            },
+        }),
+        columnHelper.accessor('party_name', {
+            header: '所属党组织',
+        }),
+        columnHelper.accessor('year', {
+            header: '年份',
+        }),
+        columnHelper.accessor('party_score', {
+            header: () => <div className="text-right">党群绩效得分</div>,
+            cell: ({ getValue }) => <div className="text-right">{getValue()}</div>,
+        }),
+        columnHelper.accessor('party_evaluation', {
+            header: '党群绩效评价',
+        }),
+        columnHelper.accessor('administrative_evaluation', {
+            header: '行政绩效评价',
+            cell: ({ row }) =>
+                is_draft_bill(row.original) ? (
+                    <AdminEvalCell value={row.original.administrative_evaluation} onCommit={(next) => onCommitAdmin(row.original, next)} />
+                ) : (
+                    row.original.administrative_evaluation
+                ),
+        }),
+        columnHelper.accessor('cxzy_evaluation', {
+            header: '创先争优评价',
+        }),
+        columnHelper.accessor('auditdate', {
+            header: '审核日期',
+            cell: ({ getValue }) => getValue() || '-',
+        }),
+        columnHelper.accessor('createtime', {
+            header: '创建时间',
+        }),
+        columnHelper.accessor('modifytime', {
+            header: '修改时间',
+        }),
+    ])
+}
 
 const PARSE_BILL_COLUMNS = [
     { key: 'billno', label: '单据编号' },
@@ -222,7 +236,7 @@ function to_add_row(form: AddFormValues): BillAddRow {
         billno: form.billno.trim(),
         billstatus: 'A',
         crrc_textfield: '年度评价结果',
-        crrc_largetextfield: json,
+        crrc_largetextfield: form.party_name.trim() || form.billno.trim(),
         crrc_largetextfield_tag: json,
     }
 }
@@ -242,8 +256,27 @@ function bill_to_add_row(bill: EvalBill): BillAddRow {
         billno: bill.billno,
         billstatus: 'A',
         crrc_textfield: '年度评价结果',
-        crrc_largetextfield: json,
+        crrc_largetextfield: bill.party_name.trim() || bill.billno,
         crrc_largetextfield_tag: json,
+    }
+}
+
+function parse_row_to_add_row(bill: ParseBillRow): BillAddRow {
+    const tag = {
+        entry: bill.entry,
+        party_name: bill.party_name,
+        year: bill.year,
+        party_score: bill.party_score,
+        party_evaluation: bill.party_evaluation,
+        administrative_evaluation: bill.administrative_evaluation,
+        cxzy_evaluation: bill.cxzy_evaluation,
+    }
+    return {
+        billno: bill.billno,
+        billstatus: 'A',
+        crrc_textfield: '年度评价结果',
+        crrc_largetextfield: bill.party_name.trim() || bill.billno,
+        crrc_largetextfield_tag: JSON.stringify(tag),
     }
 }
 
@@ -356,6 +389,13 @@ function AnnualBillForm({
         setSelectedEntryId('')
     }
 
+    function sumEntry() {
+        setForm((prev) => ({
+            ...prev,
+            party_score: String(prev.entry.reduce((sum, item) => sum + as_number(item.item_score), 0)),
+        }))
+    }
+
     return (
         <Dialog
             open
@@ -364,11 +404,11 @@ function AnnualBillForm({
                 if (!open && !saving) onClose()
             }}
         >
-            <DialogContent className="flex max-h-[90vh] w-full flex-col gap-3 overflow-hidden sm:max-w-6xl" showCloseButton={!saving}>
-                <DialogHeader>
+            <DialogContent className="flex h-[90vh] max-h-[90vh] w-full flex-col gap-3 overflow-hidden sm:max-w-6xl" showCloseButton={!saving}>
+                <DialogHeader className="shrink-0">
                     <DialogTitle>{initial ? '修改年度评价结果' : '新增年度评价结果'}</DialogTitle>
                 </DialogHeader>
-                <FieldGroup className="grid grid-cols-4 gap-x-3 gap-y-2">
+                <FieldGroup className="grid shrink-0 grid-cols-4 gap-x-3 gap-y-2">
                     <Field className="min-w-0 gap-1">
                         <FieldLabel htmlFor="annual-billno">
                             单据编号<span className="text-destructive">*</span>
@@ -438,10 +478,13 @@ function AnnualBillForm({
                             <Button type="button" variant="outline" size="lg" disabled={!selectedEntryId} onClick={removeEntry}>
                                 删行
                             </Button>
+                            <Button type="button" variant="outline" size="lg" onClick={sumEntry}>
+                                求和
+                            </Button>
                         </div>
                     }
                 >
-                    <div className="min-h-56">
+                    <div className="min-h-0 flex-1 overflow-hidden">
                         <DataTable
                             columns={addEntryColumns}
                             data={form.entry}
@@ -453,7 +496,7 @@ function AnnualBillForm({
                         />
                     </div>
                 </DetailSection>
-                <DialogFooter>
+                <DialogFooter className="shrink-0">
                     <Button type="button" variant="outline" disabled={saving} onClick={onClose}>
                         取消
                     </Button>
@@ -510,6 +553,24 @@ export function AnnualView() {
         setEditingBill(bill)
         setFormOpen(true)
     }
+
+    const saveAdminEval = useCallback(async (bill: ParseBillRow, next: string) => {
+        if (!is_draft_bill(bill)) {
+            toast.warning('已提交单据不能修改')
+            throw new Error('已提交单据不能修改')
+        }
+        try {
+            await delete_data(bill.billno)
+            await add_data(parse_row_to_add_row({ ...bill, administrative_evaluation: next }))
+            setRows((prev) => prev.map((row) => (row.billno === bill.billno ? { ...row, administrative_evaluation: next } : row)))
+            toast.success('行政绩效评价已保存')
+        } catch (err) {
+            toast.error('保存行政绩效评价失败', { description: get_err_message(err) })
+            throw err
+        }
+    }, [])
+
+    const annualColumns = useMemo(() => make_annual_columns(saveAdminEval), [saveAdminEval])
 
     function selected_bills() {
         const ids = new Set(selectedRowIds)

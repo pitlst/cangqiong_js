@@ -29,7 +29,7 @@ export function DetailSection({
     children: ReactNode
 }) {
     return (
-        <Collapsible defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
+        <Collapsible defaultOpen={defaultOpen} className={cn('flex min-h-0 flex-col overflow-hidden', className)}>
             <div className="flex shrink-0 items-center gap-2 py-2">
                 <CollapsibleTrigger
                     render={
@@ -42,7 +42,7 @@ export function DetailSection({
                 </CollapsibleTrigger>
                 {extra}
             </div>
-            <CollapsibleContent className="flex min-h-0 flex-1 flex-col">{children}</CollapsibleContent>
+            <CollapsibleContent className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</CollapsibleContent>
         </Collapsible>
     )
 }
